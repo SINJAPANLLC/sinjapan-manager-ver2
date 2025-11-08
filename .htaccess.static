@@ -60,3 +60,4 @@ RewriteRule ^api/(.*)$ - [R=404,L]
 <Files "*.log">
     Require all denied
 </Files>
+

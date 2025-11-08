@@ -185,3 +185,4 @@ echo "- Restart application: pm2 restart sinjapan-manager"
 echo ""
 
 exit 0
+

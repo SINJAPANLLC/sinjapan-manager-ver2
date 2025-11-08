@@ -1,0 +1,148 @@
+You are building a full-stack AI-powered internal management system called **SIN JAPAN MANAGER**, an **autonomous company operating system** for SIN JAPAN LLC.
+
+## 🔹 CORE PURPOSE
+Build a **self-operating business OS** where AI manages, generates, learns, and acts automatically across all departments:
+Finance, HR, Sales, Logistics, Marketing, Communications, and Administration.
+
+It must unify:
+- Business operations (11 divisions)
+- PL/BS/CF financials
+- AI memory and decision systems
+- Automation loops (self-running cycles)
+- Internal + external API integrations (Stripe, Slack, LINE, Gmail, freee, etc.)
+
+---
+
+## 🔹 SYSTEM ARCHITECTURE
+
+### 1️⃣ FRONTEND
+- Framework: **Next.js + React + TailwindCSS**
+- Pages:
+  - `/dashboard` — CEO Dashboard (AI reports, KPIs, PL/CF overview)
+  - `/business/[id]` — Business management (each division)
+  - `/tasks` — Task & KPI tracking (sales / org / risk / expansion)
+  - `/communications` — Integrated email/LINE/Slack panel
+  - `/documents` — Generated files (contracts, invoices, reports)
+  - `/ai-console` — AI logs + chat interface (SIGMA / MIZUKI / NEURAL)
+  - `/admin` — System, role, and API configuration
+
+### 2️⃣ BACKEND
+- Framework: **NestJS + Express**
+- API endpoints:
+  - `/api/finance` → handle PL/BS/CF, transactions, freee API
+  - `/api/contracts` → contracts, renewals, CloudSign integration
+  - `/api/users` → user/role management (RBAC)
+  - `/api/tasks` → CRUD for tasks + auto-classification (sales/org/risk/expand)
+  - `/api/ai` → AI agent orchestrator (SIGMA / MIZUKI / NEURAL)
+  - `/api/memory` → long-term memory store (Pinecone / Firestore)
+  - `/api/communications` → Gmail / LINE / Slack webhooks
+  - `/api/scheduler` → cron-based autonomous loop
+
+### 3️⃣ DATABASE
+Use **Firebase Firestore** for structured documents and **PostgreSQL** for transactional analytics.
+Collections / Tables:
+- `users`
+- `businesses`
+- `contracts`
+- `transactions`
+- `tasks`
+- `kpis`
+- `communications`
+- `ai_events`
+- `memory`
+- `settings`
+
+### 4️⃣ AI LAYERS
+Create **three cooperating AI modules**:
+
+| Layer | Name | Function |
+|--------|-------|-----------|
+| 1 | **SIGMA CORE** | Strategic decisions, ROI analysis, resource allocation |
+| 2 | **MIZUKI MANAGER** | Daily task automation, KPI tracking, communication |
+| 3 | **NEURAL ENGINE** | Document / report / post generation |
+
+Each AI communicates via REST endpoints and shares context via `memory` DB.
+
+### 5️⃣ MEMORY / KNOWLEDGE BASE
+Use **Pinecone vector DB** for embeddings and **Redis** for session memory.
+Every AI action and result is logged in `memory` with timestamp, task ID, and outcome.
+
+### 6️⃣ AUTOMATION LOOP
+Implement the **Autonomy Loop** via CRON jobs:
+1. Collect new data (emails, sales, metrics)
+2. Store to DB
+3. Analyze via SIGMA
+4. Generate new tasks via MIZUKI
+5. Create outputs via NEURAL (reports, messages, docs)
+6. Send summary to Dashboard + LINE/Slack
+7. Re-learn (update vectors in Pinecone)
+
+---
+
+## 🔹 CORE FEATURES
+
+- 🔄 Self-updating PL/BS/CF reports
+- ⚙️ AI-based task automation (classification + execution)
+- 💬 Integrated communications (email / Slack / LINE)
+- 📑 Auto document generation (contracts, invoices, reports)
+- 📈 KPI and ROI dashboards per business
+- 🧠 Long-term AI memory (self-learning)
+- 🔔 Daily AI briefings (“Mizuki Morning Report”)
+- ⚠️ Risk prediction & red flag alerts
+- 🚀 Multi-business modular expansion (11 current, scalable to 20+)
+
+---
+
+## 🔹 EXTERNAL INTEGRATIONS (API HUB)
+Connect:
+- **Stripe / 会費ペイ** (billing / payout)
+- **Slack / LINE / Gmail** (notifications)
+- **freee / QuickBooks / Moneytree** (accounting)
+- **Google Drive / Notion / CloudSign** (documents)
+- **AWS / Cloudflare** (storage + compute)
+
+---
+
+## 🔹 SECURITY & AUTH
+- Firebase Auth + JWT for API requests
+- Role-based access (CEO / Manager / Staff / AI)
+- Activity logging + monitoring (admin dashboard)
+
+---
+
+## 🔹 DEVELOPMENT FLOW (WBS)
+1. Scaffold full-stack app (Next.js + NestJS + Firebase)
+2. Define Firestore + PostgreSQL schema
+3. Create base API endpoints
+4. Implement AI orchestrator with 3 modules
+5. Connect API integrations (freee, Slack, Stripe)
+6. Build Dashboard & Admin UI
+7. Enable Memory layer (Pinecone / Redis)
+8. Add automation CRON jobs
+9. Test AI loop (simulate day cycle)
+10. Deploy on Vercel + AWS Lambda backend
+
+---
+
+## 🔹 DESIGN GUIDELINES
+- Color: White × Deep Green (#00A676)
+- Font: Inter / Noto Sans JP
+- Layout: Minimal dashboard, modular cards
+- Navigation: Left sidebar (business modules), top AI console bar
+- Tone: Professional, futuristic, human + AI collaboration aesthetic
+
+---
+
+## 🔹 OUTPUT EXPECTATION
+At the end of setup, you must deliver:
+- Functional full-stack scaffold (frontend + backend)
+- Firestore schema initialized
+- AI endpoints stubbed
+- API connection test (Slack + Stripe + Gmail)
+- Dashboard UI draft with dummy data
+- README with system overview and next-step notes
+
+---
+
+**SYSTEM NAME:** SIN JAPAN MANAGER  
+**GOAL:** Create a fully autonomous business management AI OS that can run, learn, and expand by itself.
