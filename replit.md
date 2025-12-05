@@ -115,7 +115,7 @@ npm start
 ### デプロイ手順
 ```bash
 ssh root@212.85.24.206
-cd /public_html
+cd /var/www/sinjapan-manager
 git pull origin main
 npm install
 npm run build
