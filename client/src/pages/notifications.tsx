@@ -103,81 +103,99 @@ export function NotificationsPage() {
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'success':
-        return <CheckCircle className="text-green-600" size={20} />;
+        return <CheckCircle className="text-emerald-600" size={20} />;
       case 'warning':
-        return <AlertCircle className="text-orange-600" size={20} />;
+        return <AlertCircle className="text-amber-600" size={20} />;
       case 'error':
         return <AlertCircle className="text-red-600" size={20} />;
       default:
-        return <Info className="text-blue-600" size={20} />;
+        return <Info className="text-primary-600" size={20} />;
+    }
+  };
+
+  const getTypeStyle = (type: string) => {
+    switch (type) {
+      case 'success':
+        return 'bg-emerald-50 border-emerald-100';
+      case 'warning':
+        return 'bg-amber-50 border-amber-100';
+      case 'error':
+        return 'bg-red-50 border-red-100';
+      default:
+        return 'bg-primary-50 border-primary-100';
     }
   };
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">通知</h1>
+          <h1 className="text-2xl font-bold text-slate-800">通知</h1>
           {unreadCount > 0 && (
-            <p className="text-gray-500 text-sm mt-1">{unreadCount}件の未読通知</p>
+            <p className="text-slate-500 text-sm mt-1">{unreadCount}件の未読通知があります</p>
           )}
         </div>
         <div className="flex gap-3">
           {unreadCount > 0 && (
             <button
               onClick={markAllAsRead}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              className="btn-secondary flex items-center gap-2"
             >
-              <CheckCheck size={20} />
+              <CheckCheck size={18} />
               全て既読
             </button>
           )}
           {canSendBulk && (
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all"
+              className="btn-primary flex items-center gap-2"
             >
-              <Send size={20} />
+              <Send size={18} />
               一括送信
             </button>
           )}
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden">
         {notifications.length > 0 ? (
-          <div className="divide-y">
+          <div className="divide-y divide-slate-50">
             {notifications.map((notification) => (
               <div
                 key={notification.id}
                 className={cn(
-                  'p-6 hover:bg-gray-50 transition-colors',
-                  !notification.isRead && 'bg-blue-50/50'
+                  'p-5 transition-all duration-200',
+                  !notification.isRead 
+                    ? 'bg-gradient-to-r from-primary-50/50 to-white' 
+                    : 'hover:bg-slate-50'
                 )}
               >
                 <div className="flex items-start gap-4">
-                  <div className="p-2 bg-gray-100 rounded-xl">
+                  <div className={cn(
+                    "p-2.5 rounded-xl border",
+                    getTypeStyle(notification.type)
+                  )}>
                     {getTypeIcon(notification.type)}
                   </div>
-                  <div className="flex-1">
-                    <div className="flex justify-between items-start">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start gap-4">
                       <div>
-                        <h3 className="font-medium text-gray-800">{notification.title}</h3>
-                        <p className="text-gray-600 mt-1">{notification.message}</p>
+                        <h3 className="font-semibold text-slate-800">{notification.title}</h3>
+                        <p className="text-slate-600 mt-1 text-sm">{notification.message}</p>
                       </div>
                       {!notification.isRead && (
                         <button
                           onClick={() => markAsRead(notification.id)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                          className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-all duration-200 hover:scale-105 shrink-0"
                           title="既読にする"
                         >
                           <Check size={18} />
                         </button>
                       )}
                     </div>
-                    <p className="text-xs text-gray-400 mt-2">
+                    <p className="text-xs text-slate-400 mt-2">
                       {format(new Date(notification.createdAt), 'yyyy/MM/dd HH:mm')}
                     </p>
                   </div>
@@ -186,86 +204,93 @@ export function NotificationsPage() {
             ))}
           </div>
         ) : (
-          <div className="p-12 text-center text-gray-400">
-            <Bell size={48} className="mx-auto mb-4 opacity-50" />
-            <p>通知はありません</p>
+          <div className="p-16 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 bg-slate-100 rounded-full flex items-center justify-center">
+              <Bell size={28} className="text-slate-400" />
+            </div>
+            <p className="text-slate-500 font-medium">通知はありません</p>
           </div>
         )}
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center p-6 border-b">
-              <h2 className="text-xl font-bold text-gray-800">通知を一括送信</h2>
+        <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-slide-up">
+            <div className="flex justify-between items-center p-6 border-b border-slate-100">
+              <h2 className="text-xl font-bold text-slate-800">通知を一括送信</h2>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg"
+                className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
               >
-                <X size={20} />
+                <X size={20} className="text-slate-500" />
               </button>
             </div>
             <form onSubmit={handleBulkSend} className="p-6 space-y-6">
               <div>
                 <div className="flex justify-between items-center mb-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    送信先 ({selectedUsers.length}人選択中)
+                  <label className="block text-sm font-medium text-slate-700">
+                    送信先 <span className="text-primary-600">({selectedUsers.length}人選択中)</span>
                   </label>
                   <button
                     type="button"
                     onClick={selectAllUsers}
-                    className="text-sm text-blue-600 hover:underline"
+                    className="text-sm text-primary-600 hover:text-primary-700 font-medium"
                   >
                     {selectedUsers.length === users.length ? '全て解除' : '全て選択'}
                   </button>
                 </div>
-                <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-1">
+                <div className="max-h-40 overflow-y-auto border border-slate-200 rounded-xl p-2 space-y-1">
                   {users.map((u) => (
                     <label
                       key={u.id}
-                      className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer"
+                      className={cn(
+                        "flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors",
+                        selectedUsers.includes(u.id) 
+                          ? "bg-primary-50" 
+                          : "hover:bg-slate-50"
+                      )}
                     >
                       <input
                         type="checkbox"
                         checked={selectedUsers.includes(u.id)}
                         onChange={() => toggleUserSelection(u.id)}
-                        className="w-4 h-4 text-blue-600 rounded"
+                        className="w-4 h-4 text-primary-600 rounded border-slate-300 focus:ring-primary-500"
                       />
-                      <span className="text-sm">{u.name}</span>
-                      <span className="text-xs text-gray-400">({u.email})</span>
+                      <span className="text-sm font-medium text-slate-700">{u.name}</span>
+                      <span className="text-xs text-slate-400">({u.email})</span>
                     </label>
                   ))}
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">タイトル *</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">タイトル *</label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="input-field"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">メッセージ *</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">メッセージ *</label>
                 <textarea
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                   rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="input-field resize-none"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">タイプ</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">タイプ</label>
                 <select
                   value={formData.type}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="input-field"
                 >
                   <option value="info">情報</option>
                   <option value="success">成功</option>
@@ -274,17 +299,17 @@ export function NotificationsPage() {
                 </select>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  className="btn-secondary"
                 >
                   キャンセル
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800"
+                  className="btn-primary"
                 >
                   送信
                 </button>

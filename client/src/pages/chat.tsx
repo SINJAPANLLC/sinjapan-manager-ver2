@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../hooks/use-auth';
-import { Send, User, Search } from 'lucide-react';
+import { Send, User, Search, MessageCircle } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 
@@ -99,18 +99,18 @@ export function ChatPage() {
   };
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex gap-6">
-      <div className="w-80 bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col">
-        <div className="p-4 border-b">
-          <h2 className="text-lg font-bold text-gray-800 mb-3">チャット</h2>
+    <div className="h-[calc(100vh-8rem)] flex gap-5 animate-fade-in">
+      <div className="w-80 bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden flex flex-col">
+        <div className="p-5 border-b border-slate-100">
+          <h2 className="text-lg font-bold text-slate-800 mb-4">チャット</h2>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input
               type="text"
               placeholder="ユーザーを検索..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+              className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 outline-none text-sm transition-all"
             />
           </div>
         </div>
@@ -120,38 +120,48 @@ export function ChatPage() {
               key={u.id}
               onClick={() => setSelectedUser(u)}
               className={cn(
-                'w-full flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors text-left',
-                selectedUser?.id === u.id && 'bg-blue-50'
+                'w-full flex items-center gap-3 p-4 transition-all duration-200 text-left border-b border-slate-50',
+                selectedUser?.id === u.id 
+                  ? 'bg-gradient-to-r from-primary-50 to-white border-l-2 border-l-primary-500' 
+                  : 'hover:bg-slate-50'
               )}
             >
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-medium">
+              <div className={cn(
+                "w-11 h-11 rounded-xl flex items-center justify-center text-white font-semibold transition-transform duration-200",
+                selectedUser?.id === u.id 
+                  ? "bg-gradient-to-br from-primary-500 to-primary-600 scale-105" 
+                  : "bg-gradient-to-br from-slate-400 to-slate-500"
+              )}>
                 {u.name.charAt(0)}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-gray-800 truncate">{u.name}</p>
-                <p className="text-xs text-gray-500">{getRoleLabel(u.role)}</p>
+                <p className={cn(
+                  "font-medium truncate",
+                  selectedUser?.id === u.id ? "text-primary-700" : "text-slate-800"
+                )}>{u.name}</p>
+                <p className="text-xs text-slate-500">{getRoleLabel(u.role)}</p>
               </div>
             </button>
           ))}
         </div>
       </div>
 
-      <div className="flex-1 bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col">
+      <div className="flex-1 bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden flex flex-col">
         {selectedUser ? (
           <>
-            <div className="p-4 border-b bg-gradient-to-r from-blue-600 to-blue-700 text-white">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center font-medium">
+            <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center text-white font-semibold shadow-button">
                   {selectedUser.name.charAt(0)}
                 </div>
                 <div>
-                  <p className="font-medium">{selectedUser.name}</p>
-                  <p className="text-sm text-blue-100">{getRoleLabel(selectedUser.role)}</p>
+                  <p className="font-semibold text-slate-800">{selectedUser.name}</p>
+                  <p className="text-sm text-primary-600">{getRoleLabel(selectedUser.role)}</p>
                 </div>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+            <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-gradient-to-b from-slate-50/50 to-white">
               {messages.map((msg) => {
                 const isMine = msg.senderId === user?.id;
                 return (
@@ -161,17 +171,17 @@ export function ChatPage() {
                   >
                     <div
                       className={cn(
-                        'max-w-[70%] px-4 py-3 rounded-2xl',
+                        'max-w-[70%] px-4 py-3 rounded-2xl shadow-soft',
                         isMine
-                          ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-br-md'
-                          : 'bg-white text-gray-800 shadow rounded-bl-md'
+                          ? 'bg-gradient-to-r from-primary-600 to-primary-500 text-white rounded-br-md'
+                          : 'bg-white text-slate-800 border border-slate-100 rounded-bl-md'
                       )}
                     >
                       <p className="whitespace-pre-wrap">{msg.content}</p>
                       <p
                         className={cn(
-                          'text-xs mt-1',
-                          isMine ? 'text-blue-100' : 'text-gray-400'
+                          'text-xs mt-1.5',
+                          isMine ? 'text-primary-100' : 'text-slate-400'
                         )}
                       >
                         {format(new Date(msg.createdAt), 'HH:mm')}
@@ -183,19 +193,19 @@ export function ChatPage() {
               <div ref={messagesEndRef} />
             </div>
 
-            <form onSubmit={sendMessage} className="p-4 border-t bg-white">
+            <form onSubmit={sendMessage} className="p-5 border-t border-slate-100 bg-white">
               <div className="flex gap-3">
                 <input
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="メッセージを入力..."
-                  className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="input-field"
                 />
                 <button
                   type="submit"
                   disabled={!newMessage.trim()}
-                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  className="btn-primary px-5 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Send size={20} />
                 </button>
@@ -203,10 +213,13 @@ export function ChatPage() {
             </form>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-gray-400">
+          <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
-              <User size={48} className="mx-auto mb-4 opacity-50" />
-              <p>ユーザーを選択してチャットを開始</p>
+              <div className="w-20 h-20 mx-auto mb-5 bg-gradient-to-br from-slate-100 to-slate-50 rounded-2xl flex items-center justify-center">
+                <MessageCircle size={36} className="text-slate-400" />
+              </div>
+              <p className="text-slate-500 font-medium">ユーザーを選択してチャットを開始</p>
+              <p className="text-slate-400 text-sm mt-1">左側のリストからユーザーを選んでください</p>
             </div>
           </div>
         )}

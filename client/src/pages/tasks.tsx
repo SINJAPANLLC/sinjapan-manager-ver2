@@ -125,11 +125,11 @@ export function TasksPage() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
-        return <CheckCircle className="text-green-600" size={20} />;
+        return <CheckCircle className="text-emerald-600" size={18} />;
       case 'in_progress':
-        return <Clock className="text-blue-600" size={20} />;
+        return <Clock className="text-primary-600" size={18} />;
       default:
-        return <AlertCircle className="text-orange-600" size={20} />;
+        return <AlertCircle className="text-amber-600" size={18} />;
     }
   };
 
@@ -142,14 +142,14 @@ export function TasksPage() {
     return labels[status] || status;
   };
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityBadge = (priority: string) => {
     switch (priority) {
       case 'high':
-        return 'bg-red-100 text-red-700';
+        return 'bg-red-50 text-red-600 border border-red-100';
       case 'medium':
-        return 'bg-yellow-100 text-yellow-700';
+        return 'bg-amber-50 text-amber-600 border border-amber-100';
       default:
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-slate-50 text-slate-600 border border-slate-200';
     }
   };
 
@@ -162,13 +162,42 @@ export function TasksPage() {
     return labels[priority] || priority;
   };
 
+  const getColumnStyle = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'from-amber-50 to-white border-amber-200';
+      case 'in_progress':
+        return 'from-primary-50 to-white border-primary-200';
+      case 'completed':
+        return 'from-emerald-50 to-white border-emerald-200';
+      default:
+        return 'from-slate-50 to-white border-slate-200';
+    }
+  };
+
+  const getColumnHeaderStyle = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'text-amber-700 bg-amber-50';
+      case 'in_progress':
+        return 'text-primary-700 bg-primary-50';
+      case 'completed':
+        return 'text-emerald-700 bg-emerald-50';
+      default:
+        return 'text-slate-700 bg-slate-50';
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <h1 className="text-2xl font-bold text-gray-800">タスク管理</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">タスク管理</h1>
+          <p className="text-slate-500 text-sm mt-1">タスクの作成と進捗管理</p>
+        </div>
         <button
           onClick={() => openModal()}
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all"
+          className="btn-primary flex items-center gap-2"
         >
           <Plus size={20} />
           新規タスク
@@ -177,42 +206,48 @@ export function TasksPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {['pending', 'in_progress', 'completed'].map((status) => (
-          <div key={status} className="bg-white rounded-2xl shadow-lg overflow-hidden">
+          <div key={status} className={cn(
+            "bg-gradient-to-b rounded-2xl border shadow-soft overflow-hidden",
+            getColumnStyle(status)
+          )}>
             <div className={cn(
-              'px-6 py-4 font-medium',
-              status === 'pending' && 'bg-orange-50 text-orange-700',
-              status === 'in_progress' && 'bg-blue-50 text-blue-700',
-              status === 'completed' && 'bg-green-50 text-green-700'
+              'px-5 py-4 font-semibold border-b flex items-center gap-2',
+              getColumnHeaderStyle(status)
             )}>
-              {getStatusLabel(status)} ({tasks.filter(t => t.status === status).length})
+              {getStatusIcon(status)}
+              {getStatusLabel(status)} 
+              <span className="ml-auto bg-white/80 px-2 py-0.5 rounded-full text-xs">
+                {tasks.filter(t => t.status === status).length}
+              </span>
             </div>
-            <div className="p-4 space-y-3">
+            <div className="p-4 space-y-3 min-h-[200px]">
               {tasks
                 .filter((t) => t.status === status)
                 .map((task) => (
                   <div
                     key={task.id}
-                    className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                    className="p-4 bg-white rounded-xl border border-slate-100 shadow-soft hover:shadow-card transition-all duration-200 hover:-translate-y-0.5"
                   >
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-medium text-gray-800">{task.title}</h3>
-                      <span className={cn('px-2 py-1 rounded text-xs', getPriorityColor(task.priority))}>
+                      <h3 className="font-semibold text-slate-800">{task.title}</h3>
+                      <span className={cn('px-2 py-0.5 rounded-full text-xs font-medium', getPriorityBadge(task.priority))}>
                         {getPriorityLabel(task.priority)}
                       </span>
                     </div>
                     {task.description && (
-                      <p className="text-sm text-gray-500 mb-3">{task.description}</p>
+                      <p className="text-sm text-slate-500 mb-3 line-clamp-2">{task.description}</p>
                     )}
                     {task.dueDate && (
-                      <p className="text-xs text-gray-400 mb-3">
+                      <p className="text-xs text-slate-400 mb-3 flex items-center gap-1">
+                        <Clock size={12} />
                         期限: {format(new Date(task.dueDate), 'yyyy/MM/dd')}
                       </p>
                     )}
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center pt-2 border-t border-slate-100">
                       <select
                         value={task.status}
                         onChange={(e) => handleStatusChange(task.id, e.target.value)}
-                        className="text-xs border rounded px-2 py-1"
+                        className="text-xs border border-slate-200 rounded-lg px-2 py-1 bg-white focus:ring-2 focus:ring-primary-500/20 outline-none"
                       >
                         <option value="pending">未着手</option>
                         <option value="in_progress">進行中</option>
@@ -221,22 +256,24 @@ export function TasksPage() {
                       <div className="flex gap-1">
                         <button
                           onClick={() => openModal(task)}
-                          className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                          className="p-1.5 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
                         >
-                          <Edit2 size={16} />
+                          <Edit2 size={14} />
                         </button>
                         <button
                           onClick={() => handleDelete(task.id)}
-                          className="p-1 text-red-600 hover:bg-red-50 rounded"
+                          className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     </div>
                   </div>
                 ))}
               {tasks.filter((t) => t.status === status).length === 0 && (
-                <p className="text-center text-gray-400 py-4">タスクなし</p>
+                <div className="flex items-center justify-center h-24 text-slate-400 text-sm">
+                  タスクなし
+                </div>
               )}
             </div>
           </div>
@@ -244,43 +281,43 @@ export function TasksPage() {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md">
-            <div className="flex justify-between items-center p-6 border-b">
-              <h2 className="text-xl font-bold text-gray-800">
+        <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl animate-slide-up">
+            <div className="flex justify-between items-center p-6 border-b border-slate-100">
+              <h2 className="text-xl font-bold text-slate-800">
                 {editingTask ? 'タスクを編集' : '新規タスク'}
               </h2>
-              <button onClick={closeModal} className="p-2 hover:bg-gray-100 rounded-lg">
-                <X size={20} />
+              <button onClick={closeModal} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
+                <X size={20} className="text-slate-500" />
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="p-6 space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">タイトル *</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">タイトル *</label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="input-field"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">説明</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">説明</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="input-field resize-none"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">優先度</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">優先度</label>
                   <select
                     value={formData.priority}
                     onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="input-field"
                   >
                     <option value="low">低</option>
                     <option value="medium">中</option>
@@ -288,21 +325,21 @@ export function TasksPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">期限</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">期限</label>
                   <input
                     type="date"
                     value={formData.dueDate}
                     onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="input-field"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">担当者</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">担当者</label>
                 <select
                   value={formData.assignedTo}
                   onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="input-field"
                 >
                   <option value="">未割り当て</option>
                   {users.map((u) => (
@@ -310,17 +347,17 @@ export function TasksPage() {
                   ))}
                 </select>
               </div>
-              <div className="flex justify-end gap-3 pt-4">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  className="btn-secondary"
                 >
                   キャンセル
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800"
+                  className="btn-primary"
                 >
                   {editingTask ? '更新' : '作成'}
                 </button>

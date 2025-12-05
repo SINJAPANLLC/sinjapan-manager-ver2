@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/use-auth';
-import { Plus, Edit2, Trash2, Search, User, X, Shield } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Users, X, Shield } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 interface UserData {
@@ -121,19 +121,19 @@ export function UsersPage() {
     return labels[role] || role;
   };
 
-  const getRoleColor = (role: string) => {
+  const getRoleBadge = (role: string) => {
     switch (role) {
       case 'admin':
       case 'ceo':
-        return 'bg-purple-100 text-purple-700';
+        return 'bg-violet-50 text-violet-700 border border-violet-100';
       case 'manager':
-        return 'bg-blue-100 text-blue-700';
+        return 'bg-primary-50 text-primary-700 border border-primary-100';
       case 'staff':
-        return 'bg-green-100 text-green-700';
+        return 'bg-emerald-50 text-emerald-700 border border-emerald-100';
       case 'agency':
-        return 'bg-orange-100 text-orange-700';
+        return 'bg-amber-50 text-amber-700 border border-amber-100';
       default:
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-slate-50 text-slate-700 border border-slate-200';
     }
   };
 
@@ -144,12 +144,15 @@ export function UsersPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <h1 className="text-2xl font-bold text-gray-800">ユーザー管理</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">ユーザー管理</h1>
+          <p className="text-slate-500 text-sm mt-1">システムユーザーの管理</p>
+        </div>
         <button
           onClick={() => openModal()}
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all"
+          className="btn-primary flex items-center gap-2"
         >
           <Plus size={20} />
           新規ユーザー
@@ -157,57 +160,57 @@ export function UsersPage() {
       </div>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
         <input
           type="text"
           placeholder="ユーザーを検索..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+          className="input-field pl-12"
         />
       </div>
 
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="table-header">
               <tr>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">ユーザー</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">メール</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">ロール</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">部署</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">ステータス</th>
-                <th className="px-6 py-4 text-right text-sm font-medium text-gray-500">操作</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600">ユーザー</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600">メール</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600">ロール</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600">部署</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600">ステータス</th>
+                <th className="px-6 py-4 text-right text-sm font-semibold text-slate-600">操作</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody>
               {filteredUsers.map((userData) => (
-                <tr key={userData.id} className="hover:bg-gray-50">
+                <tr key={userData.id} className="table-row">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-medium">
+                      <div className="w-11 h-11 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center text-white font-semibold shadow-soft">
                         {userData.name.charAt(0)}
                       </div>
                       <div>
-                        <span className="font-medium text-gray-800">{userData.name}</span>
+                        <span className="font-semibold text-slate-800">{userData.name}</span>
                         {userData.position && (
-                          <p className="text-xs text-gray-400">{userData.position}</p>
+                          <p className="text-xs text-slate-400">{userData.position}</p>
                         )}
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-gray-600">{userData.email}</td>
+                  <td className="px-6 py-4 text-slate-600">{userData.email}</td>
                   <td className="px-6 py-4">
-                    <span className={cn('px-3 py-1 rounded-full text-xs font-medium', getRoleColor(userData.role))}>
+                    <span className={cn('badge', getRoleBadge(userData.role))}>
                       {getRoleLabel(userData.role)}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-gray-600">{userData.department || '-'}</td>
+                  <td className="px-6 py-4 text-slate-600">{userData.department || '-'}</td>
                   <td className="px-6 py-4">
                     <span
                       className={cn(
-                        'px-3 py-1 rounded-full text-xs font-medium',
-                        userData.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                        'badge',
+                        userData.isActive ? 'badge-success' : 'bg-red-50 text-red-700 border border-red-100'
                       )}
                     >
                       {userData.isActive ? '有効' : '無効'}
@@ -217,14 +220,14 @@ export function UsersPage() {
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() => openModal(userData)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-all duration-200 hover:scale-105"
                       >
                         <Edit2 size={18} />
                       </button>
                       {canDelete && userData.id !== user?.id && (
                         <button
                           onClick={() => handleDelete(userData.id)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all duration-200 hover:scale-105"
                         >
                           <Trash2 size={18} />
                         </button>
@@ -237,62 +240,65 @@ export function UsersPage() {
           </table>
         </div>
         {filteredUsers.length === 0 && (
-          <div className="p-12 text-center text-gray-500">
-            ユーザーが見つかりません
+          <div className="p-16 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 bg-slate-100 rounded-full flex items-center justify-center">
+              <Users size={28} className="text-slate-400" />
+            </div>
+            <p className="text-slate-500 font-medium">ユーザーが見つかりません</p>
           </div>
         )}
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center p-6 border-b">
-              <h2 className="text-xl font-bold text-gray-800">
+        <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl animate-slide-up">
+            <div className="flex justify-between items-center p-6 border-b border-slate-100">
+              <h2 className="text-xl font-bold text-slate-800">
                 {editingUser ? 'ユーザーを編集' : '新規ユーザー'}
               </h2>
-              <button onClick={closeModal} className="p-2 hover:bg-gray-100 rounded-lg">
-                <X size={20} />
+              <button onClick={closeModal} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
+                <X size={20} className="text-slate-500" />
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="p-6 space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">名前 *</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">名前 *</label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="input-field"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">メール *</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">メール *</label>
                 <input
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="input-field"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
                   パスワード {editingUser ? '(変更する場合のみ)' : '*'}
                 </label>
                 <input
                   type="password"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="input-field"
                   required={!editingUser}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">ロール *</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">ロール *</label>
                 <select
                   value={formData.role}
                   onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="input-field"
                 >
                   <option value="admin">管理者</option>
                   <option value="ceo">CEO</option>
@@ -304,54 +310,54 @@ export function UsersPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">部署</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">部署</label>
                   <input
                     type="text"
                     value={formData.department}
                     onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="input-field"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">役職</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">役職</label>
                   <input
                     type="text"
                     value={formData.position}
                     onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="input-field"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">電話番号</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">電話番号</label>
                 <input
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="input-field"
                 />
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
                 <input
                   type="checkbox"
                   id="isActive"
                   checked={formData.isActive}
                   onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                  className="w-4 h-4 text-blue-600 rounded"
+                  className="w-4 h-4 text-primary-600 rounded border-slate-300 focus:ring-primary-500"
                 />
-                <label htmlFor="isActive" className="text-sm text-gray-700">有効なアカウント</label>
+                <label htmlFor="isActive" className="text-sm font-medium text-slate-700">有効なアカウント</label>
               </div>
-              <div className="flex justify-end gap-3 pt-4">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  className="btn-secondary"
                 >
                   キャンセル
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800"
+                  className="btn-primary"
                 >
                   {editingUser ? '更新' : '作成'}
                 </button>

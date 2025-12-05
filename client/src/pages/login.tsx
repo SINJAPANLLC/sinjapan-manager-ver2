@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../hooks/use-auth';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowRight } from 'lucide-react';
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -23,44 +23,54 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-800">SIN JAPAN</h1>
-            <p className="text-gray-500 mt-2">Manager System</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-primary-50/30 flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-primary-200/30 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-primary-100/30 to-transparent rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+      
+      <div className="w-full max-w-md relative z-10 animate-slide-up">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl shadow-button mb-6">
+            <span className="text-white font-bold text-2xl">S</span>
           </div>
+          <h1 className="text-3xl font-bold gradient-text">SIN JAPAN</h1>
+          <p className="text-slate-400 mt-2 font-medium tracking-wide text-sm">MANAGER SYSTEM</p>
+        </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="glass-card rounded-3xl shadow-card p-8">
+          <h2 className="text-xl font-semibold text-slate-800 text-center mb-6">
+            アカウントにログイン
+          </h2>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+              <div className="p-4 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm font-medium animate-fade-in">
                 {error}
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
                 メールアドレス
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                className="input-field"
                 placeholder="email@example.com"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
                 パスワード
               </label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                className="input-field"
                 placeholder="••••••••"
                 required
               />
@@ -69,7 +79,7 @@ export function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-lg hover:from-blue-700 hover:to-blue-800 focus:ring-4 focus:ring-blue-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full btn-primary flex items-center justify-center gap-2 group"
             >
               {isLoading ? (
                 <>
@@ -77,18 +87,37 @@ export function LoginPage() {
                   ログイン中...
                 </>
               ) : (
-                'ログイン'
+                <>
+                  ログイン
+                  <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform duration-200" />
+                </>
               )}
             </button>
           </form>
+        </div>
 
-          <div className="mt-8 pt-6 border-t border-gray-200">
-            <p className="text-center text-sm text-gray-500 mb-4">テストアカウント</p>
-            <div className="space-y-2 text-xs text-gray-500">
-              <p><strong>Admin:</strong> admin@test.com / test123</p>
-              <p><strong>Staff:</strong> staff@test.com / test123</p>
-              <p><strong>Agency:</strong> agency@test.com / test123</p>
-              <p><strong>Client:</strong> client@test.com / test123</p>
+        <div className="mt-8 glass-card rounded-2xl p-6">
+          <p className="text-center text-sm font-medium text-slate-500 mb-4">テストアカウント</p>
+          <div className="grid grid-cols-2 gap-3 text-xs">
+            <div className="bg-white rounded-lg p-3 border border-slate-100">
+              <p className="font-semibold text-primary-600 mb-1">Admin</p>
+              <p className="text-slate-500">admin@test.com</p>
+              <p className="text-slate-400">test123</p>
+            </div>
+            <div className="bg-white rounded-lg p-3 border border-slate-100">
+              <p className="font-semibold text-primary-600 mb-1">Staff</p>
+              <p className="text-slate-500">staff@test.com</p>
+              <p className="text-slate-400">test123</p>
+            </div>
+            <div className="bg-white rounded-lg p-3 border border-slate-100">
+              <p className="font-semibold text-primary-600 mb-1">Agency</p>
+              <p className="text-slate-500">agency@test.com</p>
+              <p className="text-slate-400">test123</p>
+            </div>
+            <div className="bg-white rounded-lg p-3 border border-slate-100">
+              <p className="font-semibold text-primary-600 mb-1">Client</p>
+              <p className="text-slate-500">client@test.com</p>
+              <p className="text-slate-400">test123</p>
             </div>
           </div>
         </div>

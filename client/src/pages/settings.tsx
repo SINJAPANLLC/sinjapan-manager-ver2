@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../hooks/use-auth';
-import { User, Lock, Save, Loader2 } from 'lucide-react';
+import { User, Lock, Save, Loader2, CheckCircle } from 'lucide-react';
+import { cn } from '../lib/utils';
 
 export function SettingsPage() {
   const { user, refetch } = useAuth();
@@ -74,125 +75,132 @@ export function SettingsPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
-      <h1 className="text-2xl font-bold text-gray-800">設定</h1>
+    <div className="max-w-2xl mx-auto space-y-8 animate-fade-in">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-800">設定</h1>
+        <p className="text-slate-500 text-sm mt-1">アカウント設定の管理</p>
+      </div>
 
       {message && (
         <div
-          className={`p-4 rounded-lg ${
-            message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-          }`}
+          className={cn(
+            'p-4 rounded-xl flex items-center gap-3 animate-fade-in',
+            message.type === 'success' 
+              ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' 
+              : 'bg-red-50 text-red-700 border border-red-100'
+          )}
         >
+          {message.type === 'success' && <CheckCircle size={20} />}
           {message.text}
         </div>
       )}
 
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-        <div className="p-6 border-b bg-gradient-to-r from-blue-600 to-blue-700">
-          <div className="flex items-center gap-3 text-white">
-            <User size={24} />
-            <h2 className="text-lg font-bold">プロフィール</h2>
+      <div className="card overflow-hidden">
+        <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-primary-50 to-white flex items-center gap-3">
+          <div className="p-2.5 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl shadow-button">
+            <User size={20} className="text-white" />
           </div>
+          <h2 className="text-lg font-bold text-slate-800">プロフィール</h2>
         </div>
-        <form onSubmit={handleProfileSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleProfileSubmit} className="p-6 space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">名前</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">名前</label>
             <input
               type="text"
               value={profileData.name}
               onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="input-field"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">メールアドレス</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">メールアドレス</label>
             <input
               type="email"
               value={user?.email || ''}
               disabled
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500"
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-500"
             />
-            <p className="text-xs text-gray-400 mt-1">メールアドレスは変更できません</p>
+            <p className="text-xs text-slate-400 mt-1.5">メールアドレスは変更できません</p>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">電話番号</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">電話番号</label>
               <input
                 type="tel"
                 value={profileData.phone}
                 onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="input-field"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">部署</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">部署</label>
               <input
                 type="text"
                 value={profileData.department}
                 onChange={(e) => setProfileData({ ...profileData, department: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="input-field"
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">役職</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">役職</label>
             <input
               type="text"
               value={profileData.position}
               onChange={(e) => setProfileData({ ...profileData, position: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="input-field"
             />
           </div>
-          <div className="flex justify-end pt-4">
+          <div className="flex justify-end pt-4 border-t border-slate-100">
             <button
               type="submit"
               disabled={isLoading}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50"
+              className="btn-primary flex items-center gap-2"
             >
-              {isLoading ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+              {isLoading ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
               保存
             </button>
           </div>
         </form>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-        <div className="p-6 border-b bg-gradient-to-r from-gray-700 to-gray-800">
-          <div className="flex items-center gap-3 text-white">
-            <Lock size={24} />
-            <h2 className="text-lg font-bold">パスワード変更</h2>
+      <div className="card overflow-hidden">
+        <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-slate-100 to-white flex items-center gap-3">
+          <div className="p-2.5 bg-gradient-to-br from-slate-600 to-slate-700 rounded-xl shadow-soft">
+            <Lock size={20} className="text-white" />
           </div>
+          <h2 className="text-lg font-bold text-slate-800">パスワード変更</h2>
         </div>
-        <form onSubmit={handlePasswordSubmit} className="p-6 space-y-4">
+        <form onSubmit={handlePasswordSubmit} className="p-6 space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">新しいパスワード</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">新しいパスワード</label>
             <input
               type="password"
               value={passwordData.newPassword}
               onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="input-field"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-slate-700 mb-2">
               新しいパスワード（確認）
             </label>
             <input
               type="password"
               value={passwordData.confirmPassword}
               onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="input-field"
               required
             />
           </div>
-          <div className="flex justify-end pt-4">
+          <div className="flex justify-end pt-4 border-t border-slate-100">
             <button
               type="submit"
               disabled={isLoading}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-gray-700 to-gray-800 text-white rounded-lg hover:from-gray-800 hover:to-gray-900 disabled:opacity-50"
+              className="px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white font-medium rounded-xl hover:from-slate-700 hover:to-slate-800 transition-all duration-300 hover:shadow-soft flex items-center gap-2"
             >
-              {isLoading ? <Loader2 className="animate-spin" size={20} /> : <Lock size={20} />}
+              {isLoading ? <Loader2 className="animate-spin" size={18} /> : <Lock size={18} />}
               変更
             </button>
           </div>

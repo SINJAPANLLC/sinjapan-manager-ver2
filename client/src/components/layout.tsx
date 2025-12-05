@@ -14,7 +14,8 @@ import {
   ClipboardList,
   UserCog,
   TrendingUp,
-  FileText
+  FileText,
+  ChevronRight
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -89,42 +90,50 @@ export function Layout({ children }: LayoutProps) {
   const menuItems = getMenuItems();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-primary-50/30">
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-lg lg:hidden"
+        className="fixed top-4 left-4 z-50 p-2.5 bg-white rounded-xl shadow-soft border border-slate-100 lg:hidden hover:shadow-card transition-all"
       >
-        {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+        {sidebarOpen ? <X size={22} className="text-slate-600" /> : <Menu size={22} className="text-slate-600" />}
       </button>
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 w-64 transform transition-transform duration-300 ease-in-out lg:translate-x-0",
-          "bg-gradient-to-b from-blue-600 via-blue-700 to-blue-800 text-white shadow-2xl",
+          "fixed inset-y-0 left-0 z-40 w-72 transform transition-all duration-300 ease-out lg:translate-x-0",
+          "glass-sidebar shadow-soft",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         <div className="flex flex-col h-full">
-          <div className="p-6 border-b border-blue-500/30">
-            <h1 className="text-2xl font-bold text-white">SIN JAPAN</h1>
-            <p className="text-blue-200 text-sm mt-1">Manager System</p>
+          <div className="p-6 border-b border-slate-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-button">
+                <span className="text-white font-bold text-lg">S</span>
+              </div>
+              <div>
+                <h1 className="text-xl font-bold gradient-text">SIN JAPAN</h1>
+                <p className="text-slate-400 text-xs font-medium tracking-wide">MANAGER SYSTEM</p>
+              </div>
+            </div>
           </div>
 
           {user && (
-            <div className="p-4 mx-4 mt-4 bg-blue-500/20 rounded-xl">
+            <div className="p-4 mx-4 mt-4 bg-gradient-to-r from-primary-50 to-white rounded-xl border border-primary-100/50">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-400 rounded-full flex items-center justify-center text-white font-bold">
+                <div className="w-11 h-11 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center text-white font-semibold shadow-soft">
                   {user.name.charAt(0)}
                 </div>
-                <div>
-                  <p className="font-medium text-white">{user.name}</p>
-                  <p className="text-xs text-blue-200 capitalize">{user.role}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-slate-800 truncate">{user.name}</p>
+                  <p className="text-xs text-primary-600 font-medium capitalize">{user.role}</p>
                 </div>
+                <ChevronRight size={16} className="text-slate-400" />
               </div>
             </div>
           )}
 
-          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = location === item.href;
@@ -134,40 +143,43 @@ export function Layout({ children }: LayoutProps) {
                   href={item.href}
                   onClick={() => setSidebarOpen(false)}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
+                    "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
                     isActive
-                      ? "bg-white text-blue-700 shadow-lg"
-                      : "text-blue-100 hover:bg-blue-500/30"
+                      ? "bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-button"
+                      : "text-slate-600 hover:bg-primary-50 hover:text-primary-600"
                   )}
                 >
-                  <Icon size={20} />
+                  <Icon size={20} className={cn(
+                    "transition-transform duration-200",
+                    !isActive && "group-hover:scale-110"
+                  )} />
                   <span className="font-medium">{item.label}</span>
                 </Link>
               );
             })}
           </nav>
 
-          <div className="p-4 border-t border-blue-500/30">
+          <div className="p-4 border-t border-slate-100">
             <button
               onClick={logout}
-              className="flex items-center gap-3 w-full px-4 py-3 text-blue-100 hover:bg-blue-500/30 rounded-xl transition-colors"
+              className="flex items-center gap-3 w-full px-4 py-3 text-slate-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all duration-200 group"
             >
-              <LogOut size={20} />
-              <span>ログアウト</span>
+              <LogOut size={20} className="group-hover:scale-110 transition-transform duration-200" />
+              <span className="font-medium">ログアウト</span>
             </button>
           </div>
         </div>
       </aside>
 
-      <main className="lg:ml-64 min-h-screen">
-        <div className="p-6 lg:p-8">
+      <main className="lg:ml-72 min-h-screen">
+        <div className="p-6 lg:p-8 animate-fade-in">
           {children}
         </div>
       </main>
 
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-30 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}

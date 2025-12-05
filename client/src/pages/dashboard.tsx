@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/use-auth';
 import { Link } from 'wouter';
-import { Users, ClipboardList, Bell, Building2, TrendingUp, MessageSquare, Plus } from 'lucide-react';
+import { Users, ClipboardList, Bell, Building2, TrendingUp, MessageSquare, Plus, ArrowUpRight, Sparkles } from 'lucide-react';
 
 interface Stats {
   customers: number;
@@ -48,27 +48,27 @@ export function DashboardPage() {
       case 'ceo':
       case 'manager':
         return [
-          { href: '/customers', label: '顧客を追加', icon: Plus, color: 'from-blue-500 to-blue-600' },
-          { href: '/tasks', label: 'タスクを作成', icon: ClipboardList, color: 'from-green-500 to-green-600' },
-          { href: '/notifications', label: '通知を送信', icon: Bell, color: 'from-purple-500 to-purple-600' },
-          { href: '/chat', label: 'チャットを開く', icon: MessageSquare, color: 'from-orange-500 to-orange-600' },
+          { href: '/customers', label: '顧客を追加', icon: Plus, description: '新規顧客を登録' },
+          { href: '/tasks', label: 'タスクを作成', icon: ClipboardList, description: 'タスクを管理' },
+          { href: '/notifications', label: '通知を送信', icon: Bell, description: 'お知らせを配信' },
+          { href: '/chat', label: 'チャットを開く', icon: MessageSquare, description: 'メッセージを確認' },
         ];
       case 'staff':
         return [
-          { href: '/customers', label: '顧客一覧', icon: Building2, color: 'from-blue-500 to-blue-600' },
-          { href: '/tasks', label: 'タスク一覧', icon: ClipboardList, color: 'from-green-500 to-green-600' },
-          { href: '/chat', label: 'チャットを開く', icon: MessageSquare, color: 'from-orange-500 to-orange-600' },
+          { href: '/customers', label: '顧客一覧', icon: Building2, description: '顧客情報を確認' },
+          { href: '/tasks', label: 'タスク一覧', icon: ClipboardList, description: 'タスクを管理' },
+          { href: '/chat', label: 'チャットを開く', icon: MessageSquare, description: 'メッセージを確認' },
         ];
       case 'agency':
         return [
-          { href: '/agency-sales', label: '売上を確認', icon: TrendingUp, color: 'from-blue-500 to-blue-600' },
-          { href: '/customers', label: '顧客一覧', icon: Building2, color: 'from-green-500 to-green-600' },
-          { href: '/chat', label: 'チャットを開く', icon: MessageSquare, color: 'from-orange-500 to-orange-600' },
+          { href: '/agency-sales', label: '売上を確認', icon: TrendingUp, description: '売上データを確認' },
+          { href: '/customers', label: '顧客一覧', icon: Building2, description: '顧客情報を確認' },
+          { href: '/chat', label: 'チャットを開く', icon: MessageSquare, description: 'メッセージを確認' },
         ];
       case 'client':
         return [
-          { href: '/chat', label: '担当者に連絡', icon: MessageSquare, color: 'from-blue-500 to-blue-600' },
-          { href: '/notifications', label: '通知を確認', icon: Bell, color: 'from-purple-500 to-purple-600' },
+          { href: '/chat', label: '担当者に連絡', icon: MessageSquare, description: 'メッセージを送信' },
+          { href: '/notifications', label: '通知を確認', icon: Bell, description: 'お知らせを確認' },
         ];
       default:
         return [];
@@ -78,70 +78,84 @@ export function DashboardPage() {
   const quickActions = getQuickActions();
 
   return (
-    <div className="space-y-8">
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-white shadow-lg">
-        <h1 className="text-3xl font-bold">
-          {getWelcomeMessage()}、{user?.name}さん
-        </h1>
-        <p className="text-blue-100 mt-2">
-          {getRoleLabel(user?.role || '')}としてログイン中
-        </p>
+    <div className="space-y-8 animate-fade-in">
+      <div className="relative overflow-hidden bg-white rounded-3xl shadow-card border border-primary-100/50 p-8">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-primary-100/50 to-transparent rounded-full -translate-y-1/2 translate-x-1/4" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-primary-50 to-transparent rounded-full translate-y-1/2 -translate-x-1/4" />
+        
+        <div className="relative">
+          <div className="flex items-center gap-2 text-primary-600 mb-2">
+            <Sparkles size={18} />
+            <span className="text-sm font-medium">{getRoleLabel(user?.role || '')}としてログイン中</span>
+          </div>
+          <h1 className="text-3xl font-bold text-slate-800">
+            {getWelcomeMessage()}、
+            <span className="gradient-text">{user?.name}</span>さん
+          </h1>
+          <p className="text-slate-500 mt-2">
+            今日も素晴らしい一日をお過ごしください
+          </p>
+        </div>
       </div>
 
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-100 rounded-xl">
-                <Building2 className="text-blue-600" size={24} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="stat-card group">
+            <div className="flex items-center justify-between">
+              <div className="p-3 bg-gradient-to-br from-primary-50 to-primary-100/50 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                <Building2 className="text-primary-600" size={24} />
               </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-800">{stats.customers}</p>
-                <p className="text-gray-500 text-sm">顧客数</p>
-              </div>
+              <ArrowUpRight size={18} className="text-slate-300 group-hover:text-primary-400 transition-colors" />
+            </div>
+            <div className="mt-4">
+              <p className="text-3xl font-bold text-slate-800">{stats.customers}</p>
+              <p className="text-slate-500 text-sm font-medium mt-1">顧客数</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-green-100 rounded-xl">
-                <ClipboardList className="text-green-600" size={24} />
+          <div className="stat-card group">
+            <div className="flex items-center justify-between">
+              <div className="p-3 bg-gradient-to-br from-emerald-50 to-emerald-100/50 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                <ClipboardList className="text-emerald-600" size={24} />
               </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-800">{stats.tasks}</p>
-                <p className="text-gray-500 text-sm">タスク数</p>
-              </div>
+              <ArrowUpRight size={18} className="text-slate-300 group-hover:text-emerald-400 transition-colors" />
+            </div>
+            <div className="mt-4">
+              <p className="text-3xl font-bold text-slate-800">{stats.tasks}</p>
+              <p className="text-slate-500 text-sm font-medium mt-1">タスク数</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-orange-100 rounded-xl">
-                <ClipboardList className="text-orange-600" size={24} />
+          <div className="stat-card group">
+            <div className="flex items-center justify-between">
+              <div className="p-3 bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                <ClipboardList className="text-amber-600" size={24} />
               </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-800">{stats.pendingTasks}</p>
-                <p className="text-gray-500 text-sm">未完了タスク</p>
-              </div>
+              <ArrowUpRight size={18} className="text-slate-300 group-hover:text-amber-400 transition-colors" />
+            </div>
+            <div className="mt-4">
+              <p className="text-3xl font-bold text-slate-800">{stats.pendingTasks}</p>
+              <p className="text-slate-500 text-sm font-medium mt-1">未完了タスク</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-purple-100 rounded-xl">
-                <Bell className="text-purple-600" size={24} />
+          <div className="stat-card group">
+            <div className="flex items-center justify-between">
+              <div className="p-3 bg-gradient-to-br from-violet-50 to-violet-100/50 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                <Bell className="text-violet-600" size={24} />
               </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-800">{stats.unreadNotifications}</p>
-                <p className="text-gray-500 text-sm">未読通知</p>
-              </div>
+              <ArrowUpRight size={18} className="text-slate-300 group-hover:text-violet-400 transition-colors" />
+            </div>
+            <div className="mt-4">
+              <p className="text-3xl font-bold text-slate-800">{stats.unreadNotifications}</p>
+              <p className="text-slate-500 text-sm font-medium mt-1">未読通知</p>
             </div>
           </div>
         </div>
       )}
 
       <div>
-        <h2 className="text-xl font-bold text-gray-800 mb-4">クイックアクション</h2>
+        <h2 className="text-xl font-bold text-slate-800 mb-5">クイックアクション</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {quickActions.map((action) => {
             const Icon = action.icon;
@@ -149,10 +163,13 @@ export function DashboardPage() {
               <Link
                 key={action.href}
                 href={action.href}
-                className={`block p-6 rounded-2xl bg-gradient-to-r ${action.color} text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1`}
+                className="card-interactive p-6 group"
               >
-                <Icon size={28} className="mb-3" />
-                <span className="font-medium">{action.label}</span>
+                <div className="p-3 bg-gradient-to-br from-primary-50 to-primary-100/50 rounded-xl w-fit group-hover:scale-110 transition-transform duration-300">
+                  <Icon className="text-primary-600" size={24} />
+                </div>
+                <h3 className="font-semibold text-slate-800 mt-4">{action.label}</h3>
+                <p className="text-sm text-slate-500 mt-1">{action.description}</p>
               </Link>
             );
           })}

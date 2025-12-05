@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/use-auth';
-import { Plus, TrendingUp, DollarSign, X } from 'lucide-react';
+import { Plus, TrendingUp, DollarSign, X, ArrowUpRight, Calendar } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 
@@ -93,16 +93,16 @@ export function AgencySalesPage() {
     return labels[status] || status;
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case 'approved':
-        return 'bg-green-100 text-green-700';
+        return 'badge-success';
       case 'paid':
-        return 'bg-blue-100 text-blue-700';
+        return 'badge-info';
       case 'rejected':
-        return 'bg-red-100 text-red-700';
+        return 'bg-red-50 text-red-700 border border-red-100';
       default:
-        return 'bg-yellow-100 text-yellow-700';
+        return 'badge-warning';
     }
   };
 
@@ -111,15 +111,18 @@ export function AgencySalesPage() {
   const approvedSales = sales.filter((s) => s.status === 'approved' || s.status === 'paid');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <h1 className="text-2xl font-bold text-gray-800">
-          {isAgency ? '売上管理' : '代理店売上'}
-        </h1>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">
+            {isAgency ? '売上管理' : '代理店売上'}
+          </h1>
+          <p className="text-slate-500 text-sm mt-1">売上データの確認と管理</p>
+        </div>
         {isAgency && (
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all"
+            className="btn-primary flex items-center gap-2"
           >
             <Plus size={20} />
             売上を登録
@@ -127,78 +130,84 @@ export function AgencySalesPage() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-2xl p-6 shadow-lg">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-blue-100 rounded-xl">
-              <TrendingUp className="text-blue-600" size={24} />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="stat-card group">
+          <div className="flex items-center justify-between">
+            <div className="p-3 bg-gradient-to-br from-primary-50 to-primary-100/50 rounded-xl group-hover:scale-110 transition-transform duration-300">
+              <TrendingUp className="text-primary-600" size={24} />
             </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-800">{sales.length}</p>
-              <p className="text-gray-500 text-sm">総売上件数</p>
-            </div>
+            <ArrowUpRight size={18} className="text-slate-300 group-hover:text-primary-400 transition-colors" />
+          </div>
+          <div className="mt-4">
+            <p className="text-3xl font-bold text-slate-800">{sales.length}</p>
+            <p className="text-slate-500 text-sm font-medium mt-1">総売上件数</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-lg">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-green-100 rounded-xl">
-              <DollarSign className="text-green-600" size={24} />
+        <div className="stat-card group">
+          <div className="flex items-center justify-between">
+            <div className="p-3 bg-gradient-to-br from-emerald-50 to-emerald-100/50 rounded-xl group-hover:scale-110 transition-transform duration-300">
+              <DollarSign className="text-emerald-600" size={24} />
             </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-800">
-                ¥{totalSales.toLocaleString()}
-              </p>
-              <p className="text-gray-500 text-sm">総売上金額</p>
-            </div>
+            <ArrowUpRight size={18} className="text-slate-300 group-hover:text-emerald-400 transition-colors" />
+          </div>
+          <div className="mt-4">
+            <p className="text-3xl font-bold text-slate-800">
+              ¥{totalSales.toLocaleString()}
+            </p>
+            <p className="text-slate-500 text-sm font-medium mt-1">総売上金額</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-lg">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-purple-100 rounded-xl">
-              <DollarSign className="text-purple-600" size={24} />
+        <div className="stat-card group">
+          <div className="flex items-center justify-between">
+            <div className="p-3 bg-gradient-to-br from-violet-50 to-violet-100/50 rounded-xl group-hover:scale-110 transition-transform duration-300">
+              <DollarSign className="text-violet-600" size={24} />
             </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-800">
-                ¥{totalCommission.toLocaleString()}
-              </p>
-              <p className="text-gray-500 text-sm">総コミッション</p>
-            </div>
+            <ArrowUpRight size={18} className="text-slate-300 group-hover:text-violet-400 transition-colors" />
+          </div>
+          <div className="mt-4">
+            <p className="text-3xl font-bold text-slate-800">
+              ¥{totalCommission.toLocaleString()}
+            </p>
+            <p className="text-slate-500 text-sm font-medium mt-1">総コミッション</p>
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="table-header">
               <tr>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">日付</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">説明</th>
-                <th className="px-6 py-4 text-right text-sm font-medium text-gray-500">金額</th>
-                <th className="px-6 py-4 text-right text-sm font-medium text-gray-500">コミッション</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">ステータス</th>
-                {canManage && <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">操作</th>}
+                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600">日付</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600">説明</th>
+                <th className="px-6 py-4 text-right text-sm font-semibold text-slate-600">金額</th>
+                <th className="px-6 py-4 text-right text-sm font-semibold text-slate-600">コミッション</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600">ステータス</th>
+                {canManage && <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600">操作</th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody>
               {sales.map((sale) => (
-                <tr key={sale.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-gray-600">
-                    {format(new Date(sale.saleDate), 'yyyy/MM/dd')}
+                <tr key={sale.id} className="table-row">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2 text-slate-600">
+                      <Calendar size={14} className="text-slate-400" />
+                      {format(new Date(sale.saleDate), 'yyyy/MM/dd')}
+                    </div>
                   </td>
-                  <td className="px-6 py-4 text-gray-800">
+                  <td className="px-6 py-4 text-slate-800 font-medium">
                     {sale.description || '-'}
                   </td>
-                  <td className="px-6 py-4 text-right font-medium text-gray-800">
+                  <td className="px-6 py-4 text-right font-semibold text-slate-800">
                     ¥{parseFloat(sale.amount).toLocaleString()}
                   </td>
-                  <td className="px-6 py-4 text-right text-gray-600">
+                  <td className="px-6 py-4 text-right text-slate-600">
                     {sale.commission ? `¥${parseFloat(sale.commission).toLocaleString()}` : '-'}
                   </td>
                   <td className="px-6 py-4">
-                    <span className={cn('px-3 py-1 rounded-full text-xs font-medium', getStatusColor(sale.status))}>
+                    <span className={cn('badge', getStatusBadge(sale.status))}>
                       {getStatusLabel(sale.status)}
                     </span>
                   </td>
@@ -207,7 +216,7 @@ export function AgencySalesPage() {
                       <select
                         value={sale.status}
                         onChange={(e) => handleStatusChange(sale.id, e.target.value)}
-                        className="text-sm border rounded px-2 py-1"
+                        className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:ring-2 focus:ring-primary-500/20 outline-none transition-all"
                       >
                         <option value="pending">保留中</option>
                         <option value="approved">承認</option>
@@ -222,32 +231,34 @@ export function AgencySalesPage() {
           </table>
         </div>
         {sales.length === 0 && (
-          <div className="p-12 text-center text-gray-400">
-            <TrendingUp size={48} className="mx-auto mb-4 opacity-50" />
-            <p>売上データがありません</p>
+          <div className="p-16 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 bg-slate-100 rounded-full flex items-center justify-center">
+              <TrendingUp size={28} className="text-slate-400" />
+            </div>
+            <p className="text-slate-500 font-medium">売上データがありません</p>
           </div>
         )}
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md">
-            <div className="flex justify-between items-center p-6 border-b">
-              <h2 className="text-xl font-bold text-gray-800">売上を登録</h2>
+        <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl animate-slide-up">
+            <div className="flex justify-between items-center p-6 border-b border-slate-100">
+              <h2 className="text-xl font-bold text-slate-800">売上を登録</h2>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg"
+                className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
               >
-                <X size={20} />
+                <X size={20} className="text-slate-500" />
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="p-6 space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">顧客</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">顧客</label>
                 <select
                   value={formData.customerId}
                   onChange={(e) => setFormData({ ...formData, customerId: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="input-field"
                 >
                   <option value="">選択してください</option>
                   {customers.map((c) => (
@@ -256,46 +267,46 @@ export function AgencySalesPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">金額 *</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">金額 *</label>
                 <input
                   type="number"
                   value={formData.amount}
                   onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="input-field"
                   placeholder="例: 100000"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">コミッション</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">コミッション</label>
                 <input
                   type="number"
                   value={formData.commission}
                   onChange={(e) => setFormData({ ...formData, commission: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="input-field"
                   placeholder="例: 10000"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">説明</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">説明</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="input-field resize-none"
                 />
               </div>
-              <div className="flex justify-end gap-3 pt-4">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  className="btn-secondary"
                 >
                   キャンセル
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800"
+                  className="btn-primary"
                 >
                   登録
                 </button>
