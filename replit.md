@@ -115,7 +115,7 @@ npm start
 ### デプロイ手順
 ```bash
 ssh root@212.85.24.206
-cd /path/to/project  # ディレクトリ確認後更新
+cd /public_html
 git pull origin main
 npm install
 npm run build
