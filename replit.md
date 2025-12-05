@@ -104,6 +104,24 @@ npm start
 - ✅ ワークフロー: `dev`（ポート5000でwebview表示）
 - ✅ TypeScript: JSX変換設定済み
 
+## 本番環境（VPS）
+
+- **ホスティング**: Hostinger VPS
+- **IPアドレス**: 212.85.24.206
+- **プロセス管理**: PM2 (`sinjapan-manager`)
+- **GitHub**: https://github.com/SINJAPANLLC/sinjapan-manager-ver2
+- **データベース**: Replit PostgreSQL（Neon）
+
+### デプロイ手順
+```bash
+ssh root@212.85.24.206
+cd /var/www/sinjapan-manager
+git pull origin main
+npm install
+npm run build
+pm2 restart sinjapan-manager
+```
+
 ## 次のステップ
 
 1. 実際のアプリケーションソースコードを取得
