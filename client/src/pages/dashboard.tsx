@@ -146,11 +146,13 @@ export function DashboardPage() {
           {quickActions.map((action) => {
             const Icon = action.icon;
             return (
-              <Link key={action.href} href={action.href}>
-                <a className={`block p-6 rounded-2xl bg-gradient-to-r ${action.color} text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1`}>
-                  <Icon size={28} className="mb-3" />
-                  <span className="font-medium">{action.label}</span>
-                </a>
+              <Link
+                key={action.href}
+                href={action.href}
+                className={`block p-6 rounded-2xl bg-gradient-to-r ${action.color} text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1`}
+              >
+                <Icon size={28} className="mb-3" />
+                <span className="font-medium">{action.label}</span>
               </Link>
             );
           })}

@@ -1,4 +1,4 @@
-import { Express, Request, Response } from 'express';
+import { Express, Request, Response, NextFunction } from 'express';
 import { storage } from './storage';
 
 declare module 'express-session' {
@@ -6,6 +6,27 @@ declare module 'express-session' {
     userId?: number;
   }
 }
+
+const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ message: '認証が必要です' });
+  }
+  next();
+};
+
+const requireRole = (...roles: string[]) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: '認証が必要です' });
+    }
+    const user = await storage.getUser(req.session.userId);
+    if (!user || !roles.includes(user.role)) {
+      return res.status(403).json({ message: '権限がありません' });
+    }
+    (req as any).currentUser = user;
+    next();
+  };
+};
 
 export function registerRoutes(app: Express) {
   app.post('/api/auth/login', async (req: Request, res: Response) => {
@@ -48,26 +69,12 @@ export function registerRoutes(app: Express) {
     res.json(userWithoutPassword);
   });
 
-  app.get('/api/users', async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: '認証が必要です' });
-    }
-    const currentUser = await storage.getUser(req.session.userId);
-    if (!currentUser || !['admin', 'ceo', 'manager'].includes(currentUser.role)) {
-      return res.status(403).json({ message: '権限がありません' });
-    }
+  app.get('/api/users', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     const users = await storage.getAllUsers();
     res.json(users.map(u => ({ ...u, password: undefined })));
   });
 
-  app.post('/api/users', async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: '認証が必要です' });
-    }
-    const currentUser = await storage.getUser(req.session.userId);
-    if (!currentUser || !['admin', 'ceo', 'manager'].includes(currentUser.role)) {
-      return res.status(403).json({ message: '権限がありません' });
-    }
+  app.post('/api/users', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     try {
       const user = await storage.createUser(req.body);
       const { password: _, ...userWithoutPassword } = user;
@@ -89,6 +96,9 @@ export function registerRoutes(app: Express) {
     if (!currentUser || (currentUser.id !== targetId && !['admin', 'ceo', 'manager'].includes(currentUser.role))) {
       return res.status(403).json({ message: '権限がありません' });
     }
+    if (currentUser.id === targetId && req.body.role && req.body.role !== currentUser.role) {
+      return res.status(403).json({ message: '自分のロールは変更できません' });
+    }
     const user = await storage.updateUser(targetId, req.body);
     if (!user) {
       return res.status(404).json({ message: 'ユーザーが見つかりません' });
@@ -97,203 +107,157 @@ export function registerRoutes(app: Express) {
     res.json(userWithoutPassword);
   });
 
-  app.delete('/api/users/:id', async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: '認証が必要です' });
+  app.delete('/api/users/:id', requireRole('admin', 'ceo'), async (req: Request, res: Response) => {
+    const currentUser = (req as any).currentUser;
+    const targetId = parseInt(req.params.id);
+    if (currentUser.id === targetId) {
+      return res.status(403).json({ message: '自分自身は削除できません' });
     }
-    const currentUser = await storage.getUser(req.session.userId);
-    if (!currentUser || !['admin', 'ceo'].includes(currentUser.role)) {
-      return res.status(403).json({ message: '権限がありません' });
-    }
-    await storage.deleteUser(parseInt(req.params.id));
+    await storage.deleteUser(targetId);
     res.json({ message: '削除しました' });
   });
 
-  app.get('/api/customers', async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: '認証が必要です' });
-    }
-    const user = await storage.getUser(req.session.userId);
-    const customers = await storage.getCustomers(req.session.userId, user?.role);
+  app.get('/api/customers', requireAuth, async (req: Request, res: Response) => {
+    const user = await storage.getUser(req.session.userId!);
+    const customers = await storage.getCustomers(req.session.userId!, user?.role);
     res.json(customers);
   });
 
-  app.get('/api/customers/:id', async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: '認証が必要です' });
-    }
+  app.get('/api/customers/:id', requireAuth, async (req: Request, res: Response) => {
+    const user = await storage.getUser(req.session.userId!);
     const customer = await storage.getCustomer(parseInt(req.params.id));
     if (!customer) {
       return res.status(404).json({ message: '顧客が見つかりません' });
     }
+    if (user?.role === 'staff' || user?.role === 'client' || user?.role === 'agency') {
+      if (customer.assignedTo !== req.session.userId) {
+        return res.status(403).json({ message: '権限がありません' });
+      }
+    }
     res.json(customer);
   });
 
-  app.post('/api/customers', async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: '認証が必要です' });
-    }
-    const customer = await storage.createCustomer(req.body);
+  app.post('/api/customers', requireRole('admin', 'ceo', 'manager', 'staff'), async (req: Request, res: Response) => {
+    const customer = await storage.createCustomer({ ...req.body, assignedTo: req.session.userId });
     res.json(customer);
   });
 
-  app.patch('/api/customers/:id', async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: '認証が必要です' });
-    }
-    const customer = await storage.updateCustomer(parseInt(req.params.id), req.body);
+  app.patch('/api/customers/:id', requireRole('admin', 'ceo', 'manager', 'staff'), async (req: Request, res: Response) => {
+    const currentUser = (req as any).currentUser;
+    const customer = await storage.getCustomer(parseInt(req.params.id));
     if (!customer) {
       return res.status(404).json({ message: '顧客が見つかりません' });
     }
-    res.json(customer);
+    if (currentUser.role === 'staff' && customer.assignedTo !== req.session.userId) {
+      return res.status(403).json({ message: '担当顧客のみ編集できます' });
+    }
+    const updated = await storage.updateCustomer(parseInt(req.params.id), req.body);
+    res.json(updated);
   });
 
-  app.delete('/api/customers/:id', async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: '認証が必要です' });
-    }
+  app.delete('/api/customers/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     await storage.deleteCustomer(parseInt(req.params.id));
     res.json({ message: '削除しました' });
   });
 
-  app.get('/api/tasks', async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: '認証が必要です' });
-    }
-    const user = await storage.getUser(req.session.userId);
-    const tasks = await storage.getTasks(req.session.userId, user?.role);
+  app.get('/api/tasks', requireAuth, async (req: Request, res: Response) => {
+    const user = await storage.getUser(req.session.userId!);
+    const tasks = await storage.getTasks(req.session.userId!, user?.role);
     res.json(tasks);
   });
 
-  app.post('/api/tasks', async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: '認証が必要です' });
-    }
+  app.post('/api/tasks', requireRole('admin', 'ceo', 'manager', 'staff'), async (req: Request, res: Response) => {
     const task = await storage.createTask({ ...req.body, createdBy: req.session.userId });
     res.json(task);
   });
 
-  app.patch('/api/tasks/:id', async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: '認証が必要です' });
-    }
-    const task = await storage.updateTask(parseInt(req.params.id), req.body);
+  app.patch('/api/tasks/:id', requireRole('admin', 'ceo', 'manager', 'staff'), async (req: Request, res: Response) => {
+    const currentUser = (req as any).currentUser;
+    const task = await storage.getTask(parseInt(req.params.id));
     if (!task) {
       return res.status(404).json({ message: 'タスクが見つかりません' });
     }
-    res.json(task);
+    if (currentUser.role === 'staff') {
+      if (task.assignedTo !== req.session.userId && task.createdBy !== req.session.userId) {
+        return res.status(403).json({ message: '担当タスクのみ編集できます' });
+      }
+    }
+    const updated = await storage.updateTask(parseInt(req.params.id), req.body);
+    res.json(updated);
   });
 
-  app.delete('/api/tasks/:id', async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: '認証が必要です' });
-    }
+  app.delete('/api/tasks/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     await storage.deleteTask(parseInt(req.params.id));
     res.json({ message: '削除しました' });
   });
 
-  app.get('/api/notifications', async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: '認証が必要です' });
-    }
-    const notifications = await storage.getNotifications(req.session.userId);
+  app.get('/api/notifications', requireAuth, async (req: Request, res: Response) => {
+    const notifications = await storage.getNotifications(req.session.userId!);
     res.json(notifications);
   });
 
-  app.post('/api/notifications', async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: '認証が必要です' });
-    }
+  app.post('/api/notifications', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     const notification = await storage.createNotification({ ...req.body, createdBy: req.session.userId });
     res.json(notification);
   });
 
-  app.post('/api/notifications/bulk', async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: '認証が必要です' });
-    }
-    const currentUser = await storage.getUser(req.session.userId);
-    if (!currentUser || !['admin', 'ceo', 'manager'].includes(currentUser.role)) {
-      return res.status(403).json({ message: '権限がありません' });
-    }
+  app.post('/api/notifications/bulk', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     const { userIds, title, message, type } = req.body;
     const notifications = await storage.createBulkNotifications(userIds, { title, message, type, createdBy: req.session.userId });
     res.json(notifications);
   });
 
-  app.patch('/api/notifications/:id/read', async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: '認証が必要です' });
+  app.patch('/api/notifications/:id/read', requireAuth, async (req: Request, res: Response) => {
+    const notification = await storage.getNotificationById(parseInt(req.params.id));
+    if (!notification || notification.userId !== req.session.userId) {
+      return res.status(403).json({ message: '権限がありません' });
     }
     await storage.markNotificationRead(parseInt(req.params.id));
     res.json({ message: '既読にしました' });
   });
 
-  app.post('/api/notifications/read-all', async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: '認証が必要です' });
-    }
-    await storage.markAllNotificationsRead(req.session.userId);
+  app.post('/api/notifications/read-all', requireAuth, async (req: Request, res: Response) => {
+    await storage.markAllNotificationsRead(req.session.userId!);
     res.json({ message: '全て既読にしました' });
   });
 
-  app.get('/api/chat/partners', async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: '認証が必要です' });
-    }
-    const partners = await storage.getChatPartners(req.session.userId);
+  app.get('/api/chat/partners', requireAuth, async (req: Request, res: Response) => {
+    const partners = await storage.getChatPartners(req.session.userId!);
     res.json(partners.map(p => ({ ...p, password: undefined })));
   });
 
-  app.get('/api/chat/users', async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: '認証が必要です' });
+  app.get('/api/chat/users', requireAuth, async (req: Request, res: Response) => {
+    const user = await storage.getUser(req.session.userId!);
+    let users = await storage.getAllUsers();
+    users = users.filter(u => u.id !== req.session.userId);
+    if (user?.role === 'client') {
+      users = users.filter(u => ['admin', 'ceo', 'manager', 'staff'].includes(u.role));
     }
-    const users = await storage.getAllUsers();
-    res.json(users.filter(u => u.id !== req.session.userId).map(u => ({ ...u, password: undefined })));
+    res.json(users.map(u => ({ ...u, password: undefined })));
   });
 
-  app.get('/api/chat/messages/:userId', async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: '認証が必要です' });
-    }
-    const messages = await storage.getChatMessages(req.session.userId, parseInt(req.params.userId));
-    await storage.markMessagesAsRead(parseInt(req.params.userId), req.session.userId);
+  app.get('/api/chat/messages/:userId', requireAuth, async (req: Request, res: Response) => {
+    const messages = await storage.getChatMessages(req.session.userId!, parseInt(req.params.userId));
+    await storage.markMessagesAsRead(parseInt(req.params.userId), req.session.userId!);
     res.json(messages);
   });
 
-  app.post('/api/chat/messages', async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: '認証が必要です' });
-    }
+  app.post('/api/chat/messages', requireAuth, async (req: Request, res: Response) => {
     const message = await storage.createChatMessage({ ...req.body, senderId: req.session.userId });
     res.json(message);
   });
 
-  app.get('/api/employees', async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: '認証が必要です' });
-    }
-    const currentUser = await storage.getUser(req.session.userId);
-    if (!currentUser || !['admin', 'ceo', 'manager'].includes(currentUser.role)) {
-      return res.status(403).json({ message: '権限がありません' });
-    }
+  app.get('/api/employees', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     const employees = await storage.getAllEmployees();
     res.json(employees);
   });
 
-  app.post('/api/employees', async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: '認証が必要です' });
-    }
+  app.post('/api/employees', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     const employee = await storage.createEmployee(req.body);
     res.json(employee);
   });
 
-  app.patch('/api/employees/:id', async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: '認証が必要です' });
-    }
+  app.patch('/api/employees/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     const employee = await storage.updateEmployee(parseInt(req.params.id), req.body);
     if (!employee) {
       return res.status(404).json({ message: '従業員が見つかりません' });
@@ -301,32 +265,20 @@ export function registerRoutes(app: Express) {
     res.json(employee);
   });
 
-  app.get('/api/agency/sales', async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: '認証が必要です' });
-    }
-    const user = await storage.getUser(req.session.userId);
-    if (!user) {
-      return res.status(401).json({ message: 'ユーザーが見つかりません' });
-    }
+  app.get('/api/agency/sales', requireRole('admin', 'ceo', 'manager', 'agency'), async (req: Request, res: Response) => {
+    const user = (req as any).currentUser;
     const sales = user.role === 'agency' 
-      ? await storage.getAgencySales(req.session.userId)
+      ? await storage.getAgencySales(req.session.userId!)
       : await storage.getAgencySales();
     res.json(sales);
   });
 
-  app.post('/api/agency/sales', async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: '認証が必要です' });
-    }
+  app.post('/api/agency/sales', requireRole('agency'), async (req: Request, res: Response) => {
     const sale = await storage.createAgencySale({ ...req.body, agencyId: req.session.userId });
     res.json(sale);
   });
 
-  app.patch('/api/agency/sales/:id', async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: '認証が必要です' });
-    }
+  app.patch('/api/agency/sales/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     const sale = await storage.updateAgencySale(parseInt(req.params.id), req.body);
     if (!sale) {
       return res.status(404).json({ message: '売上が見つかりません' });
@@ -334,15 +286,12 @@ export function registerRoutes(app: Express) {
     res.json(sale);
   });
 
-  app.get('/api/dashboard/stats', async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: '認証が必要です' });
-    }
-    const user = await storage.getUser(req.session.userId);
+  app.get('/api/dashboard/stats', requireAuth, async (req: Request, res: Response) => {
+    const user = await storage.getUser(req.session.userId!);
     if (!user) {
       return res.status(401).json({ message: 'ユーザーが見つかりません' });
     }
-    const stats = await storage.getDashboardStats(req.session.userId, user.role);
+    const stats = await storage.getDashboardStats(req.session.userId!, user.role);
     res.json(stats);
   });
 }

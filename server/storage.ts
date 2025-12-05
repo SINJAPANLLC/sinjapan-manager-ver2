@@ -121,6 +121,11 @@ export const storage = {
     return db.select().from(notifications).where(eq(notifications.userId, userId)).orderBy(desc(notifications.createdAt));
   },
 
+  async getNotificationById(id: number): Promise<Notification | undefined> {
+    const [notification] = await db.select().from(notifications).where(eq(notifications.id, id));
+    return notification;
+  },
+
   async createNotification(data: InsertNotification): Promise<Notification> {
     const [notification] = await db.insert(notifications).values(data).returning();
     return notification;

@@ -129,19 +129,19 @@ export function Layout({ children }: LayoutProps) {
               const Icon = item.icon;
               const isActive = location === item.href;
               return (
-                <Link key={item.href} href={item.href}>
-                  <a
-                    onClick={() => setSidebarOpen(false)}
-                    className={cn(
-                      "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
-                      isActive
-                        ? "bg-white text-blue-700 shadow-lg"
-                        : "text-blue-100 hover:bg-blue-500/30"
-                    )}
-                  >
-                    <Icon size={20} />
-                    <span className="font-medium">{item.label}</span>
-                  </a>
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setSidebarOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
+                    isActive
+                      ? "bg-white text-blue-700 shadow-lg"
+                      : "text-blue-100 hover:bg-blue-500/30"
+                  )}
+                >
+                  <Icon size={20} />
+                  <span className="font-medium">{item.label}</span>
                 </Link>
               );
             })}
