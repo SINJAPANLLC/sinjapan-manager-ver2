@@ -1,112 +1,145 @@
-# SIN-JAPAN-MANAGER-Ver2
+# SIN JAPAN MANAGER Ver2
 
-## Project Status
+## Overview
 
-このプロジェクトは、GitHubから「デプロイ設定ファイルのみ」をインポートしたため、実際のアプリケーションコードが含まれていませんでした。
+SIN JAPAN 業務管理システム - ロールベースアクセス制御を備えた包括的なビジネス管理アプリケーション
 
-開発画面を表示できるよう、最小限の動作確認用フルスタックアプリケーションを作成しました。
+## Current Status: Production Ready
 
-## 現在の構成
+アプリケーションは完全に機能しており、以下の機能が実装されています：
+- ロールベース認証（Admin, CEO, Manager, Staff, Agency, Client）
+- 顧客管理（CRM）with 銀行情報
+- チャット機能
+- 通知システム（一括送信対応）
+- 従業員管理（HR Hub）
+- 代理店売上追跡
+- タスク管理
 
-### フロントエンド
+## Architecture
+
+### Frontend
 - **Framework**: React 18 + TypeScript
 - **Build Tool**: Vite
-- **Port**: 5000 (Replitプロキシ対応済み)
-- **Location**: `client/` ディレクトリ
+- **Styling**: Tailwind CSS with blue gradient theme
+- **State Management**: TanStack Query
+- **Routing**: Wouter
+- **Port**: 5000 (Replit proxy compatible)
 
-### バックエンド
+### Backend
 - **Framework**: Express.js + TypeScript
-- **Port**: 3000 (環境変数PORTで変更可能)
-- **Host**: 0.0.0.0 (Replit環境対応済み)
-- **Location**: `server/` ディレクトリ
-- **API Endpoint**: `/api/health` - ヘルスチェック用
+- **Database**: PostgreSQL (Neon) via Drizzle ORM
+- **Authentication**: Session-based with bcrypt
+- **Port**: 3000
 
-### 開発環境
-- **Node.js**: v20
-- **Package Manager**: npm
-- **Dev Workflow**: `npm run dev` (フロントエンドとバックエンドを同時起動)
-- **ポート設定**: フロントエンド(5000) + バックエンド(3000)
+### Security
+- Server-side role-based authorization on all routes
+- Staff ownership validation for customer data
+- Session management with memory store
+- Password hashing with bcrypt
 
-## ファイル構造
+## File Structure
 
 ```
 .
-├── client/              # React フロントエンド
+├── client/                    # React Frontend
 │   ├── src/
-│   │   ├── App.tsx     # メインアプリコンポーネント
-│   │   ├── main.tsx    # エントリーポイント
-│   │   └── index.css   # スタイル
-│   └── index.html      # HTMLテンプレート
-├── server/              # Express バックエンド
-│   └── index.ts        # サーバーエントリーポイント
-├── vite.config.ts      # Vite設定 (プロキシ含む)
-├── tsconfig.json       # TypeScript設定
-├── package.json        # 依存関係
-└── replit.md           # このファイル
+│   │   ├── components/        # UI Components
+│   │   │   └── layout.tsx     # Main layout with sidebar
+│   │   ├── hooks/
+│   │   │   └── use-auth.tsx   # Authentication hook
+│   │   ├── lib/
+│   │   │   └── utils.ts       # Utility functions
+│   │   ├── pages/             # Page components
+│   │   │   ├── dashboard.tsx
+│   │   │   ├── customers.tsx
+│   │   │   ├── tasks.tsx
+│   │   │   ├── chat.tsx
+│   │   │   ├── notifications.tsx
+│   │   │   ├── users.tsx
+│   │   │   ├── employees.tsx
+│   │   │   ├── agency-sales.tsx
+│   │   │   └── settings.tsx
+│   │   ├── App.tsx
+│   │   ├── main.tsx
+│   │   └── index.css
+│   └── index.html
+├── server/                    # Express Backend
+│   ├── index.ts               # Server entry point
+│   ├── routes.ts              # API routes with authorization
+│   └── storage.ts             # Database operations
+├── shared/
+│   └── schema.ts              # Drizzle ORM schema
+├── drizzle.config.ts
+├── vite.config.ts
+├── tsconfig.json
+├── package.json
+└── replit.md
 ```
 
-## 重要な注意事項
+## Database Schema
 
-⚠️ **このアプリケーションは最小限の動作確認用です**
+| Table | Purpose |
+|-------|---------|
+| users | User accounts with roles |
+| customers | CRM with bank info |
+| tasks | Task management |
+| notifications | System notifications |
+| chat_messages | Real-time messaging |
+| employees | HR management |
+| agency_sales | Sales tracking |
 
-元のGitHubリポジトリには以下のファイルのみが含まれていました：
-- `package.json` - 依存関係のリスト（Stripe、Google Cloud Storage、Drizzle ORM等を含む完全な設定）
-- `.htaccess` - Hostinger用Apache設定
-- `setup-hostinger.sh` - Hostingerデプロイスクリプト
-- `HOSTINGER_403_FIX.md` - トラブルシューティングガイド
+## Role Permissions
 
-実際のアプリケーションコード（データベーススキーマ、認証ロジック、UIコンポーネント等）は**含まれていません**。
+| Role | Access |
+|------|--------|
+| admin/ceo | Full access to all features |
+| manager | Customers, tasks, employees, users, chat, notifications |
+| staff | Own customers, tasks, chat, notifications |
+| agency | Sales, customers, chat, notifications |
+| client | Documents, chat, notifications |
 
-## 完全なアプリケーションを実行するには
+## Test Accounts
 
-以下のいずれかの対応が必要です：
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | admin@test.com | test123 |
+| Staff | staff@test.com | test123 |
+| Agency | agency@test.com | test123 |
+| Client | client@test.com | test123 |
 
-1. **実際のソースコードを含むリポジトリをインポート**
-   - 正しいブランチまたはリポジトリからコードを取得
-
-2. **既存の依存関係を使用して再構築**
-   - `package.json`に記載された完全な依存関係リストを参照
-   - Stripe、Google Cloud Storage、PostgreSQL (Neon)、Drizzle ORM等の設定が含まれています
-
-3. **別の場所からソースコードを取得**
-
-## 開発コマンド
+## Development Commands
 
 ```bash
-# 開発サーバー起動（フロントエンド + バックエンド）
+# Start development server
 npm run dev
 
-# フロントエンドのみ起動
-npm run dev:client
+# Database push (sync schema)
+npm run db:push
 
-# バックエンドのみ起動
-npm run dev:server
-
-# プロダクションビルド
+# Production build
 npm run build
 
-# プロダクション起動
+# Production start
 npm start
 ```
 
-## 環境変数
+## Environment Variables
 
-現在、環境変数は不要です。完全なアプリケーションには以下が必要になる可能性があります：
-- `DATABASE_URL` - PostgreSQL接続文字列
-- `STRIPE_SECRET_KEY` - Stripe決済
-- `GOOGLE_CLOUD_STORAGE_CREDENTIALS` - GCS認証
-- その他、package.jsonに記載されたサービス用のAPI キー
+Required:
+- `DATABASE_URL` - PostgreSQL connection string (provided by Replit)
+- `SESSION_SECRET` - Auto-generated on first run
 
-## Replit設定
+## Configuration Notes
 
-- ✅ Vite設定: `0.0.0.0:5000`、全ホスト許可済み
-- ✅ Expressサーバー: `0.0.0.0:3000`、プロキシ経由でアクセス可能
-- ✅ ワークフロー: `dev`（ポート5000でwebview表示）
-- ✅ TypeScript: JSX変換設定済み
+- Vite configured with `allowedHosts: true` for Replit proxy
+- Express server binds to `0.0.0.0:3000`
+- Frontend served on port 5000
+- CORS enabled for development
 
-## 次のステップ
+## Recent Changes (2025-01-05)
 
-1. 実際のアプリケーションソースコードを取得
-2. 必要な環境変数とシークレットを設定
-3. データベースマイグレーションを実行
-4. 完全なアプリケーション機能を実装
+- Fixed wouter Link component nesting issues (removed nested `<a>` tags)
+- Implemented server-side role-based authorization on all CRUD routes
+- Added staff ownership validation for customer access
+- Added user deletion cascade/nullify across related tables
+- Resolved all console errors
