@@ -136,10 +136,39 @@ Required:
 - Frontend served on port 5000
 - CORS enabled for development
 
-## Recent Changes (2025-01-05)
+## Recent Changes (2025-12-05)
 
+### Design Overhaul - Refined White-based Theme with Blue Gradient Accents
+- Updated Tailwind configuration with custom design tokens, colors, and animations
+- Enhanced global CSS with refined component classes (glass-card, btn-primary, btn-secondary, etc.)
+- Redesigned layout with cleaner white-based sidebar and blue gradient accents
+- Updated all pages with consistent styling:
+  - Rounded-2xl/3xl cards with shadow-soft effects
+  - Blue gradient buttons and hover states
+  - Improved visual hierarchy and spacing
+  - Smooth animations (fade-in, slide-up)
+- Custom scrollbar styling
+- Glass-morphism effects for cards and modals
+
+### Previous Updates (2025-01-05)
 - Fixed wouter Link component nesting issues (removed nested `<a>` tags)
 - Implemented server-side role-based authorization on all CRUD routes
 - Added staff ownership validation for customer access
 - Added user deletion cascade/nullify across related tables
 - Resolved all console errors
+
+## Design System
+
+### Colors
+- Primary: Blue (#0070f3) with gradient variations
+- Background: White with subtle blue gradient accents
+- Text: Slate color scale for hierarchy
+
+### Components
+- `.btn-primary` - Blue gradient button with hover shadow
+- `.btn-secondary` - White button with blue border
+- `.input-field` - Rounded input with focus ring
+- `.card` - White card with soft shadow
+- `.stat-card` - Statistics card with hover effects
+- `.badge` - Status badges (success, warning, info)
+- `.glass-card` - Frosted glass effect card
