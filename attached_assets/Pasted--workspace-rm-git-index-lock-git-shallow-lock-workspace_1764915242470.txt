@@ -1,0 +1,274 @@
+~/workspace$ rm .git/index.lock .git/shallow.lock
+~/workspace$ rm .git/index.lock .git/shallow.lock
+git add -A
+git commit -m "Merge and update"
+git push origin main
+rm: cannot remove '.git/index.lock': No such file or directory
+rm: cannot remove '.git/shallow.lock': No such file or directory
+On branch main
+Your branch and 'origin/main' have diverged,
+and have 7 and 1 different commits each, respectively.
+
+nothing to commit, working tree clean
+To https://github.com/SINJAPANLLC/sinjapan-manager-ver2
+ ! [rejected]        main -> main (non-fast-forward)
+error: failed to push some refs to 'https://github.com/SINJAPANLLC/sinjapan-manager-ver2'
+hint: Updates were rejected because the tip of your current branch is behind
+hint: its remote counterpart. If you want to integrate the remote changes,
+hint: use 'git pull' before pushing again.
+hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+~/workspace$ git push origin main --force
+Enumerating objects: 59, done.
+Counting objects: 100% (58/58), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (38/38), done.
+Writing objects: 100% (40/40), 137.25 KiB | 3.71 MiB/s, done.
+Total 40 (delta 17), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (17/17), completed with 4 local objects.
+To https://github.com/SINJAPANLLC/sinjapan-manager-ver2
+ + 7165d1a...831edf8 main -> main (forced update)
+~/workspace$ Last login: Fri Dec  5 13:08:45 on ttys070
+kazuyaotani@kazuya-MacBook-Air-2 ~ % ssh root@212.85.24.206
+ssh: connect to host 212.85.24.206 port 22: Operation timed out
+kazuyaotani@kazuya-MacBook-Air-2 ~ % ssh root@212.85.24.206
+ssh: connect to host 212.85.24.206 port 22: Operation timed out
+kazuyaotani@kazuya-MacBook-Air-2 ~ % ssh root@212.85.24.206
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!
+Someone could be eavesdropping on you right now (man-in-the-middle attack)!
+It is also possible that a host key has just been changed.
+The fingerprint for the ED25519 key sent by the remote host is
+SHA256:al3WXuP5GFRPBBezR0zFKpW+RTwmSR2rlkONEgPlUSE.
+Please contact your system administrator.
+Add correct host key in /Users/kazuyaotani/.ssh/known_hosts to get rid of this message.
+Offending ECDSA key in /Users/kazuyaotani/.ssh/known_hosts:9
+Host key for 212.85.24.206 has changed and you have requested strict checking.
+Host key verification failed.
+kazuyaotani@kazuya-MacBook-Air-2 ~ % ssh root@212.85.24.206
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!
+Someone could be eavesdropping on you right now (man-in-the-middle attack)!
+It is also possible that a host key has just been changed.
+The fingerprint for the ED25519 key sent by the remote host is
+SHA256:al3WXuP5GFRPBBezR0zFKpW+RTwmSR2rlkONEgPlUSE.
+Please contact your system administrator.
+Add correct host key in /Users/kazuyaotani/.ssh/known_hosts to get rid of this message.
+Offending ECDSA key in /Users/kazuyaotani/.ssh/known_hosts:9
+Host key for 212.85.24.206 has changed and you have requested strict checking.
+Host key verification failed.
+kazuyaotani@kazuya-MacBook-Air-2 ~ % ssh root@212.85.24.206
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!
+Someone could be eavesdropping on you right now (man-in-the-middle attack)!
+It is also possible that a host key has just been changed.
+The fingerprint for the ED25519 key sent by the remote host is
+SHA256:al3WXuP5GFRPBBezR0zFKpW+RTwmSR2rlkONEgPlUSE.
+Please contact your system administrator.
+Add correct host key in /Users/kazuyaotani/.ssh/known_hosts to get rid of this message.
+
+
+bash: Last: command not found
+bash: kazuyaotani@kazuya-MacBook-Air-2: command not found
+
+bash: ssh:: command not found
+bash: kazuyaotani@kazuya-MacBook-Air-2: command not found
+bash: ssh:: command not found
+bash: kazuyaotani@kazuya-MacBook-Air-2: command not found
+bash: @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@: command not found
+bash: @: command not found
+bash: @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@: command not found
+^C
+bash: syntax error near unexpected token `('
+bash: It: command not found
+bash: The: command not found
+^C
+bash: Please: command not found
+^C
+bash: Offending: command not found
+bash: Host: command not found
+bash: Host: command not found
+bash: kazuyaotani@kazuya-MacBook-Air-2: command not found
+bash: @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@: command not found
+bash: @: command not found
+bash: @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@: command not found
+bash: IT: command not found
+bash: syntax error near unexpected token `('
+bash: It: command not found
+bash: The: command not found
+bash: SHA256:al3WXuP5GFRPBBezR0zFKpW+RTwmSR2rlkONEgPlUSE.: command not found
+bash: Please: command not found
+bash: Add: command not found
+bash: Offending: command not found
+bash: Host: command not found
+bash: Host: command not found
+bash: kazuyaotani@kazuya-MacBook-Air-2: command not found
+bash: @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@: command not found
+bash: @: command not found
+bash: @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@: command not found
+bash: IT: command not found
+bash: syntax error near unexpected token `('
+bash: It: command not found
+bash: The: command not found
+bash: SHA256:al3WXuP5GFRPBBezR0zFKpW+RTwmSR2rlkONEgPlUSE.: command not found
+bash: Please: command not found
+bash: Add: command not found
+bash: Offending: command not found
+bash: Host: command not found
+^C
+^C
+bash: kazuyaotani@kazuya-MacBook-Air-2: command not found
+bash: /Users/kazuyaotani/.ssh/known_hosts: No such file or directory
+bash: Original: command not found
+^C
+bash: The: command not found
+bash: syntax error near unexpected token `('
+^C
+bash: attached_assets: command not found
+^C
+bash: System: command not found
+^C
+bash: Usage: command not found
+^C
+bash: Swap: command not found
+bash: attached_assets: command not found
+just: command not installed. Multiple versions of this command were found in Nix.
+Select one to run (or press Ctrl-C to cancel):
+bash: https://ubuntu.com/engage/secure-kubernetes-at-the-edge: No such file or directory
+bash: Expanded: command not found
+bash: 6: command not found
+bash: To: command not found
+bash: Enable: command not found
+bash: See: command not found
+bash: 1: command not found
+see: command not installed. Multiple versions of this command were found in Nix.
+Select one to run (or press Ctrl-C to cancel):
+bash: Last: command not found
+bash: root@srv1087935:~#: command not found
+From https://github.com/SINJAPANLLC/sinjapan-manager-ver2
+ * branch            main       -> FETCH_HEAD
+Already up to date.
+⠇^C
+
+> sinjapan-manager-ver2@1.0.0 build
+> vite build && tsc server/index.ts --outDir dist --module ESNext --target ES2020
+
+sh: 1: vite: not found
+pm2: command not installed, but was located via Nix.
+package: pm2  5.4.2  Node.js production process manager with a built-in load balancer
+Would you like to run pm2 from Nix and add it to your project? [Yn]: ^C
+bash: -bash:: command not found
+bash: syntax error near unexpected token `('
+Unknown command: "error"
+
+To see a list of supported npm commands, run:
+  npm help
+Unknown command: "error"
+
+To see a list of supported npm commands, run:
+  npm help
+Unknown command: "error"
+
+To see a list of supported npm commands, run:
+  npm help
+Unknown command: "error"
+
+To see a list of supported npm commands, run:
+  npm help
+Unknown command: "error"
+
+To see a list of supported npm commands, run:
+  npm help
+Unknown command: "error"
+
+To see a list of supported npm commands, run:
+  npm help
+Unknown command: "error"
+
+To see a list of supported npm commands, run:
+  npm help
+Unknown command: "error"
+
+To see a list of supported npm commands, run:
+  npm help
+Unknown command: "error"
+
+To see a list of supported npm commands, run:
+  npm help
+Unknown command: "error"
+
+To see a list of supported npm commands, run:
+  npm help
+Unknown command: "error"
+
+To see a list of supported npm commands, run:
+  npm help
+Unknown command: "error"
+
+To see a list of supported npm commands, run:
+  npm help
+Unknown command: "error"
+
+To see a list of supported npm commands, run:
+  npm help
+Unknown command: "error"
+
+To see a list of supported npm commands, run:
+  npm help
+Unknown command: "error"
+
+To see a list of supported npm commands, run:
+  npm help
+Unknown command: "error"
+
+To see a list of supported npm commands, run:
+  npm help
+bash: Use: command not found
+bash: syntax error near unexpected token `('
+bash: syntax error near unexpected token `('
+bash: ┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐: command not found
+bash: │: command not found
+bash: ├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤: command not found
+bash: │: command not found
+bash: │: command not found
+bash: │: command not found
+bash: │: command not found
+bash: │: command not found
+bash: │: command not found
+bash: └────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘: command not found
+bash: root@srv1087935:~#: command not found
+bash: │: command not found
+bash: root@srv1087935:~#: command not found
+From https://github.com/SINJAPANLLC/sinjapan-manager-ver2
+ * branch            main       -> FETCH_HEAD
+Already up to date.
+npm error code ENOTEMPTY
+npm error syscall rename
+npm error path /home/runner/workspace/node_modules/caniuse-lite
+npm error dest /home/runner/workspace/node_modules/.caniuse-lite-26TL0GSt
+npm error errno -39
+npm error ENOTEMPTY: directory not empty, rename '/home/runner/workspace/node_modules/caniuse-lite' -> '/home/runner/workspace/node_modules/.caniuse-lite-26TL0GSt'
+npm error A complete log of this run can be found in: /home/runner/.npm/_logs/2025-12-05T05_25_58_965Z-debug-0.log
+
+> sinjapan-manager-ver2@1.0.0 build
+> vite build && tsc server/index.ts --outDir dist --module ESNext --target ES2020
+
+file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:16792
+    throw new Error(
+          ^
+
+Error: cannot test case insensitive FS, CLIENT_ENTRY does not point to an existing file: /home/runner/workspace/node_modules/vite/dist/client/client.mjs
+    at testCaseInsensitiveFS (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:16792:11)
+    at file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:16810:29
+    at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+
+Node.js v20.19.3
+pm2: command not installed, but was located via Nix.
+package: pm2  5.4.2  Node.js production process manager with a built-in load balancer
+Would you like to run pm2 from Nix and add it to your project? [Yn]: 
