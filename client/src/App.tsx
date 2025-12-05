@@ -1,29 +1,63 @@
-import { useState, useEffect } from "react";
+import { Route, Switch } from 'wouter';
+import { AuthProvider, useAuth } from './hooks/use-auth';
+import { Layout } from './components/layout';
+import { LoginPage } from './pages/login';
+import { DashboardPage } from './pages/dashboard';
+import { CustomersPage } from './pages/customers';
+import { TasksPage } from './pages/tasks';
+import { ChatPage } from './pages/chat';
+import { NotificationsPage } from './pages/notifications';
+import { UsersPage } from './pages/users';
+import { EmployeesPage } from './pages/employees';
+import { AgencySalesPage } from './pages/agency-sales';
+import { SettingsPage } from './pages/settings';
+import { Loader2 } from 'lucide-react';
 
-function App() {
-  const [health, setHealth] = useState<string>("Checking...");
+function AppRoutes() {
+  const { user, isLoading } = useAuth();
 
-  useEffect(() => {
-    fetch("/api/health")
-      .then((res) => res.json())
-      .then((data) => setHealth(data.message))
-      .catch(() => setHealth("Backend not connected"));
-  }, []);
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-100">
+        <div className="text-center">
+          <Loader2 className="animate-spin mx-auto text-blue-600" size={48} />
+          <p className="mt-4 text-gray-500">読み込み中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginPage />;
+  }
 
   return (
-    <div style={{ padding: "2rem", fontFamily: "system-ui" }}>
-      <h1>SIN-JAPAN Manager Ver2</h1>
-      <p>開発環境が起動しました</p>
-      <p>サーバーステータス: {health}</p>
-      <div style={{ marginTop: "2rem", padding: "1rem", background: "#f0f0f0", borderRadius: "8px" }}>
-        <h2>⚠️ 注意</h2>
-        <p>このリポジトリには実際のアプリケーションコードが含まれていません。</p>
-        <p>デプロイ設定ファイルのみが存在するため、最小限の動作確認用アプリを作成しました。</p>
-        <p style={{ marginTop: "1rem" }}>
-          完全なアプリケーションを実行するには、実際のソースコードが必要です。
-        </p>
-      </div>
-    </div>
+    <Layout>
+      <Switch>
+        <Route path="/" component={DashboardPage} />
+        <Route path="/customers" component={CustomersPage} />
+        <Route path="/tasks" component={TasksPage} />
+        <Route path="/chat" component={ChatPage} />
+        <Route path="/notifications" component={NotificationsPage} />
+        <Route path="/users" component={UsersPage} />
+        <Route path="/employees" component={EmployeesPage} />
+        <Route path="/agency-sales" component={AgencySalesPage} />
+        <Route path="/settings" component={SettingsPage} />
+        <Route>
+          <div className="text-center py-12">
+            <h1 className="text-2xl font-bold text-gray-800">ページが見つかりません</h1>
+          </div>
+        </Route>
+      </Switch>
+    </Layout>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppRoutes />
+    </AuthProvider>
   );
 }
 
