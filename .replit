@@ -4,7 +4,6 @@ expertMode = true
 
 [nix]
 channel = "stable-25_05"
-packages = ["pm2"]
 
 [workflows]
 runButton = "Project"
@@ -37,7 +36,3 @@ externalPort = 3001
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 5173
-externalPort = 5173
