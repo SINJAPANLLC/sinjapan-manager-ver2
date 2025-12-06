@@ -145,11 +145,11 @@ export function AiPage() {
         }),
       });
       const data = await res.json();
+      if (data.translatedPrompt) {
+        setImageTranslatedPrompt(data.translatedPrompt);
+      }
       if (data.imageUrl) {
         setGeneratedImage(data.imageUrl);
-        if (data.translatedPrompt) {
-          setImageTranslatedPrompt(data.translatedPrompt);
-        }
       } else if (data.error) {
         alert(data.error);
       }
@@ -625,15 +625,15 @@ export function AiPage() {
               {isLoading ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
               画像を生成
             </button>
+            {imageTranslatedPrompt && (
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <p className="text-sm text-blue-700">
+                  <span className="font-medium">翻訳されたプロンプト:</span> {imageTranslatedPrompt}
+                </p>
+              </div>
+            )}
             {generatedImage && (
               <div className="mt-4">
-                {imageTranslatedPrompt && (
-                  <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <p className="text-sm text-blue-700">
-                      <span className="font-medium">翻訳されたプロンプト:</span> {imageTranslatedPrompt}
-                    </p>
-                  </div>
-                )}
                 <img src={generatedImage} alt="Generated" className="max-w-full rounded-xl shadow-lg" />
                 <div className="flex flex-wrap items-center gap-2 mt-3">
                   <a href={generatedImage} download target="_blank" rel="noopener noreferrer" className="btn-secondary inline-flex items-center gap-2">

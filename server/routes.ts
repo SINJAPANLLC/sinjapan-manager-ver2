@@ -634,7 +634,7 @@ JSON形式で出力してください:
             status: 'error',
             userId: req.session.userId,
           });
-          return res.status(400).json({ error: errorMsg });
+          return res.status(400).json({ error: errorMsg, translatedPrompt: translatedPrompt !== prompt ? translatedPrompt : undefined });
         }
         
         // Check for failed generation (metadata.failed_count)
@@ -645,7 +645,7 @@ JSON形式で出力してください:
             status: 'error',
             userId: req.session.userId,
           });
-          return res.status(400).json({ error: 'コンテンツポリシー違反により画像を生成できませんでした。別のプロンプトをお試しください。' });
+          return res.status(400).json({ error: 'コンテンツポリシー違反により画像を生成できませんでした。別のプロンプトをお試しください。', translatedPrompt: translatedPrompt !== prompt ? translatedPrompt : undefined });
         }
         
         if (data.data?.image_urls && data.data.image_urls.length > 0) {
