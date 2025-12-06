@@ -17,7 +17,8 @@ import {
   Copy,
   Check,
   ChevronRight,
-  Bot
+  Bot,
+  X
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
@@ -33,11 +34,17 @@ interface AiLog {
   createdAt: string;
 }
 
+interface LogDetailModalProps {
+  log: AiLog | null;
+  onClose: () => void;
+}
+
 export function AiPage() {
   const [activeTab, setActiveTab] = useState<TabType>('chat');
   const [isLoading, setIsLoading] = useState(false);
   const [logs, setLogs] = useState<AiLog[]>([]);
   const [copied, setCopied] = useState(false);
+  const [selectedLog, setSelectedLog] = useState<AiLog | null>(null);
 
   const [chatInput, setChatInput] = useState('');
   const [chatMessages, setChatMessages] = useState<{role: string; content: string}[]>([]);
@@ -663,26 +670,115 @@ export function AiPage() {
                 </div>
               )}
               {logs.map((log) => (
-                <div key={log.id} className="bg-slate-50 rounded-xl p-4">
+                <div 
+                  key={log.id} 
+                  className="bg-slate-50 rounded-xl p-4 cursor-pointer hover:bg-slate-100 transition-colors"
+                  onClick={() => setSelectedLog(log)}
+                >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="px-2 py-1 bg-primary-100 text-primary-700 text-xs font-medium rounded-lg">
-                      {getTypeLabel(log.type)}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-1 bg-primary-100 text-primary-700 text-xs font-medium rounded-lg">
+                        {getTypeLabel(log.type)}
+                      </span>
+                      <span className={cn(
+                        "text-xs px-2 py-0.5 rounded-full",
+                        log.status === 'success' ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
+                      )}>
+                        {log.status === 'success' ? '成功' : 'エラー'}
+                      </span>
+                    </div>
                     <span className="text-xs text-slate-400">
                       {format(new Date(log.createdAt), 'yyyy/MM/dd HH:mm')}
                     </span>
                   </div>
                   {log.prompt && (
-                    <p className="text-sm text-slate-600 line-clamp-2">{log.prompt}</p>
+                    <p className="text-sm text-slate-600 line-clamp-2 mb-2">{log.prompt}</p>
                   )}
-                  <span className={cn(
-                    "text-xs",
-                    log.status === 'success' ? "text-emerald-600" : "text-red-600"
-                  )}>
-                    {log.status === 'success' ? '成功' : 'エラー'}
-                  </span>
+                  {log.result && (
+                    <div className="mt-2 pt-2 border-t border-slate-200">
+                      {(log.type === 'image' || log.type === 'video' || log.type === 'voice') && log.result.startsWith('http') ? (
+                        <div className="flex items-center gap-2">
+                          {log.type === 'image' && (
+                            <img src={log.result} alt="Generated" className="w-16 h-16 object-cover rounded-lg" />
+                          )}
+                          {log.type === 'video' && (
+                            <video src={log.result} className="w-24 h-16 object-cover rounded-lg" />
+                          )}
+                          {log.type === 'voice' && (
+                            <audio src={log.result} controls className="h-8" />
+                          )}
+                          <span className="text-xs text-primary-600">クリックして詳細を表示</span>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-slate-500 line-clamp-2">{log.result}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {selectedLog && (
+          <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setSelectedLog(null)}>
+            <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl animate-slide-up max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+              <div className="flex justify-between items-center p-6 border-b border-slate-100 sticky top-0 bg-white">
+                <div className="flex items-center gap-3">
+                  <span className="px-3 py-1 bg-primary-100 text-primary-700 text-sm font-medium rounded-lg">
+                    {getTypeLabel(selectedLog.type)}
+                  </span>
+                  <span className="text-sm text-slate-400">
+                    {format(new Date(selectedLog.createdAt), 'yyyy/MM/dd HH:mm:ss')}
+                  </span>
+                </div>
+                <button onClick={() => setSelectedLog(null)} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
+                  <X size={20} className="text-slate-500" />
+                </button>
+              </div>
+              <div className="p-6 space-y-4 overflow-y-auto max-h-[calc(90vh-80px)]">
+                {selectedLog.prompt && (
+                  <div>
+                    <h4 className="text-sm font-medium text-slate-700 mb-2">入力 / プロンプト</h4>
+                    <div className="bg-slate-50 rounded-xl p-4">
+                      <p className="text-sm text-slate-600 whitespace-pre-wrap">{selectedLog.prompt}</p>
+                    </div>
+                  </div>
+                )}
+                {selectedLog.result && (
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <h4 className="text-sm font-medium text-slate-700">生成結果</h4>
+                      {selectedLog.type !== 'image' && selectedLog.type !== 'video' && selectedLog.type !== 'voice' && (
+                        <button
+                          onClick={() => copyToClipboard(selectedLog.result || '')}
+                          className="text-primary-600 hover:text-primary-700 flex items-center gap-1 text-sm"
+                        >
+                          {copied ? <Check size={14} /> : <Copy size={14} />}
+                          {copied ? 'コピー済み' : 'コピー'}
+                        </button>
+                      )}
+                    </div>
+                    <div className="bg-slate-50 rounded-xl p-4">
+                      {selectedLog.type === 'image' && selectedLog.result.startsWith('http') ? (
+                        <div className="space-y-3">
+                          <img src={selectedLog.result} alt="Generated" className="max-w-full rounded-xl" />
+                          <a href={selectedLog.result} download target="_blank" rel="noopener noreferrer" className="btn-secondary inline-flex items-center gap-2">
+                            <Download size={16} />
+                            ダウンロード
+                          </a>
+                        </div>
+                      ) : selectedLog.type === 'video' && selectedLog.result.startsWith('http') ? (
+                        <video src={selectedLog.result} controls className="max-w-full rounded-xl" />
+                      ) : selectedLog.type === 'voice' && selectedLog.result.startsWith('http') ? (
+                        <audio src={selectedLog.result} controls className="w-full" />
+                      ) : (
+                        <pre className="text-sm text-slate-600 whitespace-pre-wrap font-sans">{selectedLog.result}</pre>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
