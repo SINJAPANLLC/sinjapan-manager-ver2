@@ -64,14 +64,6 @@ export function CalendarPage() {
     setIsModalOpen(true);
   };
 
-  const handleEditMemo = (memo: Memo, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSelectedDate(new Date(memo.date));
-    setEditingMemo(memo);
-    setFormData({ content: memo.content, color: memo.color });
-    setIsModalOpen(true);
-  };
-
   const handleDeleteMemo = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!confirm('このメモを削除しますか？')) return;
@@ -187,24 +179,32 @@ export function CalendarPage() {
                     </span>
                   )}
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-1" onClick={(e) => e.stopPropagation()}>
                   {dayMemos.slice(0, 2).map((memo) => {
                     const colorClasses = getColorClasses(memo.color);
                     return (
                       <div
                         key={memo.id}
                         className={cn(
-                          "group px-2 py-1 rounded text-xs truncate flex items-center gap-1",
+                          "group px-2 py-1 rounded text-xs truncate flex items-center gap-1 cursor-pointer hover:opacity-80",
                           colorClasses.bg,
                           colorClasses.text
                         )}
-                        onClick={(e) => handleEditMemo(memo, e)}
+                        onClick={() => {
+                          setSelectedDate(new Date(memo.date));
+                          setEditingMemo(memo);
+                          setFormData({ content: memo.content, color: memo.color || 'blue' });
+                          setIsModalOpen(true);
+                        }}
                       >
                         <span className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", colorClasses.dot)} />
                         <span className="truncate flex-1">{memo.content}</span>
                         <button
-                          onClick={(e) => handleDeleteMemo(memo.id, e)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteMemo(memo.id, e);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-white/50 rounded"
                         >
                           <X size={12} />
                         </button>
@@ -212,7 +212,15 @@ export function CalendarPage() {
                     );
                   })}
                   {dayMemos.length > 2 && (
-                    <div className="text-xs text-slate-400 pl-2">
+                    <div 
+                      className="text-xs text-primary-600 pl-2 cursor-pointer hover:underline"
+                      onClick={() => {
+                        setSelectedDate(day);
+                        setEditingMemo(null);
+                        setFormData({ content: '', color: 'blue' });
+                        setIsModalOpen(true);
+                      }}
+                    >
                       +{dayMemos.length - 2}件
                     </div>
                   )}
