@@ -29,9 +29,6 @@ export function LoginPage() {
       
       <div className="w-full max-w-md relative z-10 animate-slide-up">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl shadow-button mb-6">
-            <span className="text-white font-bold text-2xl">S</span>
-          </div>
           <h1 className="text-3xl font-bold gradient-text">SIN JAPAN</h1>
           <p className="text-slate-400 mt-2 font-medium tracking-wide text-sm">MANAGER SYSTEM</p>
         </div>
