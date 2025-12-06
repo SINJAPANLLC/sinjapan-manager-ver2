@@ -1,6 +1,25 @@
 import { Express, Request, Response, NextFunction } from 'express';
 import { storage } from './storage';
 import OpenAI from 'openai';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+
+const uploadDir = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, uploadDir),
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      cb(null, uniqueSuffix + '-' + file.originalname);
+    }
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 },
+});
 
 declare module 'express-session' {
   interface SessionData {
@@ -246,6 +265,29 @@ export function registerRoutes(app: Express) {
   app.post('/api/chat/messages', requireAuth, async (req: Request, res: Response) => {
     const message = await storage.createChatMessage({ ...req.body, senderId: req.session.userId });
     res.json(message);
+  });
+
+  app.post('/api/chat/upload', requireAuth, upload.single('file'), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: 'ファイルが必要です' });
+      }
+      const { receiverId, content } = req.body;
+      const attachmentUrl = `/uploads/${req.file.filename}`;
+      const attachmentName = req.file.originalname;
+      
+      const message = await storage.createChatMessage({
+        content: content || '',
+        senderId: req.session.userId,
+        receiverId: parseInt(receiverId),
+        attachmentUrl,
+        attachmentName,
+      });
+      res.json(message);
+    } catch (error) {
+      console.error('Upload error:', error);
+      res.status(500).json({ message: 'アップロードに失敗しました' });
+    }
   });
 
   app.get('/api/employees', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {

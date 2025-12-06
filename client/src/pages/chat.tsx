@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../hooks/use-auth';
-import { Send, User, Search, MessageCircle } from 'lucide-react';
+import { Send, User, Search, MessageCircle, Paperclip, X, FileText, Image, Download } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 
@@ -30,7 +30,10 @@ export function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -65,19 +68,52 @@ export function ChatPage() {
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !selectedUser) return;
+    if ((!newMessage.trim() && !selectedFile) || !selectedUser || isUploading) return;
 
-    await fetch('/api/chat/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        content: newMessage,
-        receiverId: selectedUser.id,
-      }),
-    });
+    setIsUploading(true);
+    try {
+      if (selectedFile) {
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        formData.append('receiverId', selectedUser.id.toString());
+        formData.append('content', newMessage);
 
-    setNewMessage('');
-    fetchMessages();
+        await fetch('/api/chat/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        setSelectedFile(null);
+      } else {
+        await fetch('/api/chat/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content: newMessage,
+            receiverId: selectedUser.id,
+          }),
+        });
+      }
+
+      setNewMessage('');
+      fetchMessages();
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        alert('ファイルサイズは10MB以下にしてください');
+        return;
+      }
+      setSelectedFile(file);
+    }
+  };
+
+  const isImageFile = (filename: string) => {
+    return /\.(jpg|jpeg|png|gif|webp)$/i.test(filename);
   };
 
   const filteredUsers = users.filter(
@@ -102,7 +138,7 @@ export function ChatPage() {
     <div className="h-[calc(100vh-8rem)] flex gap-5 animate-fade-in">
       <div className="w-80 bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden flex flex-col">
         <div className="p-5 border-b border-slate-100">
-          <h2 className="text-lg font-bold text-slate-800 mb-4">チャット</h2>
+          <h2 className="text-lg font-bold text-slate-800 mb-4">コミュニケーション</h2>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input
@@ -177,7 +213,37 @@ export function ChatPage() {
                           : 'bg-white text-slate-800 border border-slate-100 rounded-bl-md'
                       )}
                     >
-                      <p className="whitespace-pre-wrap">{msg.content}</p>
+                      {msg.attachmentUrl && (
+                        <div className={cn(
+                          "mb-2 rounded-lg overflow-hidden",
+                          isMine ? "bg-white/10" : "bg-slate-100"
+                        )}>
+                          {isImageFile(msg.attachmentName || '') ? (
+                            <a href={msg.attachmentUrl} target="_blank" rel="noopener noreferrer">
+                              <img 
+                                src={msg.attachmentUrl} 
+                                alt={msg.attachmentName} 
+                                className="max-w-full max-h-48 object-contain"
+                              />
+                            </a>
+                          ) : (
+                            <a 
+                              href={msg.attachmentUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className={cn(
+                                "flex items-center gap-2 p-3 hover:opacity-80 transition-opacity",
+                                isMine ? "text-white" : "text-slate-700"
+                              )}
+                            >
+                              <FileText size={20} />
+                              <span className="text-sm truncate flex-1">{msg.attachmentName}</span>
+                              <Download size={16} />
+                            </a>
+                          )}
+                        </div>
+                      )}
+                      {msg.content && <p className="whitespace-pre-wrap">{msg.content}</p>}
                       <p
                         className={cn(
                           'text-xs mt-1.5',
@@ -194,20 +260,50 @@ export function ChatPage() {
             </div>
 
             <form onSubmit={sendMessage} className="p-5 border-t border-slate-100 bg-white">
+              {selectedFile && (
+                <div className="mb-3 flex items-center gap-2 p-2 bg-slate-100 rounded-lg">
+                  <FileText size={18} className="text-slate-500" />
+                  <span className="text-sm text-slate-700 truncate flex-1">{selectedFile.name}</span>
+                  <button 
+                    type="button" 
+                    onClick={() => setSelectedFile(null)}
+                    className="p-1 hover:bg-slate-200 rounded"
+                  >
+                    <X size={16} className="text-slate-500" />
+                  </button>
+                </div>
+              )}
               <div className="flex gap-3">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="p-2.5 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
+                >
+                  <Paperclip size={20} className="text-slate-500" />
+                </button>
                 <input
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="メッセージを入力..."
-                  className="input-field"
+                  className="input-field flex-1"
                 />
                 <button
                   type="submit"
-                  disabled={!newMessage.trim()}
+                  disabled={(!newMessage.trim() && !selectedFile) || isUploading}
                   className="btn-primary px-5 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Send size={20} />
+                  {isUploading ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Send size={20} />
+                  )}
                 </button>
               </div>
             </form>

@@ -14,6 +14,8 @@ const MemoryStore = createMemoryStore(session);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
 app.use(session({
   secret: process.env.SESSION_SECRET || 'sin-japan-manager-secret-key-2024',
   resave: false,
