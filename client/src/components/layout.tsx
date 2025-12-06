@@ -10,9 +10,10 @@ import {
   LogOut,
   Building2,
   ClipboardList,
-  UserCog,
-  TrendingUp,
-  FileText,
+  Calendar,
+  Briefcase,
+  Bot,
+  UserCheck,
   ChevronRight
 } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -25,66 +26,19 @@ export function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuth();
   const [location] = useLocation();
 
-  const getMenuItems = () => {
-    const baseItems = [
-      { href: '/', label: 'ダッシュボード', icon: Home },
-    ];
-
-    if (!user) return baseItems;
-
-    switch (user.role) {
-      case 'admin':
-      case 'ceo':
-        return [
-          ...baseItems,
-          { href: '/customers', label: '顧客管理', icon: Building2 },
-          { href: '/tasks', label: 'タスク管理', icon: ClipboardList },
-          { href: '/employees', label: '従業員管理', icon: UserCog },
-          { href: '/users', label: 'ユーザー管理', icon: Users },
-          { href: '/chat', label: 'チャット', icon: MessageSquare },
-          { href: '/notifications', label: '通知', icon: Bell },
-          { href: '/agency-sales', label: '代理店売上', icon: TrendingUp },
-          { href: '/settings', label: '設定', icon: Settings },
-        ];
-      case 'manager':
-        return [
-          ...baseItems,
-          { href: '/customers', label: '顧客管理', icon: Building2 },
-          { href: '/tasks', label: 'タスク管理', icon: ClipboardList },
-          { href: '/employees', label: '従業員管理', icon: UserCog },
-          { href: '/users', label: 'ユーザー管理', icon: Users },
-          { href: '/chat', label: 'チャット', icon: MessageSquare },
-          { href: '/notifications', label: '通知', icon: Bell },
-        ];
-      case 'staff':
-        return [
-          ...baseItems,
-          { href: '/customers', label: '顧客管理', icon: Building2 },
-          { href: '/tasks', label: 'タスク管理', icon: ClipboardList },
-          { href: '/chat', label: 'チャット', icon: MessageSquare },
-          { href: '/notifications', label: '通知', icon: Bell },
-        ];
-      case 'agency':
-        return [
-          ...baseItems,
-          { href: '/agency-sales', label: '売上管理', icon: TrendingUp },
-          { href: '/customers', label: '顧客管理', icon: Building2 },
-          { href: '/chat', label: 'チャット', icon: MessageSquare },
-          { href: '/notifications', label: '通知', icon: Bell },
-        ];
-      case 'client':
-        return [
-          ...baseItems,
-          { href: '/documents', label: '書類', icon: FileText },
-          { href: '/chat', label: 'チャット', icon: MessageSquare },
-          { href: '/notifications', label: '通知', icon: Bell },
-        ];
-      default:
-        return baseItems;
-    }
-  };
-
-  const menuItems = getMenuItems();
+  const menuItems = [
+    { href: '/', label: 'ホーム', icon: Home },
+    { href: '/tasks', label: 'タスク', icon: ClipboardList },
+    { href: '/calendar', label: 'カレンダー', icon: Calendar },
+    { href: '/communication', label: 'コミュニケーション', icon: MessageSquare },
+    { href: '/business', label: '事業', icon: Briefcase },
+    { href: '/ai', label: 'AI', icon: Bot },
+    { href: '/staff', label: 'スタッフ', icon: UserCheck },
+    { href: '/agency', label: '代理店', icon: Building2 },
+    { href: '/clients', label: 'クライアント', icon: Users },
+    { href: '/notifications', label: '通知', icon: Bell },
+    { href: '/settings', label: '設定', icon: Settings },
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-primary-50/30">
@@ -114,7 +68,7 @@ export function Layout({ children }: LayoutProps) {
             </div>
           )}
 
-          <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
+          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = location === item.href;
@@ -123,7 +77,7 @@ export function Layout({ children }: LayoutProps) {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
+                    "flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group",
                     isActive
                       ? "bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-button"
                       : "text-slate-600 hover:bg-primary-50 hover:text-primary-600"
@@ -142,7 +96,7 @@ export function Layout({ children }: LayoutProps) {
           <div className="p-4 border-t border-slate-100">
             <button
               onClick={logout}
-              className="flex items-center gap-3 w-full px-4 py-3 text-slate-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all duration-200 group"
+              className="flex items-center gap-3 w-full px-4 py-2.5 text-slate-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all duration-200 group"
             >
               <LogOut size={20} className="group-hover:scale-110 transition-transform duration-200" />
               <span className="font-medium">ログアウト</span>
