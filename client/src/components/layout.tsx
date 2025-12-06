@@ -13,8 +13,7 @@ import {
   Calendar,
   Briefcase,
   Bot,
-  UserCheck,
-  ChevronRight
+  UserCheck
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -53,20 +52,6 @@ export function Layout({ children }: LayoutProps) {
             </div>
           </div>
 
-          {user && (
-            <div className="p-4 mx-4 mt-4 bg-gradient-to-r from-primary-50 to-white rounded-xl border border-primary-100/50">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center text-white font-semibold shadow-soft">
-                  {user.name.charAt(0)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-slate-800 truncate">{user.name}</p>
-                  <p className="text-xs text-primary-600 font-medium capitalize">{user.role}</p>
-                </div>
-                <ChevronRight size={16} className="text-slate-400" />
-              </div>
-            </div>
-          )}
 
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             {menuItems.map((item) => {
