@@ -61,7 +61,7 @@ export function AiPage() {
 
   const [videoPrompt, setVideoPrompt] = useState('');
   const [generatedVideo, setGeneratedVideo] = useState('');
-  const [videoProvider, setVideoProvider] = useState<'hailuo' | 'openai' | 'modelslab'>('openai');
+  const [videoProvider, setVideoProvider] = useState<'hailuo' | 'modelslab'>('hailuo');
   const [videoAspectRatio, setVideoAspectRatio] = useState('16:9');
   const [videoDuration, setVideoDuration] = useState('8');
   const [videoTranslatedPrompt, setVideoTranslatedPrompt] = useState('');
@@ -672,10 +672,9 @@ export function AiPage() {
                 <label className="block text-sm font-medium text-slate-700 mb-1">プロバイダー</label>
                 <select
                   value={videoProvider}
-                  onChange={(e) => setVideoProvider(e.target.value as 'hailuo' | 'openai' | 'modelslab')}
+                  onChange={(e) => setVideoProvider(e.target.value as 'hailuo' | 'modelslab')}
                   className="input-field"
                 >
-                  <option value="openai">OpenAI (Sora 2)</option>
                   <option value="hailuo">Hailuo AI (MiniMax)</option>
                   <option value="modelslab">MODELSLAB (NSFW対応)</option>
                 </select>
@@ -699,14 +698,7 @@ export function AiPage() {
                   onChange={(e) => setVideoDuration(e.target.value)}
                   className="input-field"
                 >
-                  {videoProvider === 'openai' ? (
-                    <>
-                      <option value="4">4秒</option>
-                      <option value="8">8秒</option>
-                      <option value="15">15秒</option>
-                      <option value="20">20秒</option>
-                    </>
-                  ) : videoProvider === 'modelslab' ? (
+                  {videoProvider === 'modelslab' ? (
                     <>
                       <option value="2">約2秒 (16フレーム)</option>
                       <option value="3">約3秒 (25フレーム)</option>
