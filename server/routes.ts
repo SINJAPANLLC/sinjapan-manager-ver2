@@ -621,6 +621,33 @@ JSON形式で出力してください:
         const data = await response.json();
         console.log('Hailuo Image response:', JSON.stringify(data, null, 2));
         
+        // Check for API errors first
+        if (data.base_resp?.status_code !== 0) {
+          const errorMessages: Record<number, string> = {
+            1008: '残高不足です。MiniMaxアカウントにクレジットを追加してください。',
+            1026: 'センシティブなコンテンツが検出されました。別のプロンプトをお試しください。',
+          };
+          const errorMsg = errorMessages[data.base_resp?.status_code] || data.base_resp?.status_msg || '画像生成に失敗しました';
+          await storage.createAiLog({
+            type: 'image',
+            prompt: prompt,
+            status: 'error',
+            userId: req.session.userId,
+          });
+          return res.status(400).json({ error: errorMsg });
+        }
+        
+        // Check for failed generation (metadata.failed_count)
+        if (data.metadata?.failed_count && parseInt(data.metadata.failed_count) > 0) {
+          await storage.createAiLog({
+            type: 'image',
+            prompt: prompt,
+            status: 'error',
+            userId: req.session.userId,
+          });
+          return res.status(400).json({ error: 'コンテンツポリシー違反により画像を生成できませんでした。別のプロンプトをお試しください。' });
+        }
+        
         if (data.data?.image_urls && data.data.image_urls.length > 0) {
           await storage.createAiLog({
             type: 'image',
@@ -637,7 +664,7 @@ JSON形式で出力してください:
             status: 'error',
             userId: req.session.userId,
           });
-          res.status(400).json({ error: data.base_resp?.status_msg || '画像生成に失敗しました' });
+          res.status(400).json({ error: '画像生成に失敗しました。別のプロンプトをお試しください。' });
         }
       }
     } catch (error) {
