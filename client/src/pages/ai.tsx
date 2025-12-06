@@ -18,7 +18,10 @@ import {
   Check,
   ChevronRight,
   Bot,
-  X
+  X,
+  Share2,
+  Mail,
+  ExternalLink
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
@@ -305,6 +308,79 @@ export function AiPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const shareToTwitter = (content: string, url?: string) => {
+    const text = encodeURIComponent(content.substring(0, 200) + (content.length > 200 ? '...' : ''));
+    const shareUrl = url ? `&url=${encodeURIComponent(url)}` : '';
+    window.open(`https://twitter.com/intent/tweet?text=${text}${shareUrl}`, '_blank');
+  };
+
+  const shareToLine = (content: string, url?: string) => {
+    const text = encodeURIComponent(url || content.substring(0, 200));
+    window.open(`https://social-plugins.line.me/lineit/share?url=${text}`, '_blank');
+  };
+
+  const shareByEmail = (subject: string, body: string) => {
+    const mailSubject = encodeURIComponent(subject);
+    const mailBody = encodeURIComponent(body);
+    window.location.href = `mailto:?subject=${mailSubject}&body=${mailBody}`;
+  };
+
+  const openInNewTab = (url: string) => {
+    window.open(url, '_blank');
+  };
+
+  const ShareButtons = ({ content, url, type }: { content: string; url?: string; type: 'text' | 'media' }) => (
+    <div className="flex flex-wrap items-center gap-2 mt-3">
+      <span className="text-xs text-slate-500 mr-1">共有:</span>
+      {type === 'text' && (
+        <button
+          onClick={() => copyToClipboard(content)}
+          className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs text-slate-700 transition-colors"
+        >
+          {copied ? <Check size={12} /> : <Copy size={12} />}
+          コピー
+        </button>
+      )}
+      {url && (
+        <>
+          <button
+            onClick={() => copyToClipboard(url)}
+            className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs text-slate-700 transition-colors"
+          >
+            <Copy size={12} />
+            URLコピー
+          </button>
+          <button
+            onClick={() => openInNewTab(url)}
+            className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs text-slate-700 transition-colors"
+          >
+            <ExternalLink size={12} />
+            新しいタブ
+          </button>
+        </>
+      )}
+      <button
+        onClick={() => shareToTwitter(type === 'text' ? content : 'AIで生成したコンテンツ', url)}
+        className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#1DA1F2] hover:bg-[#1a8cd8] rounded-lg text-xs text-white transition-colors"
+      >
+        𝕏
+      </button>
+      <button
+        onClick={() => shareToLine(type === 'text' ? content : (url || 'AIで生成したコンテンツ'))}
+        className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#00B900] hover:bg-[#00a000] rounded-lg text-xs text-white transition-colors"
+      >
+        LINE
+      </button>
+      <button
+        onClick={() => shareByEmail('AI生成コンテンツ', type === 'text' ? content : (url || 'コンテンツをご確認ください'))}
+        className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-600 hover:bg-slate-700 rounded-lg text-xs text-white transition-colors"
+      >
+        <Mail size={12} />
+        メール
+      </button>
+    </div>
+  );
+
   const getTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
       chat: 'テキスト会話',
@@ -433,10 +509,13 @@ export function AiPage() {
             {generatedImage && (
               <div className="mt-4">
                 <img src={generatedImage} alt="Generated" className="max-w-full rounded-xl shadow-lg" />
-                <a href={generatedImage} download className="btn-secondary mt-3 inline-flex items-center gap-2">
-                  <Download size={16} />
-                  ダウンロード
-                </a>
+                <div className="flex flex-wrap items-center gap-2 mt-3">
+                  <a href={generatedImage} download target="_blank" rel="noopener noreferrer" className="btn-secondary inline-flex items-center gap-2">
+                    <Download size={16} />
+                    ダウンロード
+                  </a>
+                </div>
+                <ShareButtons content="AIで生成した画像" url={generatedImage} type="media" />
               </div>
             )}
           </div>
@@ -476,6 +555,13 @@ export function AiPage() {
             {generatedVideo && (
               <div className="mt-4">
                 <video src={generatedVideo} controls className="max-w-full rounded-xl shadow-lg" />
+                <div className="flex flex-wrap items-center gap-2 mt-3">
+                  <a href={generatedVideo} download target="_blank" rel="noopener noreferrer" className="btn-secondary inline-flex items-center gap-2">
+                    <Download size={16} />
+                    ダウンロード
+                  </a>
+                </div>
+                <ShareButtons content="AIで生成した動画" url={generatedVideo} type="media" />
               </div>
             )}
           </div>
@@ -522,17 +608,11 @@ export function AiPage() {
               <div className="mt-4 bg-slate-50 rounded-xl p-4">
                 <div className="flex justify-between items-center mb-3">
                   <span className="text-sm font-medium text-slate-700">生成された記事</span>
-                  <button
-                    onClick={() => copyToClipboard(seoArticle)}
-                    className="text-primary-600 hover:text-primary-700 flex items-center gap-1 text-sm"
-                  >
-                    {copied ? <Check size={14} /> : <Copy size={14} />}
-                    {copied ? 'コピー済み' : 'コピー'}
-                  </button>
                 </div>
                 <div className="prose prose-sm max-w-none">
                   <pre className="whitespace-pre-wrap text-sm text-slate-700 bg-white p-4 rounded-lg border">{seoArticle}</pre>
                 </div>
+                <ShareButtons content={seoArticle} type="text" />
               </div>
             )}
           </div>
@@ -563,6 +643,13 @@ export function AiPage() {
             {voiceUrl && (
               <div className="mt-4">
                 <audio src={voiceUrl} controls className="w-full" />
+                <div className="flex flex-wrap items-center gap-2 mt-3">
+                  <a href={voiceUrl} download target="_blank" rel="noopener noreferrer" className="btn-secondary inline-flex items-center gap-2">
+                    <Download size={16} />
+                    ダウンロード
+                  </a>
+                </div>
+                <ShareButtons content="AIで生成した音声" url={voiceUrl} type="media" />
               </div>
             )}
           </div>
@@ -610,15 +697,9 @@ export function AiPage() {
               <div className="mt-4 bg-slate-50 rounded-xl p-4">
                 <div className="flex justify-between items-center mb-3">
                   <span className="text-sm font-medium text-slate-700">生成されたリスト</span>
-                  <button
-                    onClick={() => copyToClipboard(generatedList)}
-                    className="text-primary-600 hover:text-primary-700 flex items-center gap-1 text-sm"
-                  >
-                    {copied ? <Check size={14} /> : <Copy size={14} />}
-                    {copied ? 'コピー済み' : 'コピー'}
-                  </button>
                 </div>
                 <pre className="whitespace-pre-wrap text-sm text-slate-700 bg-white p-4 rounded-lg border">{generatedList}</pre>
+                <ShareButtons content={generatedList} type="text" />
               </div>
             )}
           </div>
@@ -668,15 +749,9 @@ export function AiPage() {
               <div className="mt-4 bg-slate-50 rounded-xl p-4">
                 <div className="flex justify-between items-center mb-3">
                   <span className="text-sm font-medium text-slate-700">生成された書類</span>
-                  <button
-                    onClick={() => copyToClipboard(generatedDoc)}
-                    className="text-primary-600 hover:text-primary-700 flex items-center gap-1 text-sm"
-                  >
-                    {copied ? <Check size={14} /> : <Copy size={14} />}
-                    {copied ? 'コピー済み' : 'コピー'}
-                  </button>
                 </div>
                 <pre className="whitespace-pre-wrap text-sm text-slate-700 bg-white p-4 rounded-lg border font-sans">{generatedDoc}</pre>
+                <ShareButtons content={generatedDoc} type="text" />
               </div>
             )}
           </div>
