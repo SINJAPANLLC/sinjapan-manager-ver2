@@ -562,8 +562,7 @@ JSON形式で出力してください:
       if (provider === 'openai') {
         // OpenAI DALL-E / gpt-image-1
         const openaiClient = new OpenAI({
-          apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-          baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+          apiKey: process.env.OPENAI_API_KEY,
         });
 
         const sizeMap: Record<string, string> = {
