@@ -9,11 +9,14 @@ SIN JAPAN 業務管理システム - ロールベースアクセス制御を備�
 アプリケーションは完全に機能しており、以下の機能が実装されています：
 - ロールベース認証（Admin, CEO, Manager, Staff, Agency, Client）
 - 顧客管理（CRM）with 銀行情報
-- チャット機能
+- チャット機能（ファイル添付対応）
 - 通知システム（一括送信対応）
 - 従業員管理（HR Hub）
 - 代理店売上追跡
-- タスク管理
+- タスク管理（AI生成対応）
+- 事業管理（売上/経費の都度追加）
+- カレンダー（メモ機能）
+- AI機能ページ（画像/動画/SEO記事/音声/リスト/書類生成、AIチャット）
 
 ## Architecture
 
@@ -87,6 +90,10 @@ SIN JAPAN 業務管理システム - ロールベースアクセス制御を備�
 | chat_messages | Real-time messaging |
 | employees | HR management |
 | agency_sales | Sales tracking |
+| businesses | Business management |
+| business_sales | Business revenue/expense records |
+| memos | Calendar memos |
+| ai_logs | AI usage logs |
 
 ## Role Permissions
 
@@ -129,6 +136,9 @@ Required:
 - `DATABASE_URL` - PostgreSQL connection string (provided by Replit)
 - `SESSION_SECRET` - Auto-generated on first run
 
+Optional (for AI features):
+- `MODELSLAB_API_KEY` - MODELSLAB API key for image/video/voice generation
+
 ## Configuration Notes
 
 - Vite configured with `allowedHosts: true` for Replit proxy
@@ -136,7 +146,27 @@ Required:
 - Frontend served on port 5000
 - CORS enabled for development
 
-## Recent Changes (2025-12-05)
+## Recent Changes (2025-12-06)
+
+### AI機能ページの追加
+- AIテキスト会話（OpenAI GPT-4o-mini）
+- 画像生成（MODELSLAB API）
+- 動画生成（MODELSLAB API）
+- SEO記事生成（OpenAI）
+- 音声生成（MODELSLAB API）
+- リスト生成（OpenAI）
+- 書類生成（契約書、提案書、請求書、報告書、メール、議事録）
+- AI利用ログ機能
+- AI自動化（Coming Soon）
+- 音声会話（Coming Soon）
+
+### 事業管理の売上/経費記録機能
+- business_salesテーブル追加
+- 売上・経費を都度追加可能
+- 履歴の表示・削除機能
+- 総売上・総経費・利益の自動計算
+
+## Previous Changes (2025-12-05)
 
 ### Design Overhaul - Refined White-based Theme with Blue Gradient Accents
 - Updated Tailwind configuration with custom design tokens, colors, and animations
