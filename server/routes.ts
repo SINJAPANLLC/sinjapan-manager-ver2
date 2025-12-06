@@ -520,7 +520,7 @@ JSON形式で出力してください:
 
   app.post('/api/ai/image', requireAuth, async (req: Request, res: Response) => {
     try {
-      const { prompt } = req.body;
+      const { prompt, nsfw } = req.body;
       const modelslabKey = process.env.MODELSLAB_API_KEY;
       
       if (!modelslabKey) {
@@ -541,6 +541,7 @@ JSON形式で出力してください:
           samples: '1',
           num_inference_steps: '20',
           guidance_scale: 7.5,
+          safety_checker: nsfw ? 'no' : 'yes',
         }),
       });
 
@@ -572,7 +573,7 @@ JSON形式で出力してください:
 
   app.post('/api/ai/video', requireAuth, async (req: Request, res: Response) => {
     try {
-      const { prompt } = req.body;
+      const { prompt, nsfw } = req.body;
       const modelslabKey = process.env.MODELSLAB_API_KEY;
       
       if (!modelslabKey) {
@@ -590,6 +591,7 @@ JSON形式で出力してください:
           negative_prompt: 'bad quality',
           scheduler: 'UniPCMultistepScheduler',
           seconds: 3,
+          safety_checker: nsfw ? 'no' : 'yes',
         }),
       });
 

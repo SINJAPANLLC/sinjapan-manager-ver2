@@ -54,9 +54,11 @@ export function AiPage() {
 
   const [imagePrompt, setImagePrompt] = useState('');
   const [generatedImage, setGeneratedImage] = useState('');
+  const [imageNsfw, setImageNsfw] = useState(false);
 
   const [videoPrompt, setVideoPrompt] = useState('');
   const [generatedVideo, setGeneratedVideo] = useState('');
+  const [videoNsfw, setVideoNsfw] = useState(false);
 
   const [seoTopic, setSeoTopic] = useState('');
   const [seoKeywords, setSeoKeywords] = useState('');
@@ -128,7 +130,7 @@ export function AiPage() {
       const res = await fetch('/api/ai/image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: imagePrompt }),
+        body: JSON.stringify({ prompt: imagePrompt, nsfw: imageNsfw }),
       });
       const data = await res.json();
       if (data.imageUrl) {
@@ -190,7 +192,7 @@ export function AiPage() {
       const res = await fetch('/api/ai/video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: videoPrompt }),
+        body: JSON.stringify({ prompt: videoPrompt, nsfw: videoNsfw }),
       });
       const data = await res.json();
       if (data.videoUrl) {
@@ -329,6 +331,26 @@ export function AiPage() {
     window.open(url, '_blank');
   };
 
+  const shareToFacebook = (url?: string) => {
+    const shareUrl = url ? encodeURIComponent(url) : '';
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`, '_blank');
+  };
+
+  const shareToWhatsApp = (content: string, url?: string) => {
+    const text = encodeURIComponent(url || content.substring(0, 200));
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+  };
+
+  const shareToTelegram = (content: string, url?: string) => {
+    const text = encodeURIComponent(content.substring(0, 200));
+    const shareUrl = url ? `&url=${encodeURIComponent(url)}` : '';
+    window.open(`https://t.me/share/url?text=${text}${shareUrl}`, '_blank');
+  };
+
+  const shareToInstagram = () => {
+    alert('Instagramへの直接共有はできません。\n画像をダウンロードしてInstagramアプリから投稿してください。');
+  };
+
   const ShareButtons = ({ content, url, type }: { content: string; url?: string; type: 'text' | 'media' }) => (
     <div className="flex flex-wrap items-center gap-2 mt-3">
       <span className="text-xs text-slate-500 mr-1">共有:</span>
@@ -361,7 +383,7 @@ export function AiPage() {
       )}
       <button
         onClick={() => shareToTwitter(type === 'text' ? content : 'AIで生成したコンテンツ', url)}
-        className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#1DA1F2] hover:bg-[#1a8cd8] rounded-lg text-xs text-white transition-colors"
+        className="inline-flex items-center gap-1 px-3 py-1.5 bg-black hover:bg-gray-800 rounded-lg text-xs text-white transition-colors"
       >
         𝕏
       </button>
@@ -370,6 +392,32 @@ export function AiPage() {
         className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#00B900] hover:bg-[#00a000] rounded-lg text-xs text-white transition-colors"
       >
         LINE
+      </button>
+      <button
+        onClick={() => shareToFacebook(url)}
+        className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#1877F2] hover:bg-[#166fe5] rounded-lg text-xs text-white transition-colors"
+      >
+        Facebook
+      </button>
+      {type === 'media' && (
+        <button
+          onClick={shareToInstagram}
+          className="inline-flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F77737] hover:opacity-90 rounded-lg text-xs text-white transition-colors"
+        >
+          Instagram
+        </button>
+      )}
+      <button
+        onClick={() => shareToWhatsApp(type === 'text' ? content : 'AIで生成したコンテンツ', url)}
+        className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#25D366] hover:bg-[#20bd5a] rounded-lg text-xs text-white transition-colors"
+      >
+        WhatsApp
+      </button>
+      <button
+        onClick={() => shareToTelegram(type === 'text' ? content : 'AIで生成したコンテンツ', url)}
+        className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#0088cc] hover:bg-[#007ab8] rounded-lg text-xs text-white transition-colors"
+      >
+        Telegram
       </button>
       <button
         onClick={() => shareByEmail('AI生成コンテンツ', type === 'text' ? content : (url || 'コンテンツをご確認ください'))}
@@ -498,6 +546,15 @@ export function AiPage() {
               rows={3}
               className="input-field resize-none"
             />
+            <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={imageNsfw}
+                onChange={(e) => setImageNsfw(e.target.checked)}
+                className="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+              />
+              <span>NSFW対応（セーフティチェック無効）</span>
+            </label>
             <button
               onClick={handleImageGenerate}
               disabled={isLoading || !imagePrompt.trim()}
@@ -535,6 +592,15 @@ export function AiPage() {
               rows={3}
               className="input-field resize-none"
             />
+            <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={videoNsfw}
+                onChange={(e) => setVideoNsfw(e.target.checked)}
+                className="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+              />
+              <span>NSFW対応（セーフティチェック無効）</span>
+            </label>
             <button
               onClick={handleVideoGenerate}
               disabled={isLoading || !videoPrompt.trim()}
