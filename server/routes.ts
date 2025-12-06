@@ -578,7 +578,7 @@ JSON形式で出力してください:
           prompt: translatedPrompt,
           n: 1,
           size: size as any,
-          quality: quality === 'high' ? 'hd' : 'standard',
+          quality: quality === 'high' ? 'high' : 'medium',
         });
 
         const imageUrl = response.data[0]?.url || response.data[0]?.b64_json;
