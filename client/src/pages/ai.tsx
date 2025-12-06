@@ -57,12 +57,14 @@ export function AiPage() {
   const [imageNsfw, setImageNsfw] = useState(false);
   const [imageSize, setImageSize] = useState('512x512');
   const [imageQuality, setImageQuality] = useState('medium');
+  const [imageTranslatedPrompt, setImageTranslatedPrompt] = useState('');
 
   const [videoPrompt, setVideoPrompt] = useState('');
   const [generatedVideo, setGeneratedVideo] = useState('');
   const [videoNsfw, setVideoNsfw] = useState(false);
   const [videoSize, setVideoSize] = useState('512x512');
   const [videoDuration, setVideoDuration] = useState('3');
+  const [videoTranslatedPrompt, setVideoTranslatedPrompt] = useState('');
 
   const [seoTopic, setSeoTopic] = useState('');
   const [seoKeywords, setSeoKeywords] = useState('');
@@ -129,6 +131,7 @@ export function AiPage() {
     if (!imagePrompt.trim() || isLoading) return;
     setIsLoading(true);
     setGeneratedImage('');
+    setImageTranslatedPrompt('');
 
     const [width, height] = imageSize.split('x');
     
@@ -147,6 +150,9 @@ export function AiPage() {
       const data = await res.json();
       if (data.imageUrl) {
         setGeneratedImage(data.imageUrl);
+        if (data.translatedPrompt) {
+          setImageTranslatedPrompt(data.translatedPrompt);
+        }
       } else if (data.error) {
         alert(data.error);
       }
@@ -198,6 +204,7 @@ export function AiPage() {
     if (!videoPrompt.trim() || isLoading) return;
     setIsLoading(true);
     setGeneratedVideo('');
+    setVideoTranslatedPrompt('');
     setVideoStatus('リクエスト送信中...');
 
     const [width, height] = videoSize.split('x');
@@ -219,8 +226,14 @@ export function AiPage() {
         setGeneratedVideo(data.videoUrl);
         setVideoStatus('');
         setIsLoading(false);
+        if (data.translatedPrompt) {
+          setVideoTranslatedPrompt(data.translatedPrompt);
+        }
       } else if (data.processing && data.fetchUrl) {
         setVideoStatus('動画生成を開始しました...');
+        if (data.translatedPrompt) {
+          setVideoTranslatedPrompt(data.translatedPrompt);
+        }
         pollVideoResult(data.fetchUrl, data.prompt);
       } else if (data.error) {
         setVideoStatus('');
@@ -617,6 +630,13 @@ export function AiPage() {
             </button>
             {generatedImage && (
               <div className="mt-4">
+                {imageTranslatedPrompt && (
+                  <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-sm text-blue-700">
+                      <span className="font-medium">翻訳されたプロンプト:</span> {imageTranslatedPrompt}
+                    </p>
+                  </div>
+                )}
                 <img src={generatedImage} alt="Generated" className="max-w-full rounded-xl shadow-lg" />
                 <div className="flex flex-wrap items-center gap-2 mt-3">
                   <a href={generatedImage} download target="_blank" rel="noopener noreferrer" className="btn-secondary inline-flex items-center gap-2">
@@ -698,6 +718,13 @@ export function AiPage() {
                   <span className="text-primary-700 font-medium">{videoStatus}</span>
                 </div>
                 <p className="text-sm text-slate-500 mt-2">動画生成には数分かかることがあります。このページを開いたままお待ちください。</p>
+              </div>
+            )}
+            {videoTranslatedPrompt && (
+              <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <p className="text-sm text-blue-700">
+                  <span className="font-medium">翻訳されたプロンプト:</span> {videoTranslatedPrompt}
+                </p>
               </div>
             )}
             {generatedVideo && (

@@ -600,7 +600,7 @@ JSON形式で出力してください:
           status: 'success',
           userId: req.session.userId,
         });
-        res.json({ imageUrl: data.output[0] });
+        res.json({ imageUrl: data.output[0], translatedPrompt: translatedPrompt !== prompt ? translatedPrompt : undefined });
       } else {
         await storage.createAiLog({
           type: 'image',
@@ -656,9 +656,9 @@ JSON形式で出力してください:
           status: 'success',
           userId: req.session.userId,
         });
-        res.json({ videoUrl: data.output });
+        res.json({ videoUrl: data.output, translatedPrompt: translatedPrompt !== prompt ? translatedPrompt : undefined });
       } else if (data.status === 'processing' && data.fetch_result) {
-        res.json({ processing: true, fetchUrl: data.fetch_result, prompt: prompt });
+        res.json({ processing: true, fetchUrl: data.fetch_result, prompt: prompt, translatedPrompt: translatedPrompt !== prompt ? translatedPrompt : undefined });
       } else {
         await storage.createAiLog({
           type: 'video',
