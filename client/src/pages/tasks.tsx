@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/use-auth';
-import { Plus, Edit2, Trash2, CheckCircle, Clock, AlertCircle, X, Sparkles, Loader2, Target, Users2, Expand, ShieldAlert, Workflow } from 'lucide-react';
+import { Plus, Edit2, Trash2, CheckCircle, Clock, AlertCircle, X, Sparkles, Loader2, Target, Users2, Expand, ShieldAlert, Workflow, Briefcase } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 
@@ -11,6 +11,7 @@ interface Task {
   status: string;
   priority: string;
   category?: string;
+  businessId?: number;
   dueDate?: string;
   assignedTo?: number;
   createdBy?: number;
@@ -21,6 +22,13 @@ interface User {
   id: number;
   name: string;
   email: string;
+}
+
+interface Business {
+  id: number;
+  name: string;
+  description?: string;
+  status: string;
 }
 
 const categories = [
@@ -35,11 +43,13 @@ export function TasksPage() {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [businesses, setBusinesses] = useState<Business[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('direct');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [aiPrompt, setAiPrompt] = useState('');
+  const [aiBusinessId, setAiBusinessId] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedTasks, setGeneratedTasks] = useState<{title: string; description: string; priority: string}[]>([]);
   const [formData, setFormData] = useState({
@@ -48,6 +58,7 @@ export function TasksPage() {
     status: 'pending',
     priority: 'medium',
     category: 'direct',
+    businessId: '',
     dueDate: '',
     assignedTo: '',
   });
@@ -55,6 +66,7 @@ export function TasksPage() {
   useEffect(() => {
     fetchTasks();
     fetchUsers();
+    fetchBusinesses();
   }, []);
 
   const fetchTasks = async () => {
@@ -71,6 +83,13 @@ export function TasksPage() {
     }
   };
 
+  const fetchBusinesses = async () => {
+    const res = await fetch('/api/businesses');
+    if (res.ok) {
+      setBusinesses(await res.json());
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const url = editingTask ? `/api/tasks/${editingTask.id}` : '/api/tasks';
@@ -81,6 +100,7 @@ export function TasksPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...formData,
+        businessId: formData.businessId ? parseInt(formData.businessId) : null,
         assignedTo: formData.assignedTo ? parseInt(formData.assignedTo) : null,
         dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : null,
       }),
@@ -113,10 +133,15 @@ export function TasksPage() {
     setGeneratedTasks([]);
     
     try {
+      const businessName = aiBusinessId ? businesses.find(b => b.id === parseInt(aiBusinessId))?.name : null;
       const res = await fetch('/api/ai/generate-tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: aiPrompt, category: selectedCategory }),
+        body: JSON.stringify({ 
+          prompt: aiPrompt, 
+          category: selectedCategory,
+          businessName: businessName
+        }),
       });
       
       if (res.ok) {
@@ -139,6 +164,7 @@ export function TasksPage() {
         description: task.description,
         priority: task.priority,
         category: selectedCategory,
+        businessId: aiBusinessId ? parseInt(aiBusinessId) : null,
         status: 'pending',
       }),
     });
@@ -158,6 +184,7 @@ export function TasksPage() {
         status: task.status,
         priority: task.priority,
         category: task.category || 'direct',
+        businessId: task.businessId?.toString() || '',
         dueDate: task.dueDate ? format(new Date(task.dueDate), 'yyyy-MM-dd') : '',
         assignedTo: task.assignedTo?.toString() || '',
       });
@@ -169,6 +196,7 @@ export function TasksPage() {
         status: 'pending',
         priority: 'medium',
         category: selectedCategory,
+        businessId: '',
         dueDate: '',
         assignedTo: '',
       });
@@ -219,6 +247,11 @@ export function TasksPage() {
       low: '低',
     };
     return labels[priority] || priority;
+  };
+
+  const getBusinessName = (businessId?: number) => {
+    if (!businessId) return null;
+    return businesses.find(b => b.id === businessId)?.name;
   };
 
   const currentCategory = categories.find(c => c.id === selectedCategory);
@@ -310,6 +343,12 @@ export function TasksPage() {
                       {task.description && (
                         <p className="text-xs text-slate-500 mb-2 line-clamp-2">{task.description}</p>
                       )}
+                      {getBusinessName(task.businessId) && (
+                        <p className="text-xs text-primary-600 mb-2 flex items-center gap-1">
+                          <Briefcase size={10} />
+                          {getBusinessName(task.businessId)}
+                        </p>
+                      )}
                       {task.dueDate && (
                         <p className="text-xs text-slate-400 mb-2 flex items-center gap-1">
                           <Clock size={10} />
@@ -356,8 +395,8 @@ export function TasksPage() {
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl animate-slide-up">
-            <div className="flex justify-between items-center p-6 border-b border-slate-100">
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl animate-slide-up max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center p-6 border-b border-slate-100 sticky top-0 bg-white">
               <h2 className="text-xl font-bold text-slate-800">
                 {editingTask ? 'タスクを編集' : '新規タスク'}
               </h2>
@@ -384,6 +423,25 @@ export function TasksPage() {
                   rows={2}
                   className="input-field resize-none"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <Briefcase size={14} className="inline mr-1" />
+                  事業
+                </label>
+                <select
+                  value={formData.businessId}
+                  onChange={(e) => setFormData({ ...formData, businessId: e.target.value })}
+                  className="input-field"
+                >
+                  <option value="">事業を選択</option>
+                  {businesses.map(b => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+                {businesses.length === 0 && (
+                  <p className="text-xs text-slate-400 mt-1">事業ページで事業を追加してください</p>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -450,8 +508,8 @@ export function TasksPage() {
 
       {isAIModalOpen && (
         <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl animate-slide-up">
-            <div className="flex justify-between items-center p-6 border-b border-slate-100">
+          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl animate-slide-up max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center p-6 border-b border-slate-100 sticky top-0 bg-white">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl">
                   <Sparkles size={20} className="text-white" />
@@ -459,13 +517,29 @@ export function TasksPage() {
                 <h2 className="text-xl font-bold text-slate-800">AIタスク生成</h2>
               </div>
               <button 
-                onClick={() => { setIsAIModalOpen(false); setGeneratedTasks([]); setAiPrompt(''); }}
+                onClick={() => { setIsAIModalOpen(false); setGeneratedTasks([]); setAiPrompt(''); setAiBusinessId(''); }}
                 className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
               >
                 <X size={20} className="text-slate-500" />
               </button>
             </div>
             <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <Briefcase size={14} className="inline mr-1" />
+                  事業を選択
+                </label>
+                <select
+                  value={aiBusinessId}
+                  onChange={(e) => setAiBusinessId(e.target.value)}
+                  className="input-field"
+                >
+                  <option value="">事業を選択（任意）</option>
+                  {businesses.map(b => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   どのようなタスクを生成しますか？

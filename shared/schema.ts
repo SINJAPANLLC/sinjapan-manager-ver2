@@ -35,6 +35,15 @@ export const customers = pgTable("customers", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const businesses = pgTable("businesses", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  status: text("status").notNull().default("active"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const tasks = pgTable("tasks", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
@@ -42,6 +51,7 @@ export const tasks = pgTable("tasks", {
   status: text("status").notNull().default("pending"),
   priority: text("priority").notNull().default("medium"),
   category: text("category").notNull().default("direct"),
+  businessId: integer("business_id").references(() => businesses.id, { onDelete: "set null" }),
   dueDate: timestamp("due_date"),
   assignedTo: integer("assigned_to").references(() => users.id, { onDelete: "set null" }),
   createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
@@ -138,3 +148,5 @@ export type Employee = typeof employees.$inferSelect;
 export type InsertEmployee = typeof employees.$inferInsert;
 export type AgencySale = typeof agencySales.$inferSelect;
 export type InsertAgencySale = typeof agencySales.$inferInsert;
+export type Business = typeof businesses.$inferSelect;
+export type InsertBusiness = typeof businesses.$inferInsert;

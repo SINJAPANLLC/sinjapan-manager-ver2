@@ -296,9 +296,32 @@ export function registerRoutes(app: Express) {
     res.json(stats);
   });
 
+  app.get('/api/businesses', requireAuth, async (req: Request, res: Response) => {
+    const businesses = await storage.getBusinesses();
+    res.json(businesses);
+  });
+
+  app.post('/api/businesses', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    const business = await storage.createBusiness(req.body);
+    res.json(business);
+  });
+
+  app.patch('/api/businesses/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    const business = await storage.updateBusiness(parseInt(req.params.id), req.body);
+    if (!business) {
+      return res.status(404).json({ message: '事業が見つかりません' });
+    }
+    res.json(business);
+  });
+
+  app.delete('/api/businesses/:id', requireRole('admin', 'ceo'), async (req: Request, res: Response) => {
+    await storage.deleteBusiness(parseInt(req.params.id));
+    res.json({ message: '削除しました' });
+  });
+
   app.post('/api/ai/generate-tasks', requireAuth, async (req: Request, res: Response) => {
     try {
-      const { prompt, category } = req.body;
+      const { prompt, category, businessName } = req.body;
       
       const categoryLabels: Record<string, string> = {
         direct: '直結（直接成果に繋がるタスク）',
@@ -307,6 +330,8 @@ export function registerRoutes(app: Express) {
         risk: 'リスク（リスク管理・問題対応）',
         workflow: 'ワークフロー（業務プロセス改善）',
       };
+
+      const businessContext = businessName ? `\n事業: ${businessName}` : '';
 
       const openai = new OpenAI({
         apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
@@ -319,7 +344,7 @@ export function registerRoutes(app: Express) {
           {
             role: 'system',
             content: `あなたはビジネスタスク生成アシスタントです。ユーザーの要望に基づいて、実行可能なタスクを3〜5個生成してください。
-カテゴリ: ${categoryLabels[category] || category}
+カテゴリ: ${categoryLabels[category] || category}${businessContext}
 
 JSON形式で出力してください:
 {

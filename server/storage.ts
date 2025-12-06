@@ -1,8 +1,8 @@
 import { db } from './db';
-import { users, customers, tasks, notifications, chatMessages, employees, agencySales } from '../shared/schema';
+import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses } from '../shared/schema';
 import { eq, and, or, desc, sql, isNull } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale } from '../shared/schema';
+import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness } from '../shared/schema';
 
 export const storage = {
   async getUser(id: number): Promise<User | undefined> {
@@ -242,5 +242,30 @@ export const storage = {
       pendingTasks: Number(pendingTasks[0]?.count || 0),
       unreadNotifications: Number(unreadNotifications[0]?.count || 0),
     };
+  },
+
+  async getBusinesses(): Promise<Business[]> {
+    return db.select().from(businesses).orderBy(desc(businesses.createdAt));
+  },
+
+  async getBusiness(id: number): Promise<Business | undefined> {
+    const [business] = await db.select().from(businesses).where(eq(businesses.id, id));
+    return business;
+  },
+
+  async createBusiness(data: InsertBusiness): Promise<Business> {
+    const [business] = await db.insert(businesses).values(data).returning();
+    return business;
+  },
+
+  async updateBusiness(id: number, data: Partial<InsertBusiness>): Promise<Business | undefined> {
+    const [business] = await db.update(businesses).set({ ...data, updatedAt: new Date() }).where(eq(businesses.id, id)).returning();
+    return business;
+  },
+
+  async deleteBusiness(id: number): Promise<boolean> {
+    await db.update(tasks).set({ businessId: null }).where(eq(tasks.businessId, id));
+    await db.delete(businesses).where(eq(businesses.id, id));
+    return true;
   },
 };
