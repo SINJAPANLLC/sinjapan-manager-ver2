@@ -594,6 +594,63 @@ JSON形式で出力してください:
         } else {
           throw new Error('No image generated');
         }
+      } else if (provider === 'modelslab') {
+        // MODELSLAB (NSFW対応)
+        const modelslabKey = process.env.MODELSLAB_API_KEY;
+        
+        if (!modelslabKey) {
+          return res.status(400).json({ error: 'MODELSLAB APIキーが設定されていません。' });
+        }
+
+        const sizeMap: Record<string, { width: string; height: string }> = {
+          '1:1': { width: '512', height: '512' },
+          '16:9': { width: '768', height: '432' },
+          '9:16': { width: '432', height: '768' },
+          '4:3': { width: '640', height: '480' },
+          '3:4': { width: '480', height: '640' },
+        };
+        const size = sizeMap[aspectRatio] || { width: '512', height: '512' };
+
+        const response = await fetch('https://modelslab.com/api/v6/realtime/text2img', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            key: modelslabKey,
+            prompt: translatedPrompt,
+            negative_prompt: 'bad quality, blurry, distorted',
+            width: size.width,
+            height: size.height,
+            safety_checker: false,
+            samples: 1,
+            base64: false,
+          }),
+        });
+
+        const data = await response.json();
+        console.log('MODELSLAB Image response:', JSON.stringify(data, null, 2));
+
+        if (data.status === 'success' && data.output && data.output.length > 0) {
+          await storage.createAiLog({
+            type: 'image',
+            prompt: prompt,
+            result: data.output[0],
+            status: 'success',
+            userId: req.session.userId,
+          });
+          res.json({ imageUrl: data.output[0], translatedPrompt: translatedPrompt !== prompt ? translatedPrompt : undefined });
+        } else if (data.status === 'processing' && data.fetch_result) {
+          res.json({ processing: true, fetchUrl: data.fetch_result, translatedPrompt: translatedPrompt !== prompt ? translatedPrompt : undefined });
+        } else {
+          await storage.createAiLog({
+            type: 'image',
+            prompt: prompt,
+            status: 'error',
+            userId: req.session.userId,
+          });
+          res.status(400).json({ error: data.message || '画像生成に失敗しました。', translatedPrompt: translatedPrompt !== prompt ? translatedPrompt : undefined });
+        }
       } else {
         // Hailuo AI (MiniMax Image-01)
         const minimaxKey = process.env.MINIMAX_API_KEY;
@@ -716,6 +773,71 @@ JSON形式で出力してください:
         } else {
           throw new Error('No video generated');
         }
+      } else if (provider === 'modelslab') {
+        // MODELSLAB (NSFW対応)
+        const modelslabKey = process.env.MODELSLAB_API_KEY;
+        
+        if (!modelslabKey) {
+          return res.status(400).json({ error: 'MODELSLAB APIキーが設定されていません。' });
+        }
+
+        const sizeMap: Record<string, { width: number; height: number }> = {
+          '16:9': { width: 768, height: 432 },
+          '9:16': { width: 432, height: 768 },
+          '1:1': { width: 512, height: 512 },
+        };
+        const size = sizeMap[aspectRatio] || { width: 512, height: 512 };
+
+        const response = await fetch('https://modelslab.com/api/v6/video/text2video', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            key: modelslabKey,
+            model_id: 'cogvideox',
+            prompt: translatedPrompt,
+            negative_prompt: 'low quality, blurry',
+            height: size.height,
+            width: size.width,
+            num_frames: 25,
+            num_inference_steps: 20,
+            guidance_scale: 7,
+            output_type: 'mp4',
+          }),
+        });
+
+        const data = await response.json();
+        console.log('MODELSLAB Video response:', JSON.stringify(data, null, 2));
+
+        if (data.status === 'success' && data.output && data.output.length > 0) {
+          await storage.createAiLog({
+            type: 'video',
+            prompt: prompt,
+            result: data.output[0],
+            status: 'success',
+            userId: req.session.userId,
+          });
+          res.json({ videoUrl: data.output[0], translatedPrompt: translatedPrompt !== prompt ? translatedPrompt : undefined });
+        } else if (data.status === 'processing') {
+          // MODELSLAB returns id for polling
+          const taskId = data.id?.toString() || '';
+          res.json({ 
+            processing: true, 
+            taskId: taskId, 
+            provider: 'modelslab',
+            prompt: prompt,
+            translatedPrompt: translatedPrompt !== prompt ? translatedPrompt : undefined 
+          });
+        } else {
+          await storage.createAiLog({
+            type: 'video',
+            prompt: prompt,
+            status: 'error',
+            userId: req.session.userId,
+          });
+          res.status(400).json({ error: data.message || '動画生成に失敗しました。', translatedPrompt: translatedPrompt !== prompt ? translatedPrompt : undefined });
+        }
       } else {
         // Hailuo AI (MiniMax Hailuo-02)
         const minimaxKey = process.env.MINIMAX_API_KEY;
@@ -827,6 +949,43 @@ JSON形式で出力してください:
           res.json({ processing: true });
         } else if (data.status === 'Fail') {
           res.json({ error: data.base_resp?.status_msg || '動画生成に失敗しました', completed: true });
+        } else {
+          res.json({ processing: true });
+        }
+      } else if (provider === 'modelslab') {
+        // MODELSLAB polling
+        const modelslabKey = process.env.MODELSLAB_API_KEY;
+        
+        if (!modelslabKey) {
+          return res.status(400).json({ error: 'MODELSLAB APIキーが設定されていません。' });
+        }
+
+        const response = await fetch(`https://modelslab.com/api/v6/video/fetch/${taskId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            key: modelslabKey,
+          }),
+        });
+        
+        const data = await response.json();
+        console.log('MODELSLAB Poll response:', JSON.stringify(data, null, 2));
+        
+        if (data.status === 'success' && data.output && data.output.length > 0) {
+          await storage.createAiLog({
+            type: 'video',
+            prompt: prompt,
+            result: data.output[0],
+            status: 'success',
+            userId: req.session.userId,
+          });
+          res.json({ videoUrl: data.output[0], completed: true });
+        } else if (data.status === 'processing') {
+          res.json({ processing: true });
+        } else if (data.status === 'error' || data.status === 'failed') {
+          res.json({ error: data.message || '動画生成に失敗しました', completed: true });
         } else {
           res.json({ processing: true });
         }

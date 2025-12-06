@@ -54,14 +54,14 @@ export function AiPage() {
 
   const [imagePrompt, setImagePrompt] = useState('');
   const [generatedImage, setGeneratedImage] = useState('');
-  const [imageProvider, setImageProvider] = useState<'hailuo' | 'openai'>('openai');
+  const [imageProvider, setImageProvider] = useState<'hailuo' | 'openai' | 'modelslab'>('openai');
   const [imageAspectRatio, setImageAspectRatio] = useState('1:1');
   const [imageQuality, setImageQuality] = useState('standard');
   const [imageTranslatedPrompt, setImageTranslatedPrompt] = useState('');
 
   const [videoPrompt, setVideoPrompt] = useState('');
   const [generatedVideo, setGeneratedVideo] = useState('');
-  const [videoProvider, setVideoProvider] = useState<'hailuo' | 'openai'>('openai');
+  const [videoProvider, setVideoProvider] = useState<'hailuo' | 'openai' | 'modelslab'>('openai');
   const [videoAspectRatio, setVideoAspectRatio] = useState('16:9');
   const [videoDuration, setVideoDuration] = useState('8');
   const [videoTranslatedPrompt, setVideoTranslatedPrompt] = useState('');
@@ -228,7 +228,8 @@ export function AiPage() {
         if (data.translatedPrompt) {
           setVideoTranslatedPrompt(data.translatedPrompt);
         }
-        pollVideoResult(data.taskId, data.prompt, videoProvider);
+        // Use provider from response if available, otherwise use selected provider
+        pollVideoResult(data.taskId, data.prompt || videoPrompt, data.provider || videoProvider);
       } else if (data.error) {
         setVideoStatus('');
         setIsLoading(false);
@@ -578,11 +579,12 @@ export function AiPage() {
                 <label className="block text-sm font-medium text-slate-700 mb-1">プロバイダー</label>
                 <select
                   value={imageProvider}
-                  onChange={(e) => setImageProvider(e.target.value as 'hailuo' | 'openai')}
+                  onChange={(e) => setImageProvider(e.target.value as 'hailuo' | 'openai' | 'modelslab')}
                   className="input-field"
                 >
                   <option value="openai">OpenAI (DALL-E)</option>
                   <option value="hailuo">Hailuo AI (MiniMax)</option>
+                  <option value="modelslab">MODELSLAB (NSFW対応)</option>
                 </select>
               </div>
               <div>
@@ -595,10 +597,14 @@ export function AiPage() {
                   <option value="1:1">1:1 (正方形)</option>
                   <option value="16:9">16:9 (横長)</option>
                   <option value="9:16">9:16 (縦長)</option>
-                  {imageProvider === 'hailuo' && (
+                  {(imageProvider === 'hailuo' || imageProvider === 'modelslab') && (
                     <>
                       <option value="4:3">4:3</option>
                       <option value="3:4">3:4</option>
+                    </>
+                  )}
+                  {imageProvider === 'hailuo' && (
+                    <>
                       <option value="3:2">3:2</option>
                       <option value="2:3">2:3</option>
                     </>
@@ -666,11 +672,12 @@ export function AiPage() {
                 <label className="block text-sm font-medium text-slate-700 mb-1">プロバイダー</label>
                 <select
                   value={videoProvider}
-                  onChange={(e) => setVideoProvider(e.target.value as 'hailuo' | 'openai')}
+                  onChange={(e) => setVideoProvider(e.target.value as 'hailuo' | 'openai' | 'modelslab')}
                   className="input-field"
                 >
                   <option value="openai">OpenAI (Sora 2)</option>
                   <option value="hailuo">Hailuo AI (MiniMax)</option>
+                  <option value="modelslab">MODELSLAB (NSFW対応)</option>
                 </select>
               </div>
               <div>
@@ -698,6 +705,11 @@ export function AiPage() {
                       <option value="8">8秒</option>
                       <option value="15">15秒</option>
                       <option value="20">20秒</option>
+                    </>
+                  ) : videoProvider === 'modelslab' ? (
+                    <>
+                      <option value="2">約2秒 (16フレーム)</option>
+                      <option value="3">約3秒 (25フレーム)</option>
                     </>
                   ) : (
                     <>
