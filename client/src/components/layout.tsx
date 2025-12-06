@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useAuth } from '../hooks/use-auth';
 import {
@@ -8,8 +8,6 @@ import {
   Bell,
   Settings,
   LogOut,
-  Menu,
-  X,
   Building2,
   ClipboardList,
   UserCog,
@@ -26,7 +24,6 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuth();
   const [location] = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const getMenuItems = () => {
     const baseItems = [
@@ -91,26 +88,10 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-primary-50/30">
-      <button
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="fixed top-4 left-4 z-50 p-2.5 bg-white rounded-xl shadow-soft border border-slate-100 lg:hidden hover:shadow-card transition-all"
-      >
-        {sidebarOpen ? <X size={22} className="text-slate-600" /> : <Menu size={22} className="text-slate-600" />}
-      </button>
-
-      <aside
-        className={cn(
-          "fixed inset-y-0 left-0 z-40 w-72 transform transition-all duration-300 ease-out lg:translate-x-0",
-          "glass-sidebar shadow-soft",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        )}
-      >
+      <aside className="fixed inset-y-0 left-0 z-40 w-72 glass-sidebar shadow-soft">
         <div className="flex flex-col h-full">
           <div className="p-6 border-b border-slate-100">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-button">
-                <span className="text-white font-bold text-lg">S</span>
-              </div>
               <div>
                 <h1 className="text-xl font-bold gradient-text">SIN JAPAN</h1>
                 <p className="text-slate-400 text-xs font-medium tracking-wide">MANAGER SYSTEM</p>
@@ -141,7 +122,6 @@ export function Layout({ children }: LayoutProps) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  onClick={() => setSidebarOpen(false)}
                   className={cn(
                     "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
                     isActive
@@ -171,18 +151,11 @@ export function Layout({ children }: LayoutProps) {
         </div>
       </aside>
 
-      <main className="lg:ml-72 min-h-screen">
+      <main className="ml-72 min-h-screen">
         <div className="p-6 lg:p-8 animate-fade-in">
           {children}
         </div>
       </main>
-
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-30 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
     </div>
   );
 }
