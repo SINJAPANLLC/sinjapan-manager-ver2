@@ -5,6 +5,7 @@ import { LoginPage } from './pages/login';
 import { DashboardPage } from './pages/dashboard';
 import { CustomersPage } from './pages/customers';
 import { TasksPage } from './pages/tasks';
+import { CalendarPage } from './pages/calendar';
 import { ChatPage } from './pages/chat';
 import { NotificationsPage } from './pages/notifications';
 import { UsersPage } from './pages/users';
@@ -37,6 +38,7 @@ function AppRoutes() {
         <Route path="/" component={DashboardPage} />
         <Route path="/customers" component={CustomersPage} />
         <Route path="/tasks" component={TasksPage} />
+        <Route path="/calendar" component={CalendarPage} />
         <Route path="/chat" component={ChatPage} />
         <Route path="/notifications" component={NotificationsPage} />
         <Route path="/users" component={UsersPage} />

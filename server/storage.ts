@@ -1,8 +1,8 @@
 import { db } from './db';
-import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses } from '../shared/schema';
-import { eq, and, or, desc, sql, isNull } from 'drizzle-orm';
+import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, memos } from '../shared/schema';
+import { eq, and, or, desc, sql, isNull, gte, lte } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness } from '../shared/schema';
+import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, Memo, InsertMemo } from '../shared/schema';
 
 export const storage = {
   async getUser(id: number): Promise<User | undefined> {
@@ -266,6 +266,30 @@ export const storage = {
   async deleteBusiness(id: number): Promise<boolean> {
     await db.update(tasks).set({ businessId: null }).where(eq(tasks.businessId, id));
     await db.delete(businesses).where(eq(businesses.id, id));
+    return true;
+  },
+
+  async getMemos(userId: number, startDate?: Date, endDate?: Date): Promise<Memo[]> {
+    if (startDate && endDate) {
+      return db.select().from(memos)
+        .where(and(eq(memos.userId, userId), gte(memos.date, startDate), lte(memos.date, endDate)))
+        .orderBy(desc(memos.date));
+    }
+    return db.select().from(memos).where(eq(memos.userId, userId)).orderBy(desc(memos.date));
+  },
+
+  async createMemo(data: InsertMemo): Promise<Memo> {
+    const [memo] = await db.insert(memos).values(data).returning();
+    return memo;
+  },
+
+  async updateMemo(id: number, data: Partial<InsertMemo>): Promise<Memo | undefined> {
+    const [memo] = await db.update(memos).set({ ...data, updatedAt: new Date() }).where(eq(memos.id, id)).returning();
+    return memo;
+  },
+
+  async deleteMemo(id: number): Promise<boolean> {
+    await db.delete(memos).where(eq(memos.id, id));
     return true;
   },
 };

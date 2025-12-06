@@ -44,6 +44,16 @@ export const businesses = pgTable("businesses", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const memos = pgTable("memos", {
+  id: serial("id").primaryKey(),
+  date: timestamp("date").notNull(),
+  content: text("content").notNull(),
+  color: text("color").default("blue"),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const tasks = pgTable("tasks", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
@@ -150,3 +160,5 @@ export type AgencySale = typeof agencySales.$inferSelect;
 export type InsertAgencySale = typeof agencySales.$inferInsert;
 export type Business = typeof businesses.$inferSelect;
 export type InsertBusiness = typeof businesses.$inferInsert;
+export type Memo = typeof memos.$inferSelect;
+export type InsertMemo = typeof memos.$inferInsert;

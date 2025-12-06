@@ -319,6 +319,32 @@ export function registerRoutes(app: Express) {
     res.json({ message: '削除しました' });
   });
 
+  app.get('/api/memos', requireAuth, async (req: Request, res: Response) => {
+    const { start, end } = req.query;
+    const startDate = start ? new Date(start as string) : undefined;
+    const endDate = end ? new Date(end as string) : undefined;
+    const memos = await storage.getMemos(req.session.userId!, startDate, endDate);
+    res.json(memos);
+  });
+
+  app.post('/api/memos', requireAuth, async (req: Request, res: Response) => {
+    const memo = await storage.createMemo({ ...req.body, userId: req.session.userId });
+    res.json(memo);
+  });
+
+  app.patch('/api/memos/:id', requireAuth, async (req: Request, res: Response) => {
+    const memo = await storage.updateMemo(parseInt(req.params.id), req.body);
+    if (!memo) {
+      return res.status(404).json({ message: 'メモが見つかりません' });
+    }
+    res.json(memo);
+  });
+
+  app.delete('/api/memos/:id', requireAuth, async (req: Request, res: Response) => {
+    await storage.deleteMemo(parseInt(req.params.id));
+    res.json({ message: '削除しました' });
+  });
+
   app.post('/api/ai/generate-tasks', requireAuth, async (req: Request, res: Response) => {
     try {
       const { prompt, category, businessName } = req.body;
