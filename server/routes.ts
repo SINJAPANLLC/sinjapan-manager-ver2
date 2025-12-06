@@ -531,6 +531,8 @@ JSON形式で出力してください:
       const modelId = nsfw ? 'realistic-vision-51' : 'realistic-vision-51';
       const inferenceSteps = quality === 'high' ? 40 : quality === 'medium' ? 30 : 20;
       
+      console.log('Image generation request:', { prompt, nsfw, width, height, quality, modelId });
+      
       const response = await fetch('https://modelslab.com/api/v6/images/text2img', {
         method: 'POST',
         headers: {
@@ -553,6 +555,7 @@ JSON形式で出力してください:
       });
 
       const data = await response.json();
+      console.log('Image generation response:', JSON.stringify(data, null, 2));
       
       if (data.status === 'success' && data.output && data.output.length > 0) {
         await storage.createAiLog({
