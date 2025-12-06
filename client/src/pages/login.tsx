@@ -1,11 +1,20 @@
 import { useState } from 'react';
 import { useAuth } from '../hooks/use-auth';
-import { Loader2, ArrowRight } from 'lucide-react';
+import { Loader2, ArrowRight, Shield, User, Building2, Users } from 'lucide-react';
+import { cn } from '../lib/utils';
+
+const roleOptions = [
+  { id: 'admin', label: '管理者', icon: Shield, color: 'from-violet-500 to-violet-600' },
+  { id: 'staff', label: 'スタッフ', icon: User, color: 'from-emerald-500 to-emerald-600' },
+  { id: 'agency', label: '代理店', icon: Building2, color: 'from-amber-500 to-amber-600' },
+  { id: 'client', label: 'クライアント', icon: Users, color: 'from-sky-500 to-sky-600' },
+];
 
 export function LoginPage() {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -37,6 +46,44 @@ export function LoginPage() {
           <h2 className="text-xl font-semibold text-slate-800 text-center mb-6">
             アカウントにログイン
           </h2>
+
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-slate-700 mb-3">
+              ログインタイプを選択
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {roleOptions.map((role) => {
+                const Icon = role.icon;
+                const isSelected = selectedRole === role.id;
+                return (
+                  <button
+                    key={role.id}
+                    type="button"
+                    onClick={() => setSelectedRole(role.id)}
+                    className={cn(
+                      'p-3 rounded-xl border-2 transition-all duration-200 flex items-center gap-2',
+                      isSelected
+                        ? 'border-primary-500 bg-primary-50 shadow-soft'
+                        : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+                    )}
+                  >
+                    <div className={cn(
+                      'w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-br',
+                      isSelected ? role.color : 'from-slate-200 to-slate-300'
+                    )}>
+                      <Icon size={16} className="text-white" />
+                    </div>
+                    <span className={cn(
+                      'text-sm font-medium',
+                      isSelected ? 'text-primary-700' : 'text-slate-600'
+                    )}>
+                      {role.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
