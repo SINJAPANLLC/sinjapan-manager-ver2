@@ -95,32 +95,6 @@ export function LoginPage() {
             </button>
           </form>
         </div>
-
-        <div className="mt-8 glass-card rounded-2xl p-6">
-          <p className="text-center text-sm font-medium text-slate-500 mb-4">テストアカウント</p>
-          <div className="grid grid-cols-2 gap-3 text-xs">
-            <div className="bg-white rounded-lg p-3 border border-slate-100">
-              <p className="font-semibold text-primary-600 mb-1">Admin</p>
-              <p className="text-slate-500">admin@test.com</p>
-              <p className="text-slate-400">test123</p>
-            </div>
-            <div className="bg-white rounded-lg p-3 border border-slate-100">
-              <p className="font-semibold text-primary-600 mb-1">Staff</p>
-              <p className="text-slate-500">staff@test.com</p>
-              <p className="text-slate-400">test123</p>
-            </div>
-            <div className="bg-white rounded-lg p-3 border border-slate-100">
-              <p className="font-semibold text-primary-600 mb-1">Agency</p>
-              <p className="text-slate-500">agency@test.com</p>
-              <p className="text-slate-400">test123</p>
-            </div>
-            <div className="bg-white rounded-lg p-3 border border-slate-100">
-              <p className="font-semibold text-primary-600 mb-1">Client</p>
-              <p className="text-slate-500">client@test.com</p>
-              <p className="text-slate-400">test123</p>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
