@@ -191,3 +191,23 @@ export const aiLogs = pgTable("ai_logs", {
 
 export type AiLog = typeof aiLogs.$inferSelect;
 export type InsertAiLog = typeof aiLogs.$inferInsert;
+
+export const seoArticles = pgTable("seo_articles", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  slug: text("slug").notNull().unique(),
+  content: text("content").notNull(),
+  metaTitle: text("meta_title"),
+  metaDescription: text("meta_description"),
+  keywords: text("keywords"),
+  isPublished: boolean("is_published").notNull().default(false),
+  publishedAt: timestamp("published_at"),
+  indexingStatus: text("indexing_status").default("not_sent"),
+  indexedAt: timestamp("indexed_at"),
+  userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type SeoArticle = typeof seoArticles.$inferSelect;
+export type InsertSeoArticle = typeof seoArticles.$inferInsert;

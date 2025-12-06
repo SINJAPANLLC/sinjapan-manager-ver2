@@ -1192,4 +1192,243 @@ SEO最適化のポイント：
       res.status(500).json([]);
     }
   });
+
+  // SEO Articles API
+  app.get('/api/seo-articles', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const articles = await storage.getSeoArticles();
+      res.json(articles);
+    } catch (error) {
+      console.error('Get SEO articles error:', error);
+      res.status(500).json([]);
+    }
+  });
+
+  app.get('/api/seo-articles/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const article = await storage.getSeoArticle(parseInt(req.params.id));
+      if (!article) {
+        return res.status(404).json({ error: '記事が見つかりません' });
+      }
+      res.json(article);
+    } catch (error) {
+      console.error('Get SEO article error:', error);
+      res.status(500).json({ error: '記事の取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/seo-articles', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { title, slug, content, metaTitle, metaDescription, keywords } = req.body;
+      const article = await storage.createSeoArticle({
+        title,
+        slug,
+        content,
+        metaTitle,
+        metaDescription,
+        keywords,
+        userId: req.session.userId,
+      });
+      res.json(article);
+    } catch (error: any) {
+      console.error('Create SEO article error:', error);
+      if (error.code === '23505') {
+        return res.status(400).json({ error: 'このスラッグは既に使用されています' });
+      }
+      res.status(500).json({ error: '記事の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/seo-articles/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { title, slug, content, metaTitle, metaDescription, keywords } = req.body;
+      const article = await storage.updateSeoArticle(parseInt(req.params.id), {
+        title,
+        slug,
+        content,
+        metaTitle,
+        metaDescription,
+        keywords,
+      });
+      res.json(article);
+    } catch (error: any) {
+      console.error('Update SEO article error:', error);
+      if (error.code === '23505') {
+        return res.status(400).json({ error: 'このスラッグは既に使用されています' });
+      }
+      res.status(500).json({ error: '記事の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/seo-articles/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteSeoArticle(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete SEO article error:', error);
+      res.status(500).json({ error: '記事の削除に失敗しました' });
+    }
+  });
+
+  app.post('/api/seo-articles/:id/publish', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const article = await storage.publishSeoArticle(parseInt(req.params.id));
+      res.json(article);
+    } catch (error) {
+      console.error('Publish SEO article error:', error);
+      res.status(500).json({ error: '記事の公開に失敗しました' });
+    }
+  });
+
+  app.post('/api/seo-articles/:id/unpublish', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const article = await storage.unpublishSeoArticle(parseInt(req.params.id));
+      res.json(article);
+    } catch (error) {
+      console.error('Unpublish SEO article error:', error);
+      res.status(500).json({ error: '記事の非公開に失敗しました' });
+    }
+  });
+
+  // Generate SEO article with AI
+  app.post('/api/seo-articles/generate', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { topic, keywords } = req.body;
+      const openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+
+      // Get existing articles for internal linking
+      const existingArticles = await storage.getPublishedSeoArticles();
+      const articlesContext = existingArticles.slice(0, 10).map(a => 
+        `- 「${a.title}」(URL: /articles/${a.slug})`
+      ).join('\n');
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `あなたはSEOの専門家です。与えられたトピックについて、SEOに最適化された記事を作成してください。
+
+以下の構成で記事を作成してください：
+1. キャッチーなタイトル（H1）
+2. 導入文（読者の興味を引く）
+3. 主要なポイント（H2見出しで3〜5セクション）
+4. 各セクションに詳細な説明
+5. まとめ
+6. CTA（行動喚起）
+
+SEO最適化のポイント：
+- キーワードを自然に含める
+- 読みやすい文章構成
+- 適切な見出し構造
+- 内部リンクを適切に挿入
+
+${existingArticles.length > 0 ? `
+## 内部リンク用の既存記事
+以下の記事へのリンクを記事内に自然に挿入してください（関連性がある場合のみ）：
+${articlesContext}
+
+リンクは [リンクテキスト](/articles/スラッグ) の形式で挿入してください。
+` : ''}
+
+出力はMarkdown形式で、以下のJSON構造で返してください：
+{
+  "title": "記事タイトル",
+  "metaTitle": "SEO用タイトル（60文字以内）",
+  "metaDescription": "SEO用説明文（160文字以内）",
+  "content": "Markdown形式の記事本文",
+  "suggestedSlug": "url-slug-in-english"
+}`
+          },
+          {
+            role: 'user',
+            content: `トピック: ${topic}\nキーワード: ${keywords || 'なし'}`
+          }
+        ],
+      });
+
+      const response = completion.choices[0]?.message?.content || '';
+      
+      try {
+        const jsonMatch = response.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          res.json(parsed);
+        } else {
+          res.json({ content: response, title: topic, metaTitle: topic, metaDescription: '', suggestedSlug: '' });
+        }
+      } catch {
+        res.json({ content: response, title: topic, metaTitle: topic, metaDescription: '', suggestedSlug: '' });
+      }
+    } catch (error) {
+      console.error('Generate SEO article error:', error);
+      res.status(500).json({ error: 'SEO記事生成エラーが発生しました' });
+    }
+  });
+
+  // Public article page (no auth required)
+  app.get('/articles/:slug', async (req: Request, res: Response) => {
+    try {
+      const article = await storage.getSeoArticleBySlug(req.params.slug);
+      if (!article || !article.isPublished) {
+        return res.status(404).send('記事が見つかりません');
+      }
+      res.json(article);
+    } catch (error) {
+      console.error('Get public article error:', error);
+      res.status(500).send('エラーが発生しました');
+    }
+  });
+
+  // Sitemap generation
+  app.get('/sitemap.xml', async (req: Request, res: Response) => {
+    try {
+      const articles = await storage.getPublishedSeoArticles();
+      const baseUrl = `https://${req.get('host')}`;
+      
+      let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+      xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+      
+      // Home page
+      xml += `  <url>\n    <loc>${baseUrl}/</loc>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>\n`;
+      
+      // Articles
+      for (const article of articles) {
+        xml += `  <url>\n`;
+        xml += `    <loc>${baseUrl}/articles/${article.slug}</loc>\n`;
+        xml += `    <lastmod>${article.updatedAt.toISOString().split('T')[0]}</lastmod>\n`;
+        xml += `    <changefreq>weekly</changefreq>\n`;
+        xml += `    <priority>0.8</priority>\n`;
+        xml += `  </url>\n`;
+      }
+      
+      xml += '</urlset>';
+      
+      res.set('Content-Type', 'application/xml');
+      res.send(xml);
+    } catch (error) {
+      console.error('Sitemap generation error:', error);
+      res.status(500).send('エラーが発生しました');
+    }
+  });
+
+  // Google Indexing API (placeholder - requires service account setup)
+  app.post('/api/seo-articles/:id/index', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const article = await storage.getSeoArticle(parseInt(req.params.id));
+      if (!article || !article.isPublished) {
+        return res.status(400).json({ error: '公開されている記事のみインデックス送信できます' });
+      }
+
+      // Update status to sent (actual API integration would go here)
+      await storage.updateIndexingStatus(parseInt(req.params.id), 'sent');
+      
+      res.json({ success: true, message: 'インデックス送信をリクエストしました' });
+    } catch (error) {
+      console.error('Index article error:', error);
+      res.status(500).json({ error: 'インデックス送信に失敗しました' });
+    }
+  });
 }

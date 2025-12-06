@@ -13,7 +13,8 @@ import {
   Calendar,
   Briefcase,
   Bot,
-  UserCheck
+  UserCheck,
+  FileText
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -32,6 +33,7 @@ export function Layout({ children }: LayoutProps) {
     { href: '/communication', label: 'コミュニケーション', icon: MessageSquare },
     { href: '/business', label: '事業', icon: Briefcase },
     { href: '/ai', label: 'AI', icon: Bot },
+    { href: '/seo-articles', label: 'SEO記事', icon: FileText },
     { href: '/staff', label: 'スタッフ', icon: UserCheck },
     { href: '/agency', label: '代理店', icon: Building2 },
     { href: '/clients', label: 'クライアント', icon: Users },

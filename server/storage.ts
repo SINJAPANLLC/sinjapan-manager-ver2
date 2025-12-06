@@ -1,8 +1,8 @@
 import { db } from './db';
-import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs } from '../shared/schema';
+import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, seoArticles } from '../shared/schema';
 import { eq, and, or, desc, sql, isNull, gte, lte } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog } from '../shared/schema';
+import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, SeoArticle, InsertSeoArticle } from '../shared/schema';
 
 export const storage = {
   async getUser(id: number): Promise<User | undefined> {
@@ -334,5 +334,67 @@ export const storage = {
       .where(eq(aiLogs.userId, userId))
       .orderBy(desc(aiLogs.createdAt))
       .limit(100);
+  },
+
+  async getSeoArticles(): Promise<SeoArticle[]> {
+    return db.select().from(seoArticles).orderBy(desc(seoArticles.createdAt));
+  },
+
+  async getPublishedSeoArticles(): Promise<SeoArticle[]> {
+    return db.select().from(seoArticles)
+      .where(eq(seoArticles.isPublished, true))
+      .orderBy(desc(seoArticles.publishedAt));
+  },
+
+  async getSeoArticle(id: number): Promise<SeoArticle | undefined> {
+    const [article] = await db.select().from(seoArticles).where(eq(seoArticles.id, id));
+    return article;
+  },
+
+  async getSeoArticleBySlug(slug: string): Promise<SeoArticle | undefined> {
+    const [article] = await db.select().from(seoArticles).where(eq(seoArticles.slug, slug));
+    return article;
+  },
+
+  async createSeoArticle(data: InsertSeoArticle): Promise<SeoArticle> {
+    const [article] = await db.insert(seoArticles).values(data).returning();
+    return article;
+  },
+
+  async updateSeoArticle(id: number, data: Partial<InsertSeoArticle>): Promise<SeoArticle | undefined> {
+    const [article] = await db.update(seoArticles)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(seoArticles.id, id))
+      .returning();
+    return article;
+  },
+
+  async deleteSeoArticle(id: number): Promise<boolean> {
+    await db.delete(seoArticles).where(eq(seoArticles.id, id));
+    return true;
+  },
+
+  async publishSeoArticle(id: number): Promise<SeoArticle | undefined> {
+    const [article] = await db.update(seoArticles)
+      .set({ isPublished: true, publishedAt: new Date(), updatedAt: new Date() })
+      .where(eq(seoArticles.id, id))
+      .returning();
+    return article;
+  },
+
+  async unpublishSeoArticle(id: number): Promise<SeoArticle | undefined> {
+    const [article] = await db.update(seoArticles)
+      .set({ isPublished: false, publishedAt: null, updatedAt: new Date() })
+      .where(eq(seoArticles.id, id))
+      .returning();
+    return article;
+  },
+
+  async updateIndexingStatus(id: number, status: string): Promise<SeoArticle | undefined> {
+    const [article] = await db.update(seoArticles)
+      .set({ indexingStatus: status, indexedAt: status === 'sent' ? new Date() : null, updatedAt: new Date() })
+      .where(eq(seoArticles.id, id))
+      .returning();
+    return article;
   },
 };
