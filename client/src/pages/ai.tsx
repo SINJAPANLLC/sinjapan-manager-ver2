@@ -55,10 +55,14 @@ export function AiPage() {
   const [imagePrompt, setImagePrompt] = useState('');
   const [generatedImage, setGeneratedImage] = useState('');
   const [imageNsfw, setImageNsfw] = useState(false);
+  const [imageSize, setImageSize] = useState('512x512');
+  const [imageQuality, setImageQuality] = useState('medium');
 
   const [videoPrompt, setVideoPrompt] = useState('');
   const [generatedVideo, setGeneratedVideo] = useState('');
   const [videoNsfw, setVideoNsfw] = useState(false);
+  const [videoSize, setVideoSize] = useState('512x512');
+  const [videoDuration, setVideoDuration] = useState('3');
 
   const [seoTopic, setSeoTopic] = useState('');
   const [seoKeywords, setSeoKeywords] = useState('');
@@ -126,11 +130,19 @@ export function AiPage() {
     setIsLoading(true);
     setGeneratedImage('');
 
+    const [width, height] = imageSize.split('x');
+    
     try {
       const res = await fetch('/api/ai/image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: imagePrompt, nsfw: imageNsfw }),
+        body: JSON.stringify({ 
+          prompt: imagePrompt, 
+          nsfw: imageNsfw,
+          width,
+          height,
+          quality: imageQuality
+        }),
       });
       const data = await res.json();
       if (data.imageUrl) {
@@ -188,11 +200,19 @@ export function AiPage() {
     setGeneratedVideo('');
     setVideoStatus('リクエスト送信中...');
 
+    const [width, height] = videoSize.split('x');
+
     try {
       const res = await fetch('/api/ai/video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: videoPrompt, nsfw: videoNsfw }),
+        body: JSON.stringify({ 
+          prompt: videoPrompt, 
+          nsfw: videoNsfw,
+          width: parseInt(width),
+          height: parseInt(height),
+          seconds: parseInt(videoDuration)
+        }),
       });
       const data = await res.json();
       if (data.videoUrl) {
@@ -538,23 +558,55 @@ export function AiPage() {
               <Image className="text-primary-500" size={20} />
               画像生成 (MODELSLAB)
             </h2>
-            <p className="text-sm text-slate-500">テキストから高品質な画像を生成します</p>
+            <p className="text-sm text-slate-500">テキストから高品質な画像を生成します（Realistic Vision 5.1モデル使用）</p>
             <textarea
               value={imagePrompt}
               onChange={(e) => setImagePrompt(e.target.value)}
-              placeholder="生成したい画像の説明を入力... (例: 夕日に照らされた富士山、写実的なスタイル)"
+              placeholder="生成したい画像の説明を入力... (例: beautiful woman, cinematic lighting, 8K, sharp focus)"
               rows={3}
               className="input-field resize-none"
             />
-            <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={imageNsfw}
-                onChange={(e) => setImageNsfw(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
-              />
-              <span>NSFW対応（セーフティチェック無効）</span>
-            </label>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">サイズ</label>
+                <select
+                  value={imageSize}
+                  onChange={(e) => setImageSize(e.target.value)}
+                  className="input-field"
+                >
+                  <option value="512x512">512x512 (正方形)</option>
+                  <option value="512x768">512x768 (縦長)</option>
+                  <option value="768x512">768x512 (横長)</option>
+                  <option value="768x768">768x768 (大正方形)</option>
+                  <option value="512x1024">512x1024 (縦長大)</option>
+                  <option value="1024x512">1024x512 (横長大)</option>
+                  <option value="1024x1024">1024x1024 (最大)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">品質</label>
+                <select
+                  value={imageQuality}
+                  onChange={(e) => setImageQuality(e.target.value)}
+                  className="input-field"
+                >
+                  <option value="low">低 (速い)</option>
+                  <option value="medium">中 (バランス)</option>
+                  <option value="high">高 (高品質)</option>
+                </select>
+              </div>
+              <div className="flex items-end">
+                <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer pb-2">
+                  <input
+                    type="checkbox"
+                    checked={imageNsfw}
+                    onChange={(e) => setImageNsfw(e.target.checked)}
+                    className="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+                  />
+                  <span>NSFW対応</span>
+                </label>
+              </div>
+            </div>
             <button
               onClick={handleImageGenerate}
               disabled={isLoading || !imagePrompt.trim()}
@@ -592,15 +644,45 @@ export function AiPage() {
               rows={3}
               className="input-field resize-none"
             />
-            <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={videoNsfw}
-                onChange={(e) => setVideoNsfw(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
-              />
-              <span>NSFW対応（セーフティチェック無効）</span>
-            </label>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">サイズ</label>
+                <select
+                  value={videoSize}
+                  onChange={(e) => setVideoSize(e.target.value)}
+                  className="input-field"
+                >
+                  <option value="256x256">256x256 (小)</option>
+                  <option value="512x512">512x512 (中)</option>
+                  <option value="512x768">512x768 (縦長)</option>
+                  <option value="768x512">768x512 (横長)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">長さ</label>
+                <select
+                  value={videoDuration}
+                  onChange={(e) => setVideoDuration(e.target.value)}
+                  className="input-field"
+                >
+                  <option value="2">2秒</option>
+                  <option value="3">3秒</option>
+                  <option value="4">4秒</option>
+                  <option value="5">5秒</option>
+                </select>
+              </div>
+              <div className="flex items-end col-span-2 md:col-span-2">
+                <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer pb-2">
+                  <input
+                    type="checkbox"
+                    checked={videoNsfw}
+                    onChange={(e) => setVideoNsfw(e.target.checked)}
+                    className="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+                  />
+                  <span>NSFW対応</span>
+                </label>
+              </div>
+            </div>
             <button
               onClick={handleVideoGenerate}
               disabled={isLoading || !videoPrompt.trim()}

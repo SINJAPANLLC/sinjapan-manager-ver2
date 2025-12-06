@@ -520,28 +520,35 @@ JSON形式で出力してください:
 
   app.post('/api/ai/image', requireAuth, async (req: Request, res: Response) => {
     try {
-      const { prompt, nsfw } = req.body;
+      const { prompt, nsfw, width, height, quality } = req.body;
       const modelslabKey = process.env.MODELSLAB_API_KEY;
       
       if (!modelslabKey) {
         return res.status(400).json({ error: 'MODELSLAB APIキーが設定されていません。設定画面でAPIキーを追加してください。' });
       }
 
-      const response = await fetch('https://modelslab.com/api/v6/realtime/text2img', {
+      // Use better model for NSFW content
+      const modelId = nsfw ? 'realistic-vision-51' : 'realistic-vision-51';
+      const inferenceSteps = quality === 'high' ? 40 : quality === 'medium' ? 30 : 20;
+      
+      const response = await fetch('https://modelslab.com/api/v6/images/text2img', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           key: modelslabKey,
+          model_id: modelId,
           prompt: prompt,
-          negative_prompt: 'bad quality, blurry',
-          width: '512',
-          height: '512',
+          negative_prompt: 'ugly, deformed, bad anatomy, poorly drawn, extra limbs, watermark, blurry, low quality, bad quality, worst quality',
+          width: width || '512',
+          height: height || '512',
           samples: '1',
-          num_inference_steps: '20',
+          num_inference_steps: inferenceSteps,
           guidance_scale: 7.5,
           safety_checker: !nsfw,
+          enhance_prompt: 'yes',
+          scheduler: 'UniPCMultistepScheduler',
         }),
       });
 
@@ -573,7 +580,7 @@ JSON形式で出力してください:
 
   app.post('/api/ai/video', requireAuth, async (req: Request, res: Response) => {
     try {
-      const { prompt, nsfw } = req.body;
+      const { prompt, nsfw, width, height, seconds } = req.body;
       const modelslabKey = process.env.MODELSLAB_API_KEY;
       
       if (!modelslabKey) {
@@ -588,9 +595,11 @@ JSON形式で出力してください:
         body: JSON.stringify({
           key: modelslabKey,
           prompt: prompt,
-          negative_prompt: 'bad quality',
+          negative_prompt: 'ugly, deformed, bad anatomy, poorly drawn, extra limbs, watermark, blurry, low quality',
           scheduler: 'UniPCMultistepScheduler',
-          seconds: 3,
+          seconds: seconds || 3,
+          width: width || 512,
+          height: height || 512,
           safety_checker: !nsfw,
         }),
       });
