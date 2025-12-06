@@ -328,12 +328,24 @@ export function registerRoutes(app: Express) {
   });
 
   app.post('/api/memos', requireAuth, async (req: Request, res: Response) => {
-    const memo = await storage.createMemo({ ...req.body, userId: req.session.userId });
+    const { date, content, color } = req.body;
+    const memo = await storage.createMemo({ 
+      date: new Date(date), 
+      content, 
+      color, 
+      userId: req.session.userId 
+    });
     res.json(memo);
   });
 
   app.patch('/api/memos/:id', requireAuth, async (req: Request, res: Response) => {
-    const memo = await storage.updateMemo(parseInt(req.params.id), req.body);
+    const { date, content, color } = req.body;
+    const updateData: any = {};
+    if (date) updateData.date = new Date(date);
+    if (content) updateData.content = content;
+    if (color) updateData.color = color;
+    
+    const memo = await storage.updateMemo(parseInt(req.params.id), updateData);
     if (!memo) {
       return res.status(404).json({ message: 'メモが見つかりません' });
     }
