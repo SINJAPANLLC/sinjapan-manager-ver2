@@ -626,6 +626,12 @@ JSON形式で出力してください:
       const { fetchUrl, prompt } = req.body;
       const modelslabKey = process.env.MODELSLAB_API_KEY;
       
+      if (!fetchUrl) {
+        return res.status(400).json({ error: 'fetchUrlが必要です' });
+      }
+      
+      console.log('Polling video result:', fetchUrl);
+      
       const response = await fetch(fetchUrl, {
         method: 'POST',
         headers: {
@@ -633,7 +639,9 @@ JSON形式で出力してください:
         },
         body: JSON.stringify({ key: modelslabKey }),
       });
+      
       const data = await response.json();
+      console.log('Poll response:', JSON.stringify(data, null, 2));
       
       if (data.status === 'success' && data.output && data.output.length > 0) {
         const videoUrl = data.output[0];
@@ -647,12 +655,16 @@ JSON形式で出力してください:
         res.json({ videoUrl, completed: true });
       } else if (data.status === 'processing') {
         res.json({ processing: true });
-      } else {
+      } else if (data.status === 'error') {
+        console.error('MODELSLAB error:', data.message);
         res.json({ error: data.message || '動画生成に失敗しました', completed: true });
+      } else {
+        console.log('Unknown status:', data.status);
+        res.json({ processing: true });
       }
-    } catch (error) {
-      console.error('Video poll error:', error);
-      res.status(500).json({ error: 'ポーリングエラーが発生しました' });
+    } catch (error: any) {
+      console.error('Video poll error:', error.message || error);
+      res.status(500).json({ error: 'ポーリングエラーが発生しました: ' + (error.message || '不明なエラー') });
     }
   });
 
