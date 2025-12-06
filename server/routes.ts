@@ -549,7 +549,7 @@ JSON形式で出力してください:
           num_inference_steps: inferenceSteps,
           guidance_scale: 7.5,
           safety_checker: !nsfw,
-          enhance_prompt: 'yes',
+          enhance_prompt: 'no',
           scheduler: 'UniPCMultistepScheduler',
         }),
       });
