@@ -573,11 +573,11 @@ JSON形式で出力してください:
         const size = sizeMap[aspectRatio] || '1024x1024';
 
         const response = await openaiClient.images.generate({
-          model: 'gpt-image-1',
+          model: 'dall-e-3',
           prompt: translatedPrompt,
           n: 1,
           size: size as any,
-          quality: quality === 'high' ? 'high' : 'medium',
+          quality: quality === 'high' ? 'hd' : 'standard',
         });
 
         const imageUrl = response.data[0]?.url || response.data[0]?.b64_json;
