@@ -541,7 +541,7 @@ JSON形式で出力してください:
           samples: '1',
           num_inference_steps: '20',
           guidance_scale: 7.5,
-          safety_checker: nsfw ? 'no' : 'yes',
+          safety_checker: !nsfw,
         }),
       });
 
@@ -591,7 +591,7 @@ JSON形式で出力してください:
           negative_prompt: 'bad quality',
           scheduler: 'UniPCMultistepScheduler',
           seconds: 3,
-          safety_checker: nsfw ? 'no' : 'yes',
+          safety_checker: !nsfw,
         }),
       });
 
