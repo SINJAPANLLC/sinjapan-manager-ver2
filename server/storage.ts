@@ -1,8 +1,8 @@
 import { db } from './db';
-import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, memos } from '../shared/schema';
+import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos } from '../shared/schema';
 import { eq, and, or, desc, sql, isNull, gte, lte } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, Memo, InsertMemo } from '../shared/schema';
+import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo } from '../shared/schema';
 
 export const storage = {
   async getUser(id: number): Promise<User | undefined> {
@@ -291,5 +291,36 @@ export const storage = {
   async deleteMemo(id: number): Promise<boolean> {
     await db.delete(memos).where(eq(memos.id, id));
     return true;
+  },
+
+  async getBusinessSales(businessId: string): Promise<BusinessSale[]> {
+    return db.select().from(businessSales)
+      .where(eq(businessSales.businessId, businessId))
+      .orderBy(desc(businessSales.saleDate));
+  },
+
+  async createBusinessSale(data: InsertBusinessSale): Promise<BusinessSale> {
+    const [sale] = await db.insert(businessSales).values(data).returning();
+    return sale;
+  },
+
+  async deleteBusinessSale(id: number): Promise<boolean> {
+    await db.delete(businessSales).where(eq(businessSales.id, id));
+    return true;
+  },
+
+  async getBusinessTotals(businessId: string): Promise<{ revenue: number; expenses: number }> {
+    const sales = await db.select().from(businessSales).where(eq(businessSales.businessId, businessId));
+    let revenue = 0;
+    let expenses = 0;
+    for (const sale of sales) {
+      const amount = parseFloat(sale.amount) || 0;
+      if (sale.type === 'revenue') {
+        revenue += amount;
+      } else {
+        expenses += amount;
+      }
+    }
+    return { revenue, expenses };
   },
 };

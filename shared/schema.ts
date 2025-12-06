@@ -40,13 +40,21 @@ export const businesses = pgTable("businesses", {
   name: text("name").notNull(),
   description: text("description"),
   url: text("url"),
-  revenue: decimal("revenue", { precision: 15, scale: 2 }),
-  expenses: decimal("expenses", { precision: 15, scale: 2 }),
-  profit: decimal("profit", { precision: 15, scale: 2 }),
   targetRevenue: decimal("target_revenue", { precision: 15, scale: 2 }),
   status: text("status").notNull().default("active"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const businessSales = pgTable("business_sales", {
+  id: serial("id").primaryKey(),
+  businessId: varchar("business_id").references(() => businesses.id, { onDelete: "cascade" }).notNull(),
+  type: text("type").notNull().default("revenue"),
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+  description: text("description"),
+  saleDate: timestamp("sale_date").defaultNow().notNull(),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const memos = pgTable("memos", {
@@ -165,5 +173,7 @@ export type AgencySale = typeof agencySales.$inferSelect;
 export type InsertAgencySale = typeof agencySales.$inferInsert;
 export type Business = typeof businesses.$inferSelect;
 export type InsertBusiness = typeof businesses.$inferInsert;
+export type BusinessSale = typeof businessSales.$inferSelect;
+export type InsertBusinessSale = typeof businessSales.$inferInsert;
 export type Memo = typeof memos.$inferSelect;
 export type InsertMemo = typeof memos.$inferInsert;

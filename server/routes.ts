@@ -361,6 +361,34 @@ export function registerRoutes(app: Express) {
     res.json({ message: '削除しました' });
   });
 
+  app.get('/api/businesses/:id/sales', requireAuth, async (req: Request, res: Response) => {
+    const sales = await storage.getBusinessSales(req.params.id);
+    res.json(sales);
+  });
+
+  app.post('/api/businesses/:id/sales', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    const { type, amount, description, saleDate } = req.body;
+    const sale = await storage.createBusinessSale({
+      businessId: req.params.id,
+      type,
+      amount,
+      description,
+      saleDate: saleDate ? new Date(saleDate) : new Date(),
+      createdBy: req.session.userId,
+    });
+    res.json(sale);
+  });
+
+  app.delete('/api/businesses/:id/sales/:saleId', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    await storage.deleteBusinessSale(parseInt(req.params.saleId));
+    res.json({ message: '削除しました' });
+  });
+
+  app.get('/api/businesses/:id/totals', requireAuth, async (req: Request, res: Response) => {
+    const totals = await storage.getBusinessTotals(req.params.id);
+    res.json(totals);
+  });
+
   app.get('/api/memos', requireAuth, async (req: Request, res: Response) => {
     const { start, end } = req.query;
     const startDate = start ? new Date(start as string) : undefined;
