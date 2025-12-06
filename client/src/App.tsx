@@ -40,6 +40,7 @@ function AppRoutes() {
         <Route path="/tasks" component={TasksPage} />
         <Route path="/calendar" component={CalendarPage} />
         <Route path="/chat" component={ChatPage} />
+        <Route path="/communication" component={ChatPage} />
         <Route path="/notifications" component={NotificationsPage} />
         <Route path="/users" component={UsersPage} />
         <Route path="/employees" component={EmployeesPage} />
