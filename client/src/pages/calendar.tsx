@@ -27,6 +27,8 @@ export function CalendarPage() {
   const [editingMemo, setEditingMemo] = useState<Memo | null>(null);
   const [formData, setFormData] = useState({ content: '', color: 'blue' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isListModalOpen, setIsListModalOpen] = useState(false);
+  const [listDate, setListDate] = useState<Date | null>(null);
 
   useEffect(() => {
     fetchMemos();
@@ -213,15 +215,13 @@ export function CalendarPage() {
                   })}
                   {dayMemos.length > 2 && (
                     <div 
-                      className="text-xs text-primary-600 pl-2 cursor-pointer hover:underline"
+                      className="text-xs text-primary-600 pl-2 cursor-pointer hover:underline font-medium"
                       onClick={() => {
-                        setSelectedDate(day);
-                        setEditingMemo(null);
-                        setFormData({ content: '', color: 'blue' });
-                        setIsModalOpen(true);
+                        setListDate(day);
+                        setIsListModalOpen(true);
                       }}
                     >
-                      +{dayMemos.length - 2}件
+                      +{dayMemos.length - 2}件を表示
                     </div>
                   )}
                 </div>
@@ -230,6 +230,91 @@ export function CalendarPage() {
           })}
         </div>
       </div>
+
+      {isListModalOpen && listDate && (
+        <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl animate-slide-up max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="flex justify-between items-center p-6 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-gradient-to-br from-primary-500 to-blue-600 rounded-xl">
+                  <StickyNote size={20} className="text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-slate-800">メモ一覧</h2>
+                  <p className="text-sm text-slate-500">
+                    {format(listDate, 'yyyy年M月d日（E）', { locale: ja })}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsListModalOpen(false)}
+                className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
+              >
+                <X size={20} className="text-slate-500" />
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto flex-1 space-y-2">
+              {getMemoForDate(listDate).map((memo) => {
+                const colorClasses = getColorClasses(memo.color);
+                return (
+                  <div
+                    key={memo.id}
+                    className={cn(
+                      "p-3 rounded-xl flex items-start gap-3",
+                      colorClasses.bg
+                    )}
+                  >
+                    <span className={cn("w-2 h-2 rounded-full mt-1.5 flex-shrink-0", colorClasses.dot)} />
+                    <div className="flex-1">
+                      <p className={cn("text-sm", colorClasses.text)}>{memo.content}</p>
+                    </div>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => {
+                          setIsListModalOpen(false);
+                          setSelectedDate(new Date(memo.date));
+                          setEditingMemo(memo);
+                          setFormData({ content: memo.content, color: memo.color || 'blue' });
+                          setIsModalOpen(true);
+                        }}
+                        className={cn("p-1.5 rounded-lg hover:bg-white/50", colorClasses.text)}
+                      >
+                        <Edit2 size={14} />
+                      </button>
+                      <button
+                        onClick={async (e) => {
+                          await handleDeleteMemo(memo.id, e);
+                          if (getMemoForDate(listDate).length <= 1) {
+                            setIsListModalOpen(false);
+                          }
+                        }}
+                        className="p-1.5 rounded-lg text-red-500 hover:bg-red-50"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="p-4 border-t border-slate-100">
+              <button
+                onClick={() => {
+                  setIsListModalOpen(false);
+                  setSelectedDate(listDate);
+                  setEditingMemo(null);
+                  setFormData({ content: '', color: 'blue' });
+                  setIsModalOpen(true);
+                }}
+                className="w-full btn-primary flex items-center justify-center gap-2"
+              >
+                <Plus size={18} />
+                新規メモを追加
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isModalOpen && selectedDate && (
         <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
