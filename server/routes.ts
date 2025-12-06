@@ -1,5 +1,6 @@
 import { Express, Request, Response, NextFunction } from 'express';
 import { storage } from './storage';
+import OpenAI from 'openai';
 
 declare module 'express-session' {
   interface SessionData {
@@ -293,5 +294,58 @@ export function registerRoutes(app: Express) {
     }
     const stats = await storage.getDashboardStats(req.session.userId!, user.role);
     res.json(stats);
+  });
+
+  app.post('/api/ai/generate-tasks', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { prompt, category } = req.body;
+      
+      const categoryLabels: Record<string, string> = {
+        direct: '直結（直接成果に繋がるタスク）',
+        organization: '組織（チーム運営・組織改善）',
+        expansion: '拡張（事業拡大・新規開拓）',
+        risk: 'リスク（リスク管理・問題対応）',
+        workflow: 'ワークフロー（業務プロセス改善）',
+      };
+
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      });
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `あなたはビジネスタスク生成アシスタントです。ユーザーの要望に基づいて、実行可能なタスクを3〜5個生成してください。
+カテゴリ: ${categoryLabels[category] || category}
+
+JSON形式で出力してください:
+{
+  "tasks": [
+    {"title": "タスク名", "description": "タスクの説明", "priority": "high/medium/low"}
+  ]
+}`
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        response_format: { type: 'json_object' },
+      });
+
+      const content = completion.choices[0]?.message?.content;
+      if (content) {
+        const parsed = JSON.parse(content);
+        res.json(parsed);
+      } else {
+        res.json({ tasks: [] });
+      }
+    } catch (error) {
+      console.error('AI task generation error:', error);
+      res.status(500).json({ message: 'AIタスク生成に失敗しました', tasks: [] });
+    }
   });
 }
