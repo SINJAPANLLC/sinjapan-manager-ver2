@@ -1,8 +1,8 @@
 import { db } from './db';
-import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos } from '../shared/schema';
+import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs } from '../shared/schema';
 import { eq, and, or, desc, sql, isNull, gte, lte } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo } from '../shared/schema';
+import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog } from '../shared/schema';
 
 export const storage = {
   async getUser(id: number): Promise<User | undefined> {
@@ -322,5 +322,17 @@ export const storage = {
       }
     }
     return { revenue, expenses };
+  },
+
+  async createAiLog(data: InsertAiLog): Promise<AiLog> {
+    const [log] = await db.insert(aiLogs).values(data).returning();
+    return log;
+  },
+
+  async getAiLogs(userId: number): Promise<AiLog[]> {
+    return db.select().from(aiLogs)
+      .where(eq(aiLogs.userId, userId))
+      .orderBy(desc(aiLogs.createdAt))
+      .limit(100);
   },
 };

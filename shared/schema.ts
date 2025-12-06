@@ -177,3 +177,17 @@ export type BusinessSale = typeof businessSales.$inferSelect;
 export type InsertBusinessSale = typeof businessSales.$inferInsert;
 export type Memo = typeof memos.$inferSelect;
 export type InsertMemo = typeof memos.$inferInsert;
+
+export const aiLogs = pgTable("ai_logs", {
+  id: serial("id").primaryKey(),
+  type: text("type").notNull(),
+  prompt: text("prompt"),
+  result: text("result"),
+  status: text("status").notNull().default("success"),
+  userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
+  metadata: text("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type AiLog = typeof aiLogs.$inferSelect;
+export type InsertAiLog = typeof aiLogs.$inferInsert;

@@ -481,4 +481,333 @@ JSON形式で出力してください:
       res.status(500).json({ message: 'AIタスク生成に失敗しました', tasks: [] });
     }
   });
+
+  app.post('/api/ai/chat', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { message, history } = req.body;
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      });
+
+      const messages = [
+        { role: 'system' as const, content: 'あなたは親切で知識豊富なAIアシスタントです。日本語で回答してください。' },
+        ...(history || []).map((m: any) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+        { role: 'user' as const, content: message }
+      ];
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages,
+      });
+
+      const reply = completion.choices[0]?.message?.content || '';
+
+      await storage.createAiLog({
+        type: 'chat',
+        prompt: message,
+        result: reply,
+        status: 'success',
+        userId: req.session.userId,
+      });
+
+      res.json({ reply });
+    } catch (error) {
+      console.error('AI chat error:', error);
+      res.status(500).json({ error: 'チャットエラーが発生しました' });
+    }
+  });
+
+  app.post('/api/ai/image', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { prompt } = req.body;
+      const modelslabKey = process.env.MODELSLAB_API_KEY;
+      
+      if (!modelslabKey) {
+        return res.status(400).json({ error: 'MODELSLAB APIキーが設定されていません。設定画面でAPIキーを追加してください。' });
+      }
+
+      const response = await fetch('https://modelslab.com/api/v6/realtime/text2img', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          key: modelslabKey,
+          prompt: prompt,
+          negative_prompt: 'bad quality, blurry',
+          width: '512',
+          height: '512',
+          samples: '1',
+          num_inference_steps: '20',
+          guidance_scale: 7.5,
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (data.status === 'success' && data.output && data.output.length > 0) {
+        await storage.createAiLog({
+          type: 'image',
+          prompt: prompt,
+          result: data.output[0],
+          status: 'success',
+          userId: req.session.userId,
+        });
+        res.json({ imageUrl: data.output[0] });
+      } else {
+        await storage.createAiLog({
+          type: 'image',
+          prompt: prompt,
+          status: 'error',
+          userId: req.session.userId,
+        });
+        res.status(400).json({ error: data.message || '画像生成に失敗しました' });
+      }
+    } catch (error) {
+      console.error('Image generation error:', error);
+      res.status(500).json({ error: '画像生成エラーが発生しました' });
+    }
+  });
+
+  app.post('/api/ai/video', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { prompt } = req.body;
+      const modelslabKey = process.env.MODELSLAB_API_KEY;
+      
+      if (!modelslabKey) {
+        return res.status(400).json({ error: 'MODELSLAB APIキーが設定されていません。設定画面でAPIキーを追加してください。' });
+      }
+
+      const response = await fetch('https://modelslab.com/api/v6/video/text2video', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          key: modelslabKey,
+          prompt: prompt,
+          negative_prompt: 'bad quality',
+          scheduler: 'UniPCMultistepScheduler',
+          seconds: 3,
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (data.status === 'success' && data.output) {
+        await storage.createAiLog({
+          type: 'video',
+          prompt: prompt,
+          result: data.output,
+          status: 'success',
+          userId: req.session.userId,
+        });
+        res.json({ videoUrl: data.output });
+      } else if (data.status === 'processing') {
+        res.json({ message: '動画を生成中です。しばらくお待ちください。', fetchUrl: data.fetch_result });
+      } else {
+        res.status(400).json({ error: data.message || '動画生成に失敗しました' });
+      }
+    } catch (error) {
+      console.error('Video generation error:', error);
+      res.status(500).json({ error: '動画生成エラーが発生しました' });
+    }
+  });
+
+  app.post('/api/ai/seo', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { topic, keywords } = req.body;
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      });
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `あなたはSEOの専門家です。与えられたトピックについて、SEOに最適化された記事を作成してください。
+
+以下の構成で記事を作成してください：
+1. キャッチーなタイトル（H1）
+2. 導入文（読者の興味を引く）
+3. 主要なポイント（H2見出しで3〜5セクション）
+4. 各セクションに詳細な説明
+5. まとめ
+6. CTA（行動喚起）
+
+SEO最適化のポイント：
+- キーワードを自然に含める
+- 読みやすい文章構成
+- 適切な見出し構造`
+          },
+          {
+            role: 'user',
+            content: `トピック: ${topic}\nキーワード: ${keywords || 'なし'}`
+          }
+        ],
+      });
+
+      const article = completion.choices[0]?.message?.content || '';
+
+      await storage.createAiLog({
+        type: 'seo',
+        prompt: `${topic} | ${keywords}`,
+        result: article.substring(0, 500),
+        status: 'success',
+        userId: req.session.userId,
+      });
+
+      res.json({ article });
+    } catch (error) {
+      console.error('SEO article error:', error);
+      res.status(500).json({ error: 'SEO記事生成エラーが発生しました' });
+    }
+  });
+
+  app.post('/api/ai/voice', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { text } = req.body;
+      const modelslabKey = process.env.MODELSLAB_API_KEY;
+      
+      if (!modelslabKey) {
+        return res.status(400).json({ error: 'MODELSLAB APIキーが設定されていません。' });
+      }
+
+      const response = await fetch('https://modelslab.com/api/v6/voice/text_to_speech', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          key: modelslabKey,
+          text: text,
+          language: 'japanese',
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (data.status === 'success' && data.output) {
+        await storage.createAiLog({
+          type: 'voice',
+          prompt: text,
+          result: data.output,
+          status: 'success',
+          userId: req.session.userId,
+        });
+        res.json({ audioUrl: data.output });
+      } else {
+        res.status(400).json({ error: data.message || '音声生成に失敗しました' });
+      }
+    } catch (error) {
+      console.error('Voice generation error:', error);
+      res.status(500).json({ error: '音声生成エラーが発生しました' });
+    }
+  });
+
+  app.post('/api/ai/list', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { topic, count } = req.body;
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      });
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `あなたはリスト生成の専門家です。指定されたトピックについて、${count || 10}項目のリストを作成してください。各項目は簡潔で有用な情報を含めてください。番号付きリストで出力してください。`
+          },
+          {
+            role: 'user',
+            content: topic
+          }
+        ],
+      });
+
+      const list = completion.choices[0]?.message?.content || '';
+
+      await storage.createAiLog({
+        type: 'list',
+        prompt: topic,
+        result: list.substring(0, 500),
+        status: 'success',
+        userId: req.session.userId,
+      });
+
+      res.json({ list });
+    } catch (error) {
+      console.error('List generation error:', error);
+      res.status(500).json({ error: 'リスト生成エラーが発生しました' });
+    }
+  });
+
+  app.post('/api/ai/document', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { type, details } = req.body;
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      });
+
+      const docTypes: Record<string, string> = {
+        contract: '契約書',
+        proposal: '提案書',
+        invoice: '請求書',
+        report: '報告書',
+        email: 'ビジネスメール',
+        minutes: '議事録',
+      };
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `あなたはビジネス文書作成の専門家です。${docTypes[type] || type}を作成してください。
+
+フォーマットは日本のビジネス慣行に従ってください。
+- 適切な敬語を使用
+- 正式な書式
+- 必要な項目を網羅
+- プロフェッショナルな表現`
+          },
+          {
+            role: 'user',
+            content: details
+          }
+        ],
+      });
+
+      const document = completion.choices[0]?.message?.content || '';
+
+      await storage.createAiLog({
+        type: 'document',
+        prompt: `${type}: ${details.substring(0, 100)}`,
+        result: document.substring(0, 500),
+        status: 'success',
+        userId: req.session.userId,
+      });
+
+      res.json({ document });
+    } catch (error) {
+      console.error('Document generation error:', error);
+      res.status(500).json({ error: '書類生成エラーが発生しました' });
+    }
+  });
+
+  app.get('/api/ai/logs', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const logs = await storage.getAiLogs(req.session.userId!);
+      res.json(logs);
+    } catch (error) {
+      console.error('Get AI logs error:', error);
+      res.status(500).json([]);
+    }
+  });
 }
