@@ -604,14 +604,48 @@ JSON形式で出力してください:
           userId: req.session.userId,
         });
         res.json({ videoUrl: data.output });
-      } else if (data.status === 'processing') {
-        res.json({ message: '動画を生成中です。しばらくお待ちください。', fetchUrl: data.fetch_result });
+      } else if (data.status === 'processing' && data.fetch_result) {
+        res.json({ processing: true, fetchUrl: data.fetch_result, prompt: prompt });
       } else {
+        await storage.createAiLog({
+          type: 'video',
+          prompt: prompt,
+          status: 'error',
+          userId: req.session.userId,
+        });
         res.status(400).json({ error: data.message || '動画生成に失敗しました' });
       }
     } catch (error) {
       console.error('Video generation error:', error);
       res.status(500).json({ error: '動画生成エラーが発生しました' });
+    }
+  });
+
+  app.post('/api/ai/video/poll', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { fetchUrl, prompt } = req.body;
+      
+      const response = await fetch(fetchUrl);
+      const data = await response.json();
+      
+      if (data.status === 'success' && data.output && data.output.length > 0) {
+        const videoUrl = data.output[0];
+        await storage.createAiLog({
+          type: 'video',
+          prompt: prompt,
+          result: videoUrl,
+          status: 'success',
+          userId: req.session.userId,
+        });
+        res.json({ videoUrl, completed: true });
+      } else if (data.status === 'processing') {
+        res.json({ processing: true });
+      } else {
+        res.json({ error: data.message || '動画生成に失敗しました', completed: true });
+      }
+    } catch (error) {
+      console.error('Video poll error:', error);
+      res.status(500).json({ error: 'ポーリングエラーが発生しました' });
     }
   });
 

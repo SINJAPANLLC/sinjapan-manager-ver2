@@ -140,10 +140,48 @@ export function AiPage() {
     }
   };
 
+  const [videoStatus, setVideoStatus] = useState('');
+
+  const pollVideoResult = async (fetchUrl: string, prompt: string, attempts = 0): Promise<void> => {
+    if (attempts > 60) {
+      setVideoStatus('');
+      setIsLoading(false);
+      alert('動画生成がタイムアウトしました。もう一度お試しください。');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/ai/video/poll', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fetchUrl, prompt }),
+      });
+      const data = await res.json();
+
+      if (data.videoUrl) {
+        setGeneratedVideo(data.videoUrl);
+        setVideoStatus('');
+        setIsLoading(false);
+      } else if (data.processing) {
+        setVideoStatus(`生成中... (${attempts + 1}/60)`);
+        setTimeout(() => pollVideoResult(fetchUrl, prompt, attempts + 1), 3000);
+      } else if (data.error) {
+        setVideoStatus('');
+        setIsLoading(false);
+        alert(data.error);
+      }
+    } catch (err) {
+      setVideoStatus('');
+      setIsLoading(false);
+      alert('ポーリングに失敗しました');
+    }
+  };
+
   const handleVideoGenerate = async () => {
     if (!videoPrompt.trim() || isLoading) return;
     setIsLoading(true);
     setGeneratedVideo('');
+    setVideoStatus('リクエスト送信中...');
 
     try {
       const res = await fetch('/api/ai/video', {
@@ -154,13 +192,20 @@ export function AiPage() {
       const data = await res.json();
       if (data.videoUrl) {
         setGeneratedVideo(data.videoUrl);
+        setVideoStatus('');
+        setIsLoading(false);
+      } else if (data.processing && data.fetchUrl) {
+        setVideoStatus('動画生成を開始しました...');
+        pollVideoResult(data.fetchUrl, data.prompt);
       } else if (data.error) {
+        setVideoStatus('');
+        setIsLoading(false);
         alert(data.error);
       }
     } catch (err) {
-      alert('動画生成に失敗しました');
-    } finally {
+      setVideoStatus('');
       setIsLoading(false);
+      alert('動画生成に失敗しました');
     }
   };
 
@@ -403,7 +448,7 @@ export function AiPage() {
               <Video className="text-primary-500" size={20} />
               動画生成 (MODELSLAB)
             </h2>
-            <p className="text-sm text-slate-500">テキストから動画を生成します</p>
+            <p className="text-sm text-slate-500">テキストから動画を生成します（生成には数分かかる場合があります）</p>
             <textarea
               value={videoPrompt}
               onChange={(e) => setVideoPrompt(e.target.value)}
@@ -419,6 +464,15 @@ export function AiPage() {
               {isLoading ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
               動画を生成
             </button>
+            {videoStatus && (
+              <div className="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
+                <div className="flex items-center gap-3">
+                  <Loader2 className="animate-spin text-primary-500" size={20} />
+                  <span className="text-primary-700 font-medium">{videoStatus}</span>
+                </div>
+                <p className="text-sm text-slate-500 mt-2">動画生成には数分かかることがあります。このページを開いたままお待ちください。</p>
+              </div>
+            )}
             {generatedVideo && (
               <div className="mt-4">
                 <video src={generatedVideo} controls className="max-w-full rounded-xl shadow-lg" />
