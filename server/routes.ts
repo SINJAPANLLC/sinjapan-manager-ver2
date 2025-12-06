@@ -553,63 +553,92 @@ JSON形式で出力してください:
 
   app.post('/api/ai/image', requireAuth, async (req: Request, res: Response) => {
     try {
-      const { prompt, nsfw, width, height, quality } = req.body;
-      const modelslabKey = process.env.MODELSLAB_API_KEY;
+      const { prompt, provider, aspectRatio, quality } = req.body;
       
-      if (!modelslabKey) {
-        return res.status(400).json({ error: 'MODELSLAB APIキーが設定されていません。設定画面でAPIキーを追加してください。' });
-      }
-
       // Translate Japanese prompt to English
       const translatedPrompt = await translateToEnglish(prompt);
+      console.log('Image generation request:', { prompt, translatedPrompt, provider, aspectRatio, quality });
 
-      // Use better model for NSFW content
-      const modelId = nsfw ? 'realistic-vision-51' : 'realistic-vision-51';
-      const inferenceSteps = quality === 'high' ? 40 : quality === 'medium' ? 30 : 20;
-      
-      console.log('Image generation request:', { prompt, translatedPrompt, nsfw, width, height, quality, modelId });
-      
-      const response = await fetch('https://modelslab.com/api/v6/images/text2img', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          key: modelslabKey,
-          model_id: modelId,
+      if (provider === 'openai') {
+        // OpenAI DALL-E / gpt-image-1
+        const openaiClient = new OpenAI({
+          apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+          baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+        });
+
+        const sizeMap: Record<string, string> = {
+          '1:1': '1024x1024',
+          '16:9': '1792x1024',
+          '9:16': '1024x1792',
+        };
+        const size = sizeMap[aspectRatio] || '1024x1024';
+
+        const response = await openaiClient.images.generate({
+          model: 'gpt-image-1',
           prompt: translatedPrompt,
-          negative_prompt: 'ugly, deformed, bad anatomy, poorly drawn, extra limbs, watermark, blurry, low quality, bad quality, worst quality',
-          width: width || '512',
-          height: height || '512',
-          samples: '1',
-          num_inference_steps: inferenceSteps,
-          guidance_scale: 7.5,
-          safety_checker: !nsfw,
-          enhance_prompt: 'no',
-          scheduler: 'UniPCMultistepScheduler',
-        }),
-      });
+          n: 1,
+          size: size as any,
+          quality: quality === 'high' ? 'hd' : 'standard',
+        });
 
-      const data = await response.json();
-      console.log('Image generation response:', JSON.stringify(data, null, 2));
-      
-      if (data.status === 'success' && data.output && data.output.length > 0) {
-        await storage.createAiLog({
-          type: 'image',
-          prompt: prompt,
-          result: data.output[0],
-          status: 'success',
-          userId: req.session.userId,
-        });
-        res.json({ imageUrl: data.output[0], translatedPrompt: translatedPrompt !== prompt ? translatedPrompt : undefined });
+        const imageUrl = response.data[0]?.url || response.data[0]?.b64_json;
+        if (imageUrl) {
+          await storage.createAiLog({
+            type: 'image',
+            prompt: prompt,
+            result: imageUrl,
+            status: 'success',
+            userId: req.session.userId,
+          });
+          res.json({ imageUrl, translatedPrompt: translatedPrompt !== prompt ? translatedPrompt : undefined });
+        } else {
+          throw new Error('No image generated');
+        }
       } else {
-        await storage.createAiLog({
-          type: 'image',
-          prompt: prompt,
-          status: 'error',
-          userId: req.session.userId,
+        // Hailuo AI (MiniMax Image-01)
+        const minimaxKey = process.env.MINIMAX_API_KEY;
+        
+        if (!minimaxKey) {
+          return res.status(400).json({ error: 'MiniMax APIキーが設定されていません。設定画面でAPIキーを追加してください。' });
+        }
+
+        const response = await fetch('https://api.minimax.io/v1/image_generation', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${minimaxKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'image-01',
+            prompt: translatedPrompt,
+            aspect_ratio: aspectRatio || '1:1',
+            response_format: 'url',
+            n: 1,
+            prompt_optimizer: true,
+          }),
         });
-        res.status(400).json({ error: data.message || '画像生成に失敗しました' });
+
+        const data = await response.json();
+        console.log('Hailuo Image response:', JSON.stringify(data, null, 2));
+        
+        if (data.data?.image_urls && data.data.image_urls.length > 0) {
+          await storage.createAiLog({
+            type: 'image',
+            prompt: prompt,
+            result: data.data.image_urls[0],
+            status: 'success',
+            userId: req.session.userId,
+          });
+          res.json({ imageUrl: data.data.image_urls[0], translatedPrompt: translatedPrompt !== prompt ? translatedPrompt : undefined });
+        } else {
+          await storage.createAiLog({
+            type: 'image',
+            prompt: prompt,
+            status: 'error',
+            userId: req.session.userId,
+          });
+          res.status(400).json({ error: data.base_resp?.status_msg || '画像生成に失敗しました' });
+        }
       }
     } catch (error) {
       console.error('Image generation error:', error);
@@ -619,55 +648,97 @@ JSON形式で出力してください:
 
   app.post('/api/ai/video', requireAuth, async (req: Request, res: Response) => {
     try {
-      const { prompt, nsfw, width, height, seconds } = req.body;
-      const modelslabKey = process.env.MODELSLAB_API_KEY;
+      const { prompt, provider, aspectRatio, seconds } = req.body;
       
-      if (!modelslabKey) {
-        return res.status(400).json({ error: 'MODELSLAB APIキーが設定されていません。設定画面でAPIキーを追加してください。' });
-      }
-
       // Translate Japanese prompt to English
       const translatedPrompt = await translateToEnglish(prompt);
-      console.log('Video generation request:', { prompt, translatedPrompt, nsfw, width, height, seconds });
+      console.log('Video generation request:', { prompt, translatedPrompt, provider, aspectRatio, seconds });
 
-      const response = await fetch('https://modelslab.com/api/v6/video/text2video', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          key: modelslabKey,
+      if (provider === 'openai') {
+        // OpenAI Sora 2
+        const openaiClient = new OpenAI({
+          apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+          baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+        });
+
+        const sizeMap: Record<string, string> = {
+          '16:9': '1280x720',
+          '9:16': '720x1280',
+          '1:1': '1080x1080',
+        };
+        const size = sizeMap[aspectRatio] || '1280x720';
+
+        // Sora 2 API call
+        const response = await (openaiClient as any).videos.generate({
+          model: 'sora-2',
           prompt: translatedPrompt,
-          negative_prompt: 'ugly, deformed, bad anatomy, poorly drawn, extra limbs, watermark, blurry, low quality',
-          scheduler: 'UniPCMultistepScheduler',
-          seconds: seconds || 3,
-          width: width || 512,
-          height: height || 512,
-          safety_checker: !nsfw,
-        }),
-      });
+          size: size,
+          seconds: seconds || 8,
+        });
 
-      const data = await response.json();
-      
-      if (data.status === 'success' && data.output) {
-        await storage.createAiLog({
-          type: 'video',
-          prompt: prompt,
-          result: data.output,
-          status: 'success',
-          userId: req.session.userId,
-        });
-        res.json({ videoUrl: data.output, translatedPrompt: translatedPrompt !== prompt ? translatedPrompt : undefined });
-      } else if (data.status === 'processing' && data.fetch_result) {
-        res.json({ processing: true, fetchUrl: data.fetch_result, prompt: prompt, translatedPrompt: translatedPrompt !== prompt ? translatedPrompt : undefined });
+        const videoUrl = response.data?.[0]?.url;
+        if (videoUrl) {
+          await storage.createAiLog({
+            type: 'video',
+            prompt: prompt,
+            result: videoUrl,
+            status: 'success',
+            userId: req.session.userId,
+          });
+          res.json({ videoUrl, translatedPrompt: translatedPrompt !== prompt ? translatedPrompt : undefined });
+        } else {
+          throw new Error('No video generated');
+        }
       } else {
-        await storage.createAiLog({
-          type: 'video',
-          prompt: prompt,
-          status: 'error',
-          userId: req.session.userId,
+        // Hailuo AI (MiniMax Hailuo-02)
+        const minimaxKey = process.env.MINIMAX_API_KEY;
+        
+        if (!minimaxKey) {
+          return res.status(400).json({ error: 'MiniMax APIキーが設定されていません。設定画面でAPIキーを追加してください。' });
+        }
+
+        const response = await fetch('https://api.minimax.io/v1/video_generation', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${minimaxKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'video-01',
+            prompt: translatedPrompt,
+            prompt_optimizer: true,
+          }),
         });
-        res.status(400).json({ error: data.message || '動画生成に失敗しました' });
+
+        const data = await response.json();
+        console.log('Hailuo Video response:', JSON.stringify(data, null, 2));
+        
+        if (data.task_id) {
+          // Video generation is async, return task ID for polling
+          res.json({ 
+            processing: true, 
+            taskId: data.task_id, 
+            prompt: prompt, 
+            translatedPrompt: translatedPrompt !== prompt ? translatedPrompt : undefined 
+          });
+        } else if (data.data?.video_url) {
+          await storage.createAiLog({
+            type: 'video',
+            prompt: prompt,
+            result: data.data.video_url,
+            status: 'success',
+            userId: req.session.userId,
+          });
+          res.json({ videoUrl: data.data.video_url, translatedPrompt: translatedPrompt !== prompt ? translatedPrompt : undefined });
+        } else {
+          await storage.createAiLog({
+            type: 'video',
+            prompt: prompt,
+            status: 'error',
+            userId: req.session.userId,
+          });
+          res.status(400).json({ error: data.base_resp?.status_msg || '動画生成に失敗しました' });
+        }
       }
     } catch (error) {
       console.error('Video generation error:', error);
@@ -677,44 +748,64 @@ JSON形式で出力してください:
 
   app.post('/api/ai/video/poll', requireAuth, async (req: Request, res: Response) => {
     try {
-      const { fetchUrl, prompt } = req.body;
-      const modelslabKey = process.env.MODELSLAB_API_KEY;
+      const { taskId, prompt, provider } = req.body;
       
-      if (!fetchUrl) {
-        return res.status(400).json({ error: 'fetchUrlが必要です' });
+      if (!taskId) {
+        return res.status(400).json({ error: 'taskIdが必要です' });
       }
       
-      console.log('Polling video result:', fetchUrl);
-      
-      const response = await fetch(fetchUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ key: modelslabKey }),
-      });
-      
-      const data = await response.json();
-      console.log('Poll response:', JSON.stringify(data, null, 2));
-      
-      if (data.status === 'success' && data.output && data.output.length > 0) {
-        const videoUrl = data.output[0];
-        await storage.createAiLog({
-          type: 'video',
-          prompt: prompt,
-          result: videoUrl,
-          status: 'success',
-          userId: req.session.userId,
+      console.log('Polling video result:', { taskId, provider });
+
+      if (provider === 'hailuo') {
+        // Hailuo AI (MiniMax) polling
+        const minimaxKey = process.env.MINIMAX_API_KEY;
+        
+        if (!minimaxKey) {
+          return res.status(400).json({ error: 'MiniMax APIキーが設定されていません。' });
+        }
+
+        const response = await fetch(`https://api.minimax.io/v1/query/video_generation?task_id=${taskId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${minimaxKey}`,
+          },
         });
-        res.json({ videoUrl, completed: true });
-      } else if (data.status === 'processing') {
-        res.json({ processing: true });
-      } else if (data.status === 'error') {
-        console.error('MODELSLAB error:', data.message);
-        res.json({ error: data.message || '動画生成に失敗しました', completed: true });
+        
+        const data = await response.json();
+        console.log('Hailuo Poll response:', JSON.stringify(data, null, 2));
+        
+        if (data.status === 'Success' && data.file_id) {
+          // Get the video URL
+          const fileResponse = await fetch(`https://api.minimax.io/v1/files/retrieve?file_id=${data.file_id}`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${minimaxKey}`,
+            },
+          });
+          const fileData = await fileResponse.json();
+          
+          if (fileData.file?.download_url) {
+            await storage.createAiLog({
+              type: 'video',
+              prompt: prompt,
+              result: fileData.file.download_url,
+              status: 'success',
+              userId: req.session.userId,
+            });
+            res.json({ videoUrl: fileData.file.download_url, completed: true });
+          } else {
+            res.json({ processing: true });
+          }
+        } else if (data.status === 'Processing' || data.status === 'Queueing') {
+          res.json({ processing: true });
+        } else if (data.status === 'Fail') {
+          res.json({ error: data.base_resp?.status_msg || '動画生成に失敗しました', completed: true });
+        } else {
+          res.json({ processing: true });
+        }
       } else {
-        console.log('Unknown status:', data.status);
-        res.json({ processing: true });
+        // Default error - unsupported provider
+        res.status(400).json({ error: 'サポートされていないプロバイダーです' });
       }
     } catch (error: any) {
       console.error('Video poll error:', error.message || error);
