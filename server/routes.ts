@@ -518,6 +518,38 @@ JSON形式で出力してください:
     }
   });
 
+  // Helper function to translate Japanese to English for better AI generation
+  async function translateToEnglish(text: string): Promise<string> {
+    // Check if text contains Japanese characters
+    const hasJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text);
+    if (!hasJapanese) {
+      return text;
+    }
+    
+    try {
+      const openaiClient = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY,
+      });
+      const completion = await openaiClient.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a translator. Translate the following Japanese text to English. Only output the translation, nothing else. Keep it concise and suitable for AI image/video generation prompts.'
+          },
+          { role: 'user', content: text }
+        ],
+      });
+      
+      const translated = completion.choices[0]?.message?.content || text;
+      console.log(`Translated: "${text}" -> "${translated}"`);
+      return translated;
+    } catch (error) {
+      console.error('Translation error:', error);
+      return text;
+    }
+  }
+
   app.post('/api/ai/image', requireAuth, async (req: Request, res: Response) => {
     try {
       const { prompt, nsfw, width, height, quality } = req.body;
@@ -527,11 +559,14 @@ JSON形式で出力してください:
         return res.status(400).json({ error: 'MODELSLAB APIキーが設定されていません。設定画面でAPIキーを追加してください。' });
       }
 
+      // Translate Japanese prompt to English
+      const translatedPrompt = await translateToEnglish(prompt);
+
       // Use better model for NSFW content
       const modelId = nsfw ? 'realistic-vision-51' : 'realistic-vision-51';
       const inferenceSteps = quality === 'high' ? 40 : quality === 'medium' ? 30 : 20;
       
-      console.log('Image generation request:', { prompt, nsfw, width, height, quality, modelId });
+      console.log('Image generation request:', { prompt, translatedPrompt, nsfw, width, height, quality, modelId });
       
       const response = await fetch('https://modelslab.com/api/v6/images/text2img', {
         method: 'POST',
@@ -541,7 +576,7 @@ JSON形式で出力してください:
         body: JSON.stringify({
           key: modelslabKey,
           model_id: modelId,
-          prompt: prompt,
+          prompt: translatedPrompt,
           negative_prompt: 'ugly, deformed, bad anatomy, poorly drawn, extra limbs, watermark, blurry, low quality, bad quality, worst quality',
           width: width || '512',
           height: height || '512',
@@ -590,6 +625,10 @@ JSON形式で出力してください:
         return res.status(400).json({ error: 'MODELSLAB APIキーが設定されていません。設定画面でAPIキーを追加してください。' });
       }
 
+      // Translate Japanese prompt to English
+      const translatedPrompt = await translateToEnglish(prompt);
+      console.log('Video generation request:', { prompt, translatedPrompt, nsfw, width, height, seconds });
+
       const response = await fetch('https://modelslab.com/api/v6/video/text2video', {
         method: 'POST',
         headers: {
@@ -597,7 +636,7 @@ JSON形式で出力してください:
         },
         body: JSON.stringify({
           key: modelslabKey,
-          prompt: prompt,
+          prompt: translatedPrompt,
           negative_prompt: 'ugly, deformed, bad anatomy, poorly drawn, extra limbs, watermark, blurry, low quality',
           scheduler: 'UniPCMultistepScheduler',
           seconds: seconds || 3,
