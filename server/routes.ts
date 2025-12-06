@@ -624,8 +624,15 @@ JSON形式で出力してください:
   app.post('/api/ai/video/poll', requireAuth, async (req: Request, res: Response) => {
     try {
       const { fetchUrl, prompt } = req.body;
+      const modelslabKey = process.env.MODELSLAB_API_KEY;
       
-      const response = await fetch(fetchUrl);
+      const response = await fetch(fetchUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ key: modelslabKey }),
+      });
       const data = await response.json();
       
       if (data.status === 'success' && data.output && data.output.length > 0) {
