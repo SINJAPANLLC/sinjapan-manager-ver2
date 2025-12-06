@@ -26,6 +26,7 @@ export function CalendarPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMemo, setEditingMemo] = useState<Memo | null>(null);
   const [formData, setFormData] = useState({ content: '', color: 'blue' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchMemos();
@@ -80,26 +81,31 @@ export function CalendarPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedDate || !formData.content.trim()) return;
+    if (!selectedDate || !formData.content.trim() || isSubmitting) return;
 
+    setIsSubmitting(true);
     const url = editingMemo ? `/api/memos/${editingMemo.id}` : '/api/memos';
     const method = editingMemo ? 'PATCH' : 'POST';
 
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        date: selectedDate.toISOString(),
-        content: formData.content,
-        color: formData.color,
-      }),
-    });
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date: selectedDate.toISOString(),
+          content: formData.content,
+          color: formData.color,
+        }),
+      });
 
-    if (res.ok) {
-      fetchMemos();
-      setIsModalOpen(false);
-      setEditingMemo(null);
-      setFormData({ content: '', color: 'blue' });
+      if (res.ok) {
+        await fetchMemos();
+        setIsModalOpen(false);
+        setEditingMemo(null);
+        setFormData({ content: '', color: 'blue' });
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -281,8 +287,8 @@ export function CalendarPage() {
                 >
                   キャンセル
                 </button>
-                <button type="submit" className="btn-primary">
-                  {editingMemo ? '更新' : '保存'}
+                <button type="submit" className="btn-primary" disabled={isSubmitting}>
+                  {isSubmitting ? '保存中...' : (editingMemo ? '更新' : '保存')}
                 </button>
               </div>
             </form>
