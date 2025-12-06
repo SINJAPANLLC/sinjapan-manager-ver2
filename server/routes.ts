@@ -780,8 +780,8 @@ JSON形式で出力してください:
         }
 
         const sizeMap: Record<string, { width: number; height: number }> = {
-          '16:9': { width: 768, height: 432 },
-          '9:16': { width: 432, height: 768 },
+          '16:9': { width: 512, height: 288 },
+          '9:16': { width: 288, height: 512 },
           '1:1': { width: 512, height: 512 },
         };
         const size = sizeMap[aspectRatio] || { width: 512, height: 512 };
