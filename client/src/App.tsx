@@ -15,6 +15,9 @@ import { EmployeesPage } from './pages/employees';
 import { AgencySalesPage } from './pages/agency-sales';
 import { SettingsPage } from './pages/settings';
 import LeadsPage from './pages/leads';
+import { StaffPage } from './pages/staff';
+import { AgencyPage } from './pages/agency';
+import { ClientsPage } from './pages/clients';
 import { Loader2 } from 'lucide-react';
 
 function AppRoutes() {
@@ -51,6 +54,9 @@ function AppRoutes() {
         <Route path="/employees" component={EmployeesPage} />
         <Route path="/agency-sales" component={AgencySalesPage} />
         <Route path="/leads" component={LeadsPage} />
+        <Route path="/staff" component={StaffPage} />
+        <Route path="/agency" component={AgencyPage} />
+        <Route path="/clients" component={ClientsPage} />
         <Route path="/settings" component={SettingsPage} />
         <Route>
           <div className="text-center py-12">

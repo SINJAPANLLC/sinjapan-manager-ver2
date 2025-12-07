@@ -1611,6 +1611,92 @@ ${articleList}`
     }
   });
 
+  // Client Projects API
+  app.get('/api/client-projects', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const projects = await storage.getClientProjects();
+      res.json(projects);
+    } catch (error) {
+      console.error('Get client projects error:', error);
+      res.status(500).json([]);
+    }
+  });
+
+  app.post('/api/client-projects', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const project = await storage.createClientProject(req.body);
+      res.json(project);
+    } catch (error) {
+      console.error('Create client project error:', error);
+      res.status(500).json({ error: '案件の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/client-projects/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const project = await storage.updateClientProject(id, req.body);
+      res.json(project);
+    } catch (error) {
+      console.error('Update client project error:', error);
+      res.status(500).json({ error: '案件の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/client-projects/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteClientProject(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete client project error:', error);
+      res.status(500).json({ error: '案件の削除に失敗しました' });
+    }
+  });
+
+  // Client Invoices API
+  app.get('/api/client-invoices', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const invoices = await storage.getClientInvoices();
+      res.json(invoices);
+    } catch (error) {
+      console.error('Get client invoices error:', error);
+      res.status(500).json([]);
+    }
+  });
+
+  app.post('/api/client-invoices', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const invoice = await storage.createClientInvoice(req.body);
+      res.json(invoice);
+    } catch (error) {
+      console.error('Create client invoice error:', error);
+      res.status(500).json({ error: '請求の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/client-invoices/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const invoice = await storage.updateClientInvoice(id, req.body);
+      res.json(invoice);
+    } catch (error) {
+      console.error('Update client invoice error:', error);
+      res.status(500).json({ error: '請求の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/client-invoices/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteClientInvoice(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete client invoice error:', error);
+      res.status(500).json({ error: '請求の削除に失敗しました' });
+    }
+  });
+
   // Lead Management API
   app.get('/api/leads', requireAuth, async (req: Request, res: Response) => {
     try {

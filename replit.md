@@ -96,6 +96,8 @@ SIN JAPAN 業務管理システム - ロールベースアクセス制御を備�
 | ai_logs | AI usage logs |
 | ai_conversations | AI conversation memory |
 | ai_knowledge | AI knowledge base |
+| client_projects | Client project management |
+| client_invoices | Client invoices |
 
 ## Role Permissions
 

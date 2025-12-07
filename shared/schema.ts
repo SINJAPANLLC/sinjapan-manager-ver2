@@ -301,3 +301,34 @@ export type Lead = typeof leads.$inferSelect;
 export type InsertLead = typeof leads.$inferInsert;
 export type LeadActivity = typeof leadActivities.$inferSelect;
 export type InsertLeadActivity = typeof leadActivities.$inferInsert;
+
+export const clientProjects = pgTable("client_projects", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  status: varchar("status", { length: 50 }).default("active"),
+  budget: decimal("budget", { precision: 15, scale: 2 }),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type ClientProject = typeof clientProjects.$inferSelect;
+export type InsertClientProject = typeof clientProjects.$inferInsert;
+
+export const clientInvoices = pgTable("client_invoices", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  invoiceNumber: varchar("invoice_number", { length: 50 }).notNull(),
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+  status: varchar("status", { length: 50 }).default("pending"),
+  dueDate: timestamp("due_date").notNull(),
+  paidDate: timestamp("paid_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type ClientInvoice = typeof clientInvoices.$inferSelect;
+export type InsertClientInvoice = typeof clientInvoices.$inferInsert;

@@ -1,8 +1,8 @@
 import { db } from './db';
-import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, systemSettings, leads, leadActivities } from '../shared/schema';
+import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, systemSettings, leads, leadActivities, clientProjects, clientInvoices } from '../shared/schema';
 import { eq, and, or, desc, sql, isNull, gte, lte, like, ilike } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, SystemSetting, Lead, InsertLead, LeadActivity, InsertLeadActivity } from '../shared/schema';
+import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, SystemSetting, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice } from '../shared/schema';
 
 export const storage = {
   async getUser(id: number): Promise<User | undefined> {
@@ -537,6 +537,52 @@ export const storage = {
 
   async deleteAiKnowledge(id: number): Promise<boolean> {
     await db.delete(aiKnowledge).where(eq(aiKnowledge.id, id));
+    return true;
+  },
+
+  // Client Projects
+  async getClientProjects(): Promise<ClientProject[]> {
+    return db.select().from(clientProjects).orderBy(desc(clientProjects.createdAt));
+  },
+
+  async createClientProject(data: InsertClientProject): Promise<ClientProject> {
+    const [project] = await db.insert(clientProjects).values(data).returning();
+    return project;
+  },
+
+  async updateClientProject(id: number, data: Partial<InsertClientProject>): Promise<ClientProject | undefined> {
+    const [project] = await db.update(clientProjects)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(clientProjects.id, id))
+      .returning();
+    return project;
+  },
+
+  async deleteClientProject(id: number): Promise<boolean> {
+    await db.delete(clientProjects).where(eq(clientProjects.id, id));
+    return true;
+  },
+
+  // Client Invoices
+  async getClientInvoices(): Promise<ClientInvoice[]> {
+    return db.select().from(clientInvoices).orderBy(desc(clientInvoices.createdAt));
+  },
+
+  async createClientInvoice(data: InsertClientInvoice): Promise<ClientInvoice> {
+    const [invoice] = await db.insert(clientInvoices).values(data).returning();
+    return invoice;
+  },
+
+  async updateClientInvoice(id: number, data: Partial<InsertClientInvoice>): Promise<ClientInvoice | undefined> {
+    const [invoice] = await db.update(clientInvoices)
+      .set(data)
+      .where(eq(clientInvoices.id, id))
+      .returning();
+    return invoice;
+  },
+
+  async deleteClientInvoice(id: number): Promise<boolean> {
+    await db.delete(clientInvoices).where(eq(clientInvoices.id, id));
     return true;
   },
 };
