@@ -552,9 +552,9 @@ export function FinancialsPage() {
       )}
 
       {isInvestModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl animate-slide-up">
-            <div className="flex justify-between items-center p-6 border-b border-slate-100">
+        <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl animate-slide-up max-h-[90vh] flex flex-col my-auto">
+            <div className="flex justify-between items-center p-6 border-b border-slate-100 flex-shrink-0">
               <h2 className="text-xl font-bold text-slate-800">投資を記録</h2>
               <button
                 onClick={() => setIsInvestModalOpen(false)}
@@ -563,7 +563,7 @@ export function FinancialsPage() {
                 <X size={20} className="text-slate-500" />
               </button>
             </div>
-            <form onSubmit={handleInvestSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleInvestSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">投資先事業（任意）</label>
                 <select
