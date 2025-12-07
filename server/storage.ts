@@ -767,6 +767,9 @@ export const storage = {
   },
 
   async deleteCompany(id: number): Promise<boolean> {
+    // Delete related records first to avoid foreign key constraint violations
+    await db.execute(sql`UPDATE businesses SET company_id = NULL WHERE company_id = ${id}`);
+    await db.execute(sql`DELETE FROM saved_reports WHERE company_id = ${id}`);
     await db.delete(companies).where(eq(companies.id, id));
     return true;
   },
