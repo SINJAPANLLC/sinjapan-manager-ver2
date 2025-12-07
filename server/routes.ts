@@ -2054,7 +2054,7 @@ ${articlesContext}
         <body>
           <nav>
             <div class="container">
-              <a href="/" class="logo">${siteName}</a>
+              <span class="logo">${siteName}</span>
             </div>
           </nav>
           

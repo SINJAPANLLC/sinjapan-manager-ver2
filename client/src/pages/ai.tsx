@@ -188,12 +188,12 @@ export function AiPage() {
   const saveSeoSettings = async () => {
     await Promise.all([
       fetch('/api/settings', {
-        method: 'POST',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key: 'site_name', value: siteName }),
       }),
       fetch('/api/settings', {
-        method: 'POST',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key: 'seo_domain', value: seoDomain }),
       }),
