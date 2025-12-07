@@ -1132,6 +1132,7 @@ ${articleList}`
         body: JSON.stringify({
           key: modelslabKey,
           prompt: text,
+          voice_id: 'yuki',
           language: 'japanese',
         }),
       });
