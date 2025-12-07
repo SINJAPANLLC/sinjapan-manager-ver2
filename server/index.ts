@@ -41,7 +41,17 @@ registerRoutes(app);
 
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../dist/public')));
-  app.get('*', (req, res) => {
+  // Catch-all for SPA, but exclude API routes and public pages
+  app.get('*', (req, res, next) => {
+    const publicPaths = ['/articles/', '/sitemap.xml', '/rss.xml', '/robots.txt'];
+    // Skip if it's a public page (handled by routes.ts SSR)
+    if (publicPaths.some(p => req.path.startsWith(p) || req.path === p.replace('/', ''))) {
+      return next();
+    }
+    // Skip API routes
+    if (req.path.startsWith('/api/')) {
+      return next();
+    }
     res.sendFile(path.join(__dirname, '../dist/public/index.html'));
   });
 }
