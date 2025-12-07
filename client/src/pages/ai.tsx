@@ -92,8 +92,6 @@ export function AiPage() {
   const [seoArticles, setSeoArticles] = useState<SeoArticle[]>([]);
   const [seoView, setSeoView] = useState<'list' | 'edit' | 'generate'>('list');
   const [editingArticle, setEditingArticle] = useState<SeoArticle | null>(null);
-  const [seoDomain, setSeoDomain] = useState('');
-  const [seoDomainSaving, setSeoDomainSaving] = useState(false);
   const [articleForm, setArticleForm] = useState({
     title: '',
     content: '',
@@ -101,6 +99,7 @@ export function AiPage() {
     keywords: '',
     ctaUrl: '',
     ctaText: 'お問い合わせはこちら',
+    domain: '',
   });
 
   const [voiceText, setVoiceText] = useState('');
@@ -139,26 +138,6 @@ export function AiPage() {
     if (res.ok) {
       setSeoArticles(await res.json());
     }
-    const settingsRes = await fetch('/api/settings');
-    if (settingsRes.ok) {
-      const settings = await settingsRes.json();
-      if (settings.seo_domain) {
-        setSeoDomain(settings.seo_domain);
-      }
-    }
-  };
-
-  const handleSaveSeoDomain = async () => {
-    setSeoDomainSaving(true);
-    try {
-      await fetch('/api/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: 'seo_domain', value: seoDomain }),
-      });
-    } finally {
-      setSeoDomainSaving(false);
-    }
   };
 
   useEffect(() => {
@@ -186,7 +165,7 @@ export function AiPage() {
         await fetchSeoArticles();
         setSeoView('list');
         setEditingArticle(null);
-        setArticleForm({ title: '', content: '', metaDescription: '', keywords: '', ctaUrl: '', ctaText: 'お問い合わせはこちら' });
+        setArticleForm({ title: '', content: '', metaDescription: '', keywords: '', ctaUrl: '', ctaText: 'お問い合わせはこちら', domain: '' });
       }
     } finally {
       setIsLoading(false);
@@ -233,13 +212,14 @@ export function AiPage() {
       keywords: article.keywords || '',
       ctaUrl: article.ctaUrl || '',
       ctaText: article.ctaText || 'お問い合わせはこちら',
+      domain: article.domain || '',
     });
     setSeoView('edit');
   };
 
   const startNewArticle = () => {
     setEditingArticle(null);
-    setArticleForm({ title: '', content: '', metaDescription: '', keywords: '', ctaUrl: '', ctaText: 'お問い合わせはこちら' });
+    setArticleForm({ title: '', content: '', metaDescription: '', keywords: '', ctaUrl: '', ctaText: 'お問い合わせはこちら', domain: '' });
     setSeoView('edit');
   };
 
@@ -261,6 +241,7 @@ export function AiPage() {
           keywords: seoKeywords,
           ctaUrl: '',
           ctaText: 'お問い合わせはこちら',
+          domain: '',
         });
         setSeoView('edit');
         setSeoTopic('');
@@ -945,31 +926,6 @@ export function AiPage() {
                   </div>
                 </div>
 
-                <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
-                  <h3 className="text-sm font-semibold text-blue-800 mb-2 flex items-center gap-2">
-                    <Globe size={16} />
-                    SEOドメイン設定
-                  </h3>
-                  <p className="text-xs text-blue-600 mb-3">公開記事やサイトマップで使用するドメインを設定します</p>
-                  <div className="flex gap-2">
-                    <input
-                      type="url"
-                      value={seoDomain}
-                      onChange={(e) => setSeoDomain(e.target.value)}
-                      placeholder="https://example.com（未設定の場合はReplitドメイン）"
-                      className="input-field flex-1"
-                    />
-                    <button
-                      onClick={handleSaveSeoDomain}
-                      disabled={seoDomainSaving}
-                      className="btn-primary flex items-center gap-2 whitespace-nowrap"
-                    >
-                      {seoDomainSaving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-                      保存
-                    </button>
-                  </div>
-                </div>
-
                 <div className="grid gap-4">
                   {seoArticles.length === 0 ? (
                     <div className="text-center py-12 bg-slate-50 rounded-xl">
@@ -1189,6 +1145,22 @@ export function AiPage() {
                           className="input-field"
                         />
                       </div>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                    <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                      <Globe size={16} />
+                      ドメイン設定（この記事用）
+                    </h3>
+                    <div>
+                      <input
+                        type="url"
+                        value={articleForm.domain}
+                        onChange={(e) => setArticleForm({ ...articleForm, domain: e.target.value })}
+                        placeholder="https://example.com（未設定の場合は公開ドメインを使用）"
+                        className="input-field"
+                      />
+                      <p className="text-xs text-slate-500 mt-1">記事ごとに異なるドメインを設定できます。未設定の場合は公開されているReplitドメインを使用します。</p>
                     </div>
                   </div>
                   <div className="flex gap-2">

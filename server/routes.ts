@@ -1246,7 +1246,7 @@ SEO最適化のポイント：
 
   app.post('/api/seo-articles', requireAuth, async (req: Request, res: Response) => {
     try {
-      const { title, slug, content, metaTitle, metaDescription, keywords, ctaUrl, ctaText } = req.body;
+      const { title, slug, content, metaTitle, metaDescription, keywords, ctaUrl, ctaText, domain } = req.body;
       const article = await storage.createSeoArticle({
         title,
         slug,
@@ -1256,6 +1256,7 @@ SEO最適化のポイント：
         keywords,
         ctaUrl,
         ctaText,
+        domain,
         userId: req.session.userId,
       });
       res.json(article);
@@ -1270,7 +1271,7 @@ SEO最適化のポイント：
 
   app.put('/api/seo-articles/:id', requireAuth, async (req: Request, res: Response) => {
     try {
-      const { title, slug, content, metaTitle, metaDescription, keywords, isPublished, ctaUrl, ctaText } = req.body;
+      const { title, slug, content, metaTitle, metaDescription, keywords, isPublished, ctaUrl, ctaText, domain } = req.body;
       const article = await storage.updateSeoArticle(req.params.id, {
         title,
         slug,
@@ -1281,6 +1282,7 @@ SEO最適化のポイント：
         isPublished,
         ctaUrl,
         ctaText,
+        domain,
       });
       res.json(article);
     } catch (error: any) {
@@ -1404,7 +1406,8 @@ ${articlesContext}
   app.get('/articles/:slug', async (req: Request, res: Response) => {
     try {
       const article = await storage.getSeoArticleBySlug(req.params.slug);
-      const seoDomain = await storage.getSetting('seo_domain') || `https://${req.get('host')}`;
+      const globalDomain = await storage.getSetting('seo_domain');
+      const seoDomain = article?.domain || globalDomain || `https://${req.get('host')}`;
       
       if (!article || !article.isPublished) {
         return res.status(404).send(`
