@@ -1021,13 +1021,6 @@ export function AiPage() {
                       インデックス監視
                     </button>
                     <button 
-                      onClick={() => setSeoView('categories')} 
-                      className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium transition-colors flex items-center gap-2"
-                    >
-                      <FolderOpen size={16} />
-                      カテゴリ管理
-                    </button>
-                    <button 
                       onClick={() => setSeoView('bulk')} 
                       className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium transition-colors flex items-center gap-2"
                     >
