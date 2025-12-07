@@ -200,6 +200,8 @@ export const seoArticles = pgTable("seo_articles", {
   metaTitle: varchar("meta_title", { length: 255 }),
   metaDescription: text("meta_description"),
   keywords: text("keywords"),
+  ctaUrl: text("cta_url"),
+  ctaText: text("cta_text").default("お問い合わせはこちら"),
   status: varchar("status", { length: 50 }).default("draft"),
   isPublished: boolean("is_published").default(false),
   publishedAt: timestamp("published_at"),

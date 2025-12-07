@@ -1655,11 +1655,13 @@ ${articlesContext}
               <p>${contentHtml}</p>
             </div>
             
+            ${article.ctaUrl ? `
             <div class="cta-section">
-              <h2>お問い合わせはこちら</h2>
+              <h2>${article.ctaText || 'お問い合わせはこちら'}</h2>
               <p>ご質問やご相談がございましたら、お気軽にお問い合わせください。</p>
-              <a href="/" class="cta-button">詳しく見る</a>
+              <a href="${article.ctaUrl}" class="cta-button" target="_blank" rel="noopener noreferrer">詳しく見る</a>
             </div>
+            ` : ''}
           </main>
           
           <footer>

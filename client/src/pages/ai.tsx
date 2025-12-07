@@ -97,6 +97,8 @@ export function AiPage() {
     content: '',
     metaDescription: '',
     keywords: '',
+    ctaUrl: '',
+    ctaText: 'お問い合わせはこちら',
   });
 
   const [voiceText, setVoiceText] = useState('');
@@ -162,7 +164,7 @@ export function AiPage() {
         await fetchSeoArticles();
         setSeoView('list');
         setEditingArticle(null);
-        setArticleForm({ title: '', content: '', metaDescription: '', keywords: '' });
+        setArticleForm({ title: '', content: '', metaDescription: '', keywords: '', ctaUrl: '', ctaText: 'お問い合わせはこちら' });
       }
     } finally {
       setIsLoading(false);
@@ -207,13 +209,15 @@ export function AiPage() {
       content: article.content,
       metaDescription: article.metaDescription || '',
       keywords: article.keywords || '',
+      ctaUrl: article.ctaUrl || '',
+      ctaText: article.ctaText || 'お問い合わせはこちら',
     });
     setSeoView('edit');
   };
 
   const startNewArticle = () => {
     setEditingArticle(null);
-    setArticleForm({ title: '', content: '', metaDescription: '', keywords: '' });
+    setArticleForm({ title: '', content: '', metaDescription: '', keywords: '', ctaUrl: '', ctaText: 'お問い合わせはこちら' });
     setSeoView('edit');
   };
 
@@ -233,6 +237,8 @@ export function AiPage() {
           content: data.article,
           metaDescription: `${seoTopic}についての詳細記事`,
           keywords: seoKeywords,
+          ctaUrl: '',
+          ctaText: 'お問い合わせはこちら',
         });
         setSeoView('edit');
         setSeoTopic('');
@@ -1108,6 +1114,35 @@ export function AiPage() {
                       placeholder="カンマ区切りでキーワードを入力"
                       className="input-field"
                     />
+                  </div>
+                  <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                    <h3 className="text-sm font-semibold text-blue-800 mb-3 flex items-center gap-2">
+                      <ExternalLink size={16} />
+                      CTA設定（外部サービスへの誘導）
+                    </h3>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">リンク先URL</label>
+                        <input
+                          type="url"
+                          value={articleForm.ctaUrl}
+                          onChange={(e) => setArticleForm({ ...articleForm, ctaUrl: e.target.value })}
+                          placeholder="https://example.com/service"
+                          className="input-field"
+                        />
+                        <p className="text-xs text-slate-500 mt-1">記事下部のCTAボタンのリンク先（外部サービスページ）</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">CTAボタンのテキスト</label>
+                        <input
+                          type="text"
+                          value={articleForm.ctaText}
+                          onChange={(e) => setArticleForm({ ...articleForm, ctaText: e.target.value })}
+                          placeholder="お問い合わせはこちら"
+                          className="input-field"
+                        />
+                      </div>
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <button
