@@ -505,26 +505,26 @@ export function ClientsPage() {
                   </div>
                 </div>
 
-                <div className="flex gap-2 mt-4 pt-3 border-t border-slate-100" onClick={(e) => e.stopPropagation()}>
+                <div className="grid grid-cols-4 gap-2 mt-4 pt-3 border-t border-slate-100" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={() => {
                       setProjectForm({ ...projectForm, clientId: c.id });
                       setShowProjectModal(true);
                     }}
-                    className="flex-1 btn-secondary text-sm py-1.5"
+                    className="btn-secondary text-xs py-2 flex flex-col items-center justify-center"
                   >
-                    <FileText size={14} className="inline mr-1" />
-                    案件
+                    <FileText size={16} />
+                    <span className="mt-1">案件</span>
                   </button>
                   <button
                     onClick={() => {
                       setInvoiceForm({ ...invoiceForm, clientId: c.id });
                       setShowInvoiceModal(true);
                     }}
-                    className="flex-1 btn-secondary text-sm py-1.5"
+                    className="btn-secondary text-xs py-2 flex flex-col items-center justify-center"
                   >
-                    <Receipt size={14} className="inline mr-1" />
-                    請求
+                    <Receipt size={16} />
+                    <span className="mt-1">請求</span>
                   </button>
                   <button
                     onClick={() => {
@@ -532,15 +532,17 @@ export function ClientsPage() {
                       setForm({ email: c.email, name: c.name, password: '', phone: c.phone || '', bankName: c.bankName || '', bankBranch: c.bankBranch || '', bankAccountType: c.bankAccountType || '普通', bankAccountNumber: c.bankAccountNumber || '', bankAccountHolder: c.bankAccountHolder || '' });
                       setShowModal(true);
                     }}
-                    className="btn-secondary text-sm py-1.5"
+                    className="btn-secondary text-xs py-2 flex flex-col items-center justify-center"
                   >
-                    <Edit size={14} />
+                    <Edit size={16} />
+                    <span className="mt-1">編集</span>
                   </button>
                   <button
                     onClick={() => handleDelete(c.id)}
-                    className="btn-secondary text-sm py-1.5 text-red-600 border-red-200 hover:bg-red-50"
+                    className="btn-secondary text-xs py-2 flex flex-col items-center justify-center text-red-600 border-red-200 hover:bg-red-50"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={16} />
+                    <span className="mt-1">削除</span>
                   </button>
                 </div>
               </div>
