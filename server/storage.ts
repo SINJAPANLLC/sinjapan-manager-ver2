@@ -358,7 +358,8 @@ export const storage = {
 
   async createSeoArticle(data: InsertSeoArticle): Promise<SeoArticle> {
     const id = `seo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const [article] = await db.insert(seoArticles).values({ ...data, id }).returning();
+    const slug = data.slug || `article-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+    const [article] = await db.insert(seoArticles).values({ ...data, id, slug }).returning();
     return article;
   },
 
