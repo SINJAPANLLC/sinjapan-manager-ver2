@@ -21,9 +21,24 @@ interface SquareStatus {
   locations?: SquareLocation[];
 }
 
+interface PaymentLink {
+  id: string;
+  url: string;
+  longUrl?: string;
+  createdAt: string;
+}
+
 function PaymentTab() {
   const [status, setStatus] = useState<SquareStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
+  const [showLinkForm, setShowLinkForm] = useState(false);
+  const [createdLink, setCreatedLink] = useState<PaymentLink | null>(null);
+  const [linkForm, setLinkForm] = useState({
+    name: '',
+    amount: '',
+    description: '',
+  });
 
   const fetchStatus = async () => {
     setIsLoading(true);
@@ -42,6 +57,39 @@ function PaymentTab() {
   useEffect(() => {
     fetchStatus();
   }, []);
+
+  const handleCreateLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!linkForm.name || !linkForm.amount) return;
+    
+    setIsCreating(true);
+    try {
+      const res = await fetch('/api/square/payment-links', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: linkForm.name,
+          amount: parseInt(linkForm.amount),
+          description: linkForm.description,
+        }),
+      });
+      
+      if (res.ok) {
+        const link = await res.json();
+        setCreatedLink(link);
+        setLinkForm({ name: '', amount: '', description: '' });
+        setShowLinkForm(false);
+      }
+    } catch (error) {
+      console.error('Create payment link error:', error);
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
 
   if (isLoading) {
     return (
@@ -117,35 +165,127 @@ function PaymentTab() {
       </div>
 
       {status?.connected && (
-        <div className="grid grid-cols-3 gap-4">
-          <div className="card p-5">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Users size={18} className="text-blue-600" />
-              </div>
-              <span className="text-sm text-slate-500">顧客管理</span>
+        <>
+          <div className="card p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="font-bold text-slate-800">決済リンクを作成</h4>
+              <button
+                onClick={() => setShowLinkForm(!showLinkForm)}
+                className="btn-primary flex items-center gap-2"
+              >
+                <Plus size={18} />
+                新規作成
+              </button>
             </div>
-            <p className="text-sm text-slate-600">Squareの顧客データと連携</p>
-          </div>
-          <div className="card p-5">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <CreditCard size={18} className="text-green-600" />
+
+            {showLinkForm && (
+              <form onSubmit={handleCreateLink} className="space-y-4 p-4 bg-slate-50 rounded-xl">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">商品・サービス名 *</label>
+                  <input
+                    type="text"
+                    value={linkForm.name}
+                    onChange={(e) => setLinkForm({ ...linkForm, name: e.target.value })}
+                    className="input-field"
+                    placeholder="例: コンサルティング料金"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">金額（円） *</label>
+                  <input
+                    type="number"
+                    value={linkForm.amount}
+                    onChange={(e) => setLinkForm({ ...linkForm, amount: e.target.value })}
+                    className="input-field"
+                    placeholder="例: 10000"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">説明</label>
+                  <textarea
+                    value={linkForm.description}
+                    onChange={(e) => setLinkForm({ ...linkForm, description: e.target.value })}
+                    className="input-field resize-none"
+                    rows={2}
+                    placeholder="決済に関するメモ"
+                  />
+                </div>
+                <div className="flex justify-end gap-3">
+                  <button type="button" onClick={() => setShowLinkForm(false)} className="btn-secondary">
+                    キャンセル
+                  </button>
+                  <button type="submit" disabled={isCreating} className="btn-primary flex items-center gap-2">
+                    {isCreating ? <Loader2 className="animate-spin" size={18} /> : <CreditCard size={18} />}
+                    決済リンクを作成
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {createdLink && (
+              <div className="mt-4 p-4 bg-green-50 rounded-xl border border-green-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <CheckCircle2 size={18} className="text-green-600" />
+                  <span className="font-medium text-green-800">決済リンクを作成しました</span>
+                </div>
+                <div className="flex items-center gap-2 mt-3">
+                  <input
+                    type="text"
+                    value={createdLink.url}
+                    readOnly
+                    className="input-field flex-1 bg-white"
+                  />
+                  <button
+                    onClick={() => copyToClipboard(createdLink.url)}
+                    className="btn-secondary"
+                  >
+                    コピー
+                  </button>
+                  <a
+                    href={createdLink.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-primary"
+                  >
+                    開く
+                  </a>
+                </div>
               </div>
-              <span className="text-sm text-slate-500">決済履歴</span>
-            </div>
-            <p className="text-sm text-slate-600">過去の決済を確認</p>
+            )}
           </div>
-          <div className="card p-5">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Mail size={18} className="text-purple-600" />
+
+          <div className="grid grid-cols-3 gap-4">
+            <div className="card p-5">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Users size={18} className="text-blue-600" />
+                </div>
+                <span className="text-sm text-slate-500">顧客管理</span>
               </div>
-              <span className="text-sm text-slate-500">請求書</span>
+              <p className="text-sm text-slate-600">Squareの顧客データと連携</p>
             </div>
-            <p className="text-sm text-slate-600">請求書の作成・送信</p>
+            <div className="card p-5">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <CreditCard size={18} className="text-green-600" />
+                </div>
+                <span className="text-sm text-slate-500">決済履歴</span>
+              </div>
+              <p className="text-sm text-slate-600">過去の決済を確認</p>
+            </div>
+            <div className="card p-5">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Mail size={18} className="text-purple-600" />
+                </div>
+                <span className="text-sm text-slate-500">請求書</span>
+              </div>
+              <p className="text-sm text-slate-600">請求書の作成・送信</p>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {!status?.connected && (

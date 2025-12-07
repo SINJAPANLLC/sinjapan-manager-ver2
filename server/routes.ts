@@ -1891,6 +1891,56 @@ ${articleList}`
     }
   });
 
+  app.post('/api/square/payment-links', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const { name, amount, description, currency = 'JPY' } = req.body;
+      
+      if (!name || !amount) {
+        return res.status(400).json({ error: '商品名と金額は必須です' });
+      }
+
+      const { locations } = await squareClient.locations.list();
+      const locationId = locations?.[0]?.id;
+      
+      if (!locationId) {
+        return res.status(400).json({ error: '店舗が登録されていません' });
+      }
+
+      const { paymentLink } = await squareClient.checkout.paymentLinks.create({
+        idempotencyKey: crypto.randomUUID(),
+        quickPay: {
+          name,
+          priceMoney: {
+            amount: BigInt(amount),
+            currency,
+          },
+          locationId,
+        },
+        paymentNote: description || undefined,
+      });
+
+      res.json({
+        id: paymentLink?.id,
+        url: paymentLink?.url,
+        longUrl: paymentLink?.longUrl,
+        createdAt: paymentLink?.createdAt,
+      });
+    } catch (error: any) {
+      console.error('Create payment link error:', error);
+      res.status(500).json({ error: error.message || '決済リンクの作成に失敗しました' });
+    }
+  });
+
+  app.get('/api/square/payment-links', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const { paymentLinks } = await squareClient.checkout.paymentLinks.list();
+      res.json(paymentLinks || []);
+    } catch (error: any) {
+      console.error('List payment links error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Quick Notes API
   app.get('/api/quick-notes', requireAuth, async (req: Request, res: Response) => {
     try {
