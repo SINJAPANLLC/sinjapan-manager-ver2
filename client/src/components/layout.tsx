@@ -32,7 +32,6 @@ export function Layout({ children }: LayoutProps) {
     { href: '/calendar', label: 'カレンダー', icon: Calendar },
     { href: '/communication', label: 'コミュニケーション', icon: MessageSquare },
     { href: '/business', label: '事業', icon: Briefcase },
-    { href: '/leads', label: 'リード管理', icon: Target },
     { href: '/ai', label: 'AI', icon: Bot },
     { href: '/staff', label: 'スタッフ', icon: UserCheck },
     { href: '/agency', label: '代理店', icon: Building2 },

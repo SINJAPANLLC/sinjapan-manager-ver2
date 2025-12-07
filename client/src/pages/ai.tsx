@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'wouter';
 import {
   Image,
   Video,
@@ -30,7 +31,8 @@ import {
   Save,
   ArrowLeft,
   BarChart3,
-  FolderOpen
+  FolderOpen,
+  Target
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
@@ -1760,6 +1762,19 @@ export function AiPage() {
                 <ShareButtons content={generatedList} type="text" />
               </div>
             )}
+
+            <div className="mt-8 pt-6 border-t border-slate-200">
+              <h3 className="text-md font-semibold text-slate-800 flex items-center gap-2 mb-3">
+                <Target className="text-primary-500" size={18} />
+                リード管理
+              </h3>
+              <p className="text-sm text-slate-500 mb-4">MEO・SNSから収集したリード（見込み客）を一元管理。電話・メール・DMでアプローチできます。</p>
+              <Link href="/leads" className="btn-primary inline-flex items-center gap-2">
+                <Target size={18} />
+                リード管理を開く
+                <ChevronRight size={16} />
+              </Link>
+            </div>
           </div>
         )}
 
