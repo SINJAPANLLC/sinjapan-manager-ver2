@@ -1131,7 +1131,7 @@ ${articleList}`
         },
         body: JSON.stringify({
           key: modelslabKey,
-          text: text,
+          prompt: text,
           language: 'japanese',
         }),
       });
