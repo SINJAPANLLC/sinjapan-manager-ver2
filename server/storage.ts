@@ -1,8 +1,8 @@
 import { db } from './db';
-import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, seoArticles, systemSettings } from '../shared/schema';
+import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, seoArticles, seoCategories, systemSettings } from '../shared/schema';
 import { eq, and, or, desc, sql, isNull, gte, lte } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, SeoArticle, InsertSeoArticle, SystemSetting } from '../shared/schema';
+import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, SystemSetting } from '../shared/schema';
 
 export const storage = {
   async getUser(id: number): Promise<User | undefined> {
@@ -336,6 +336,21 @@ export const storage = {
       .limit(100);
   },
 
+  async getSeoCategories(): Promise<SeoCategory[]> {
+    return db.select().from(seoCategories).orderBy(seoCategories.name);
+  },
+
+  async createSeoCategory(data: InsertSeoCategory): Promise<SeoCategory> {
+    const [category] = await db.insert(seoCategories).values(data).returning();
+    return category;
+  },
+
+  async deleteSeoCategory(id: number): Promise<boolean> {
+    await db.update(seoArticles).set({ categoryId: null }).where(eq(seoArticles.categoryId, id));
+    await db.delete(seoCategories).where(eq(seoCategories.id, id));
+    return true;
+  },
+
   async getSeoArticles(): Promise<SeoArticle[]> {
     return db.select().from(seoArticles).orderBy(desc(seoArticles.createdAt));
   },
@@ -356,10 +371,10 @@ export const storage = {
     return article;
   },
 
-  async createSeoArticle(data: InsertSeoArticle): Promise<SeoArticle> {
+  async createSeoArticle(data: Omit<InsertSeoArticle, 'id' | 'slug'> & { slug?: string }): Promise<SeoArticle> {
     const id = `seo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const slug = data.slug || `article-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
-    const [article] = await db.insert(seoArticles).values({ ...data, id, slug }).returning();
+    const [article] = await db.insert(seoArticles).values({ ...data, id, slug } as InsertSeoArticle).returning();
     return article;
   },
 

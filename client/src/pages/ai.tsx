@@ -44,6 +44,14 @@ interface AiLog {
   createdAt: string;
 }
 
+interface SeoCategory {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string;
+  createdAt: string;
+}
+
 interface SeoArticle {
   id: string;
   title: string;
@@ -51,6 +59,7 @@ interface SeoArticle {
   content: string;
   metaDescription: string;
   keywords: string;
+  categoryId?: number;
   isPublished: boolean;
   indexingStatus: string;
   createdAt: string;
@@ -90,7 +99,8 @@ export function AiPage() {
   const [seoKeywords, setSeoKeywords] = useState('');
   const [seoArticle, setSeoArticle] = useState('');
   const [seoArticles, setSeoArticles] = useState<SeoArticle[]>([]);
-  const [seoView, setSeoView] = useState<'list' | 'edit' | 'generate'>('list');
+  const [seoCategories, setSeoCategories] = useState<SeoCategory[]>([]);
+  const [seoView, setSeoView] = useState<'list' | 'edit' | 'generate' | 'bulk' | 'categories' | 'stats'>('list');
   const [editingArticle, setEditingArticle] = useState<SeoArticle | null>(null);
   const [articleForm, setArticleForm] = useState({
     title: '',
@@ -100,7 +110,13 @@ export function AiPage() {
     ctaUrl: '',
     ctaText: 'お問い合わせはこちら',
     domain: '',
+    categoryId: undefined as number | undefined,
   });
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategorySlug, setNewCategorySlug] = useState('');
+  const [bulkTopics, setBulkTopics] = useState('');
+  const [bulkCategoryId, setBulkCategoryId] = useState<number | undefined>(undefined);
+  const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0, generating: false });
 
   const [voiceText, setVoiceText] = useState('');
   const [voiceUrl, setVoiceUrl] = useState('');
@@ -140,9 +156,17 @@ export function AiPage() {
     }
   };
 
+  const fetchSeoCategories = async () => {
+    const res = await fetch('/api/seo-categories');
+    if (res.ok) {
+      setSeoCategories(await res.json());
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'seo') {
       fetchSeoArticles();
+      fetchSeoCategories();
     }
   }, [activeTab]);
 
@@ -165,7 +189,7 @@ export function AiPage() {
         await fetchSeoArticles();
         setSeoView('list');
         setEditingArticle(null);
-        setArticleForm({ title: '', content: '', metaDescription: '', keywords: '', ctaUrl: '', ctaText: 'お問い合わせはこちら', domain: '' });
+        setArticleForm({ title: '', content: '', metaDescription: '', keywords: '', ctaUrl: '', ctaText: 'お問い合わせはこちら', domain: '', categoryId: undefined });
       }
     } finally {
       setIsLoading(false);
@@ -210,17 +234,82 @@ export function AiPage() {
       content: article.content,
       metaDescription: article.metaDescription || '',
       keywords: article.keywords || '',
-      ctaUrl: article.ctaUrl || '',
-      ctaText: article.ctaText || 'お問い合わせはこちら',
-      domain: article.domain || '',
+      ctaUrl: (article as any).ctaUrl || '',
+      ctaText: (article as any).ctaText || 'お問い合わせはこちら',
+      domain: (article as any).domain || '',
+      categoryId: article.categoryId,
     });
     setSeoView('edit');
   };
 
   const startNewArticle = () => {
     setEditingArticle(null);
-    setArticleForm({ title: '', content: '', metaDescription: '', keywords: '', ctaUrl: '', ctaText: 'お問い合わせはこちら', domain: '' });
+    setArticleForm({ title: '', content: '', metaDescription: '', keywords: '', ctaUrl: '', ctaText: 'お問い合わせはこちら', domain: '', categoryId: undefined });
     setSeoView('edit');
+  };
+
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) return;
+    const slug = newCategorySlug.trim() || newCategoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const res = await fetch('/api/seo-categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: newCategoryName, slug }),
+    });
+    if (res.ok) {
+      await fetchSeoCategories();
+      setNewCategoryName('');
+      setNewCategorySlug('');
+    }
+  };
+
+  const handleDeleteCategory = async (id: number) => {
+    if (!confirm('このカテゴリを削除しますか？記事は削除されませんが、カテゴリは外れます。')) return;
+    const res = await fetch(`/api/seo-categories/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      await fetchSeoCategories();
+    }
+  };
+
+  const handleBulkGenerate = async () => {
+    const topics = bulkTopics.split('\n').map(t => t.trim()).filter(t => t);
+    if (topics.length === 0) return;
+    
+    setBulkProgress({ current: 0, total: topics.length, generating: true });
+    
+    for (let i = 0; i < topics.length; i++) {
+      const topic = topics[i];
+      try {
+        const res = await fetch('/api/ai/seo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ topic, keywords: '' }),
+        });
+        const data = await res.json();
+        if (data.article) {
+          const slug = `article-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+          await fetch('/api/seo-articles', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: topic,
+              slug,
+              content: data.article,
+              metaDescription: `${topic}についての詳細記事`,
+              keywords: '',
+              categoryId: bulkCategoryId,
+            }),
+          });
+        }
+      } catch (e) {
+        console.error('Bulk generate error:', e);
+      }
+      setBulkProgress({ current: i + 1, total: topics.length, generating: true });
+    }
+    
+    setBulkProgress({ current: topics.length, total: topics.length, generating: false });
+    setBulkTopics('');
+    await fetchSeoArticles();
   };
 
   const handleGenerateAndSave = async () => {
@@ -242,6 +331,7 @@ export function AiPage() {
           ctaUrl: '',
           ctaText: 'お問い合わせはこちら',
           domain: '',
+          categoryId: undefined,
         });
         setSeoView('edit');
         setSeoTopic('');
@@ -914,7 +1004,16 @@ export function AiPage() {
                     </h2>
                     <p className="text-sm text-slate-500">記事の作成・編集・公開を管理します</p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={() => setSeoView('stats')} className="btn-secondary flex items-center gap-2 text-sm">
+                      インデックス監視
+                    </button>
+                    <button onClick={() => setSeoView('categories')} className="btn-secondary flex items-center gap-2 text-sm">
+                      カテゴリ管理
+                    </button>
+                    <button onClick={() => setSeoView('bulk')} className="btn-secondary flex items-center gap-2 text-sm">
+                      一括生成
+                    </button>
                     <button onClick={() => setSeoView('generate')} className="btn-secondary flex items-center gap-2">
                       <Sparkles size={16} />
                       AI生成
@@ -1067,6 +1166,227 @@ export function AiPage() {
               </>
             )}
 
+            {seoView === 'categories' && (
+              <>
+                <button onClick={() => setSeoView('list')} className="flex items-center gap-2 text-slate-600 hover:text-primary-600 mb-4">
+                  <ArrowLeft size={18} />
+                  記事一覧に戻る
+                </button>
+                <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                  カテゴリ管理
+                </h2>
+                <p className="text-sm text-slate-500 mb-4">記事のカテゴリを管理します</p>
+                
+                <div className="bg-white border rounded-xl p-4 mb-4">
+                  <h3 className="font-medium text-slate-700 mb-3">新規カテゴリ作成</h3>
+                  <div className="grid md:grid-cols-2 gap-3">
+                    <input
+                      type="text"
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      placeholder="カテゴリ名"
+                      className="input-field"
+                    />
+                    <input
+                      type="text"
+                      value={newCategorySlug}
+                      onChange={(e) => setNewCategorySlug(e.target.value)}
+                      placeholder="スラッグ（自動生成）"
+                      className="input-field"
+                    />
+                  </div>
+                  <button onClick={handleCreateCategory} disabled={!newCategoryName.trim()} className="btn-primary mt-3">
+                    <Plus size={16} className="mr-2" />
+                    カテゴリを追加
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {seoCategories.length === 0 ? (
+                    <div className="text-center py-8 bg-slate-50 rounded-xl">
+                      <p className="text-slate-500">カテゴリがありません</p>
+                    </div>
+                  ) : (
+                    seoCategories.map((cat) => (
+                      <div key={cat.id} className="flex items-center justify-between bg-white border rounded-lg p-3">
+                        <div>
+                          <span className="font-medium text-slate-800">{cat.name}</span>
+                          <span className="text-sm text-slate-500 ml-2">/{cat.slug}</span>
+                        </div>
+                        <button onClick={() => handleDeleteCategory(cat.id)} className="text-red-500 hover:bg-red-50 p-2 rounded-lg">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </>
+            )}
+
+            {seoView === 'bulk' && (
+              <>
+                <button onClick={() => setSeoView('list')} className="flex items-center gap-2 text-slate-600 hover:text-primary-600 mb-4">
+                  <ArrowLeft size={18} />
+                  記事一覧に戻る
+                </button>
+                <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                  <Sparkles className="text-primary-500" size={20} />
+                  一括記事生成
+                </h2>
+                <p className="text-sm text-slate-500 mb-4">複数のトピックから記事を一括生成します（1日10〜30記事推奨）</p>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">トピックリスト（1行1トピック）</label>
+                    <textarea
+                      value={bulkTopics}
+                      onChange={(e) => setBulkTopics(e.target.value)}
+                      placeholder="東京のおすすめカフェ&#10;京都の観光スポット&#10;大阪のグルメガイド"
+                      rows={10}
+                      className="input-field resize-none"
+                      disabled={bulkProgress.generating}
+                    />
+                    <p className="text-xs text-slate-400 mt-1">
+                      現在: {bulkTopics.split('\n').filter(t => t.trim()).length} トピック
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">カテゴリ（オプション）</label>
+                    <select
+                      value={bulkCategoryId || ''}
+                      onChange={(e) => setBulkCategoryId(e.target.value ? parseInt(e.target.value) : undefined)}
+                      className="input-field"
+                      disabled={bulkProgress.generating}
+                    >
+                      <option value="">カテゴリなし</option>
+                      {seoCategories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {bulkProgress.generating && (
+                    <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Loader2 className="animate-spin text-primary-500" size={20} />
+                        <span className="font-medium text-primary-700">
+                          生成中... {bulkProgress.current} / {bulkProgress.total}
+                        </span>
+                      </div>
+                      <div className="w-full bg-blue-200 rounded-full h-2">
+                        <div
+                          className="bg-primary-500 h-2 rounded-full transition-all"
+                          style={{ width: `${(bulkProgress.current / bulkProgress.total) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={handleBulkGenerate}
+                    disabled={bulkProgress.generating || bulkTopics.split('\n').filter(t => t.trim()).length === 0}
+                    className="btn-primary flex items-center gap-2"
+                  >
+                    {bulkProgress.generating ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
+                    一括生成開始
+                  </button>
+                </div>
+              </>
+            )}
+
+            {seoView === 'stats' && (
+              <>
+                <button onClick={() => setSeoView('list')} className="flex items-center gap-2 text-slate-600 hover:text-primary-600 mb-4">
+                  <ArrowLeft size={18} />
+                  記事一覧に戻る
+                </button>
+                <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                  インデックス監視ダッシュボード
+                </h2>
+                <p className="text-sm text-slate-500 mb-4">記事のインデックス状況を監視します（目標: 50%以上）</p>
+
+                {(() => {
+                  const total = seoArticles.length;
+                  const published = seoArticles.filter(a => a.isPublished).length;
+                  const indexed = seoArticles.filter(a => a.indexingStatus === 'sent').length;
+                  const indexRate = published > 0 ? Math.round((indexed / published) * 100) : 0;
+
+                  return (
+                    <div className="space-y-4">
+                      <div className="grid md:grid-cols-4 gap-4">
+                        <div className="bg-white border rounded-xl p-4 text-center">
+                          <p className="text-3xl font-bold text-slate-800">{total}</p>
+                          <p className="text-sm text-slate-500">総記事数</p>
+                        </div>
+                        <div className="bg-white border rounded-xl p-4 text-center">
+                          <p className="text-3xl font-bold text-green-600">{published}</p>
+                          <p className="text-sm text-slate-500">公開中</p>
+                        </div>
+                        <div className="bg-white border rounded-xl p-4 text-center">
+                          <p className="text-3xl font-bold text-blue-600">{indexed}</p>
+                          <p className="text-sm text-slate-500">インデックス送信済</p>
+                        </div>
+                        <div className={cn(
+                          "bg-white border rounded-xl p-4 text-center",
+                          indexRate >= 50 ? "ring-2 ring-green-500" : "ring-2 ring-orange-500"
+                        )}>
+                          <p className={cn(
+                            "text-3xl font-bold",
+                            indexRate >= 50 ? "text-green-600" : "text-orange-600"
+                          )}>{indexRate}%</p>
+                          <p className="text-sm text-slate-500">インデックス率</p>
+                        </div>
+                      </div>
+
+                      {indexRate < 50 && (
+                        <div className="p-4 bg-orange-50 rounded-xl border border-orange-200">
+                          <p className="text-orange-800 font-medium">インデックス率が50%を下回っています</p>
+                          <p className="text-sm text-orange-600 mt-1">
+                            公開記事のインデックス送信を行い、Search Consoleでの確認をおすすめします。
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="bg-white border rounded-xl p-4">
+                        <h3 className="font-medium text-slate-700 mb-3">未インデックス記事（公開中）</h3>
+                        <div className="space-y-2 max-h-60 overflow-y-auto">
+                          {seoArticles.filter(a => a.isPublished && a.indexingStatus !== 'sent').length === 0 ? (
+                            <p className="text-slate-500 text-sm">すべての公開記事がインデックス済みです</p>
+                          ) : (
+                            seoArticles.filter(a => a.isPublished && a.indexingStatus !== 'sent').map((article) => (
+                              <div key={article.id} className="flex items-center justify-between py-2 border-b last:border-0">
+                                <span className="text-sm text-slate-700">{article.title}</span>
+                                <button
+                                  onClick={() => handleIndexArticle(article.id)}
+                                  disabled={isLoading}
+                                  className="text-xs px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                                >
+                                  インデックス送信
+                                </button>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                        <p className="text-sm text-blue-700">
+                          <span className="font-medium">サイトマップ:</span>{' '}
+                          <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer" className="underline hover:no-underline">
+                            /sitemap.xml
+                          </a>
+                        </p>
+                        <p className="text-xs text-blue-600 mt-1">
+                          Google Search Consoleにサイトマップを送信することでインデックス率が向上します
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </>
+            )}
+
             {seoView === 'edit' && (
               <>
                 <button onClick={() => setSeoView('list')} className="flex items-center gap-2 text-slate-600 hover:text-primary-600 mb-4">
@@ -1089,7 +1409,37 @@ export function AiPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">本文 *</label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-slate-700">本文 *</label>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!articleForm.content.trim()) return;
+                          setIsLoading(true);
+                          try {
+                            const res = await fetch('/api/ai/internal-links', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ articleId: editingArticle?.id, content: articleForm.content }),
+                            });
+                            const data = await res.json();
+                            if (data.linkedContent) {
+                              setArticleForm({ ...articleForm, content: data.linkedContent });
+                              alert(`${data.linksAdded}個の内部リンクを挿入しました`);
+                            }
+                          } catch (e) {
+                            console.error('Internal link error:', e);
+                          } finally {
+                            setIsLoading(false);
+                          }
+                        }}
+                        disabled={isLoading || !articleForm.content.trim()}
+                        className="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 disabled:opacity-50 flex items-center gap-1"
+                      >
+                        <Sparkles size={12} />
+                        内部リンク自動挿入
+                      </button>
+                    </div>
                     <textarea
                       value={articleForm.content}
                       onChange={(e) => setArticleForm({ ...articleForm, content: e.target.value })}

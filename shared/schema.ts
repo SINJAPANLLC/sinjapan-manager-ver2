@@ -192,6 +192,14 @@ export const aiLogs = pgTable("ai_logs", {
 export type AiLog = typeof aiLogs.$inferSelect;
 export type InsertAiLog = typeof aiLogs.$inferInsert;
 
+export const seoCategories = pgTable("seo_categories", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 255 }).notNull().unique(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const seoArticles = pgTable("seo_articles", {
   id: varchar("id", { length: 255 }).primaryKey(),
   title: varchar("title", { length: 255 }).notNull(),
@@ -203,6 +211,7 @@ export const seoArticles = pgTable("seo_articles", {
   ctaUrl: text("cta_url"),
   ctaText: text("cta_text").default("お問い合わせはこちら"),
   domain: text("domain"),
+  categoryId: integer("category_id").references(() => seoCategories.id),
   status: varchar("status", { length: 50 }).default("draft"),
   isPublished: boolean("is_published").default(false),
   publishedAt: timestamp("published_at"),
@@ -213,6 +222,8 @@ export const seoArticles = pgTable("seo_articles", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export type SeoCategory = typeof seoCategories.$inferSelect;
+export type InsertSeoCategory = typeof seoCategories.$inferInsert;
 export type SeoArticle = typeof seoArticles.$inferSelect;
 export type InsertSeoArticle = typeof seoArticles.$inferInsert;
 

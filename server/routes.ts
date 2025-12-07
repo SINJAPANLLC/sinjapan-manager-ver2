@@ -1049,6 +1049,58 @@ SEO最適化のポイント：
     }
   });
 
+  app.post('/api/ai/internal-links', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { articleId, content } = req.body;
+      
+      const publishedArticles = await storage.getPublishedSeoArticles();
+      const otherArticles = publishedArticles.filter(a => a.id !== articleId);
+      
+      if (otherArticles.length === 0) {
+        return res.json({ linkedContent: content, linksAdded: 0 });
+      }
+
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      });
+
+      const articleList = otherArticles.map(a => `- タイトル: ${a.title}, URL: /articles/${a.slug}`).join('\n');
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `あなたはSEOの専門家です。記事に内部リンクを挿入してSEOを改善してください。
+
+以下のルールに従ってください：
+1. 関連性の高い記事にのみリンクを貼る
+2. 自然な文脈でリンクを挿入する
+3. 1記事につき2〜5個の内部リンクが適切
+4. リンクはMarkdown形式 [テキスト](/articles/slug) で挿入
+5. 既存の文章を大きく変えずにリンクを追加
+
+利用可能な記事一覧:
+${articleList}`
+          },
+          {
+            role: 'user',
+            content: `以下の記事に内部リンクを挿入してください:\n\n${content}`
+          }
+        ],
+      });
+
+      const linkedContent = completion.choices[0]?.message?.content || content;
+      const linksAdded = (linkedContent.match(/\[.*?\]\(\/articles\/.*?\)/g) || []).length;
+
+      res.json({ linkedContent, linksAdded });
+    } catch (error) {
+      console.error('Internal links error:', error);
+      res.status(500).json({ error: '内部リンク生成エラーが発生しました' });
+    }
+  });
+
   app.post('/api/ai/voice', requireAuth, async (req: Request, res: Response) => {
     try {
       const { text } = req.body;
@@ -1220,6 +1272,41 @@ SEO最適化のポイント：
     }
   });
 
+  // SEO Categories API
+  app.get('/api/seo-categories', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const categories = await storage.getSeoCategories();
+      res.json(categories);
+    } catch (error) {
+      console.error('Get SEO categories error:', error);
+      res.status(500).json([]);
+    }
+  });
+
+  app.post('/api/seo-categories', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { name, slug, description } = req.body;
+      const category = await storage.createSeoCategory({ name, slug, description });
+      res.json(category);
+    } catch (error: any) {
+      console.error('Create SEO category error:', error);
+      if (error.code === '23505') {
+        return res.status(400).json({ error: 'このスラッグは既に使用されています' });
+      }
+      res.status(500).json({ error: 'カテゴリの作成に失敗しました' });
+    }
+  });
+
+  app.delete('/api/seo-categories/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteSeoCategory(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete SEO category error:', error);
+      res.status(500).json({ error: 'カテゴリの削除に失敗しました' });
+    }
+  });
+
   // SEO Articles API
   app.get('/api/seo-articles', requireAuth, async (req: Request, res: Response) => {
     try {
@@ -1246,7 +1333,7 @@ SEO最適化のポイント：
 
   app.post('/api/seo-articles', requireAuth, async (req: Request, res: Response) => {
     try {
-      const { title, slug, content, metaTitle, metaDescription, keywords, ctaUrl, ctaText, domain } = req.body;
+      const { title, slug, content, metaTitle, metaDescription, keywords, ctaUrl, ctaText, domain, categoryId } = req.body;
       const article = await storage.createSeoArticle({
         title,
         slug,
@@ -1257,6 +1344,7 @@ SEO最適化のポイント：
         ctaUrl,
         ctaText,
         domain,
+        categoryId,
         userId: req.session.userId,
       });
       res.json(article);
@@ -1271,7 +1359,7 @@ SEO最適化のポイント：
 
   app.put('/api/seo-articles/:id', requireAuth, async (req: Request, res: Response) => {
     try {
-      const { title, slug, content, metaTitle, metaDescription, keywords, isPublished, ctaUrl, ctaText, domain } = req.body;
+      const { title, slug, content, metaTitle, metaDescription, keywords, isPublished, ctaUrl, ctaText, domain, categoryId } = req.body;
       const article = await storage.updateSeoArticle(req.params.id, {
         title,
         slug,
@@ -1283,6 +1371,7 @@ SEO最適化のポイント：
         ctaUrl,
         ctaText,
         domain,
+        categoryId,
       });
       res.json(article);
     } catch (error: any) {

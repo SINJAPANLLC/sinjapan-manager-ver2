@@ -146,9 +146,26 @@ Optional (for AI features):
 - Frontend served on port 5000
 - CORS enabled for development
 
-## Recent Changes (2025-12-06)
+## Recent Changes (2025-12-07)
 
-### AI機能ページの追加
+### SEO記事管理の高度な機能追加
+- **カテゴリ管理**: 記事をカテゴリで分類・管理
+  - seo_categoriesテーブル追加
+  - 記事にcategoryId連携
+- **一括記事生成**: トピックリストから複数記事を自動生成（1日10〜30記事推奨）
+  - 進捗表示付きの一括生成UI
+  - カテゴリ指定可能
+- **内部リンク自動生成AI**: 記事編集時に関連記事へのリンクを自動挿入
+  - OpenAI APIで関連性を分析
+  - 自然な文脈でリンクを追加
+- **インデックス監視ダッシュボード**: SEOパフォーマンスの可視化
+  - 総記事数、公開数、インデックス送信済み数
+  - インデックス率（目標50%以上）の監視
+  - 未インデックス記事のリスト表示
+
+### Previous Changes (2025-12-06)
+
+#### AI機能ページの追加
 - AIテキスト会話（OpenAI GPT-4o-mini）
 - 画像生成（MODELSLAB API）
 - 動画生成（MODELSLAB API）
@@ -160,7 +177,7 @@ Optional (for AI features):
 - AI自動化（Coming Soon）
 - 音声会話（Coming Soon）
 
-### 事業管理の売上/経費記録機能
+#### 事業管理の売上/経費記録機能
 - business_salesテーブル追加
 - 売上・経費を都度追加可能
 - 履歴の表示・削除機能
