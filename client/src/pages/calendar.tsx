@@ -231,6 +231,94 @@ export function CalendarPage() {
         </div>
       </div>
 
+      <div className="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden">
+        <div className="p-4 border-b border-slate-100 bg-gradient-to-r from-amber-50 to-orange-50 flex items-center justify-between">
+          <h3 className="font-bold text-slate-800 flex items-center gap-2">
+            <StickyNote size={18} className="text-amber-600" />
+            {format(currentDate, 'M月', { locale: ja })}のメモ一覧
+          </h3>
+          <span className="px-2.5 py-1 text-xs bg-amber-100 text-amber-700 rounded-full font-medium">
+            {memos.length}件
+          </span>
+        </div>
+        {memos.length > 0 ? (
+          <div className="divide-y divide-slate-50 max-h-[400px] overflow-y-auto">
+            {memos
+              .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+              .map((memo) => {
+                const colorClasses = getColorClasses(memo.color);
+                const memoDate = new Date(memo.date);
+                return (
+                  <div
+                    key={memo.id}
+                    className="p-4 hover:bg-slate-50 transition-colors flex items-start gap-4 group cursor-pointer"
+                    onClick={() => {
+                      setSelectedDate(memoDate);
+                      setEditingMemo(memo);
+                      setFormData({ content: memo.content, color: memo.color || 'blue' });
+                      setIsModalOpen(true);
+                    }}
+                  >
+                    <div className="text-center min-w-[50px]">
+                      <p className={cn(
+                        "text-2xl font-bold",
+                        isToday(memoDate) ? "text-primary-600" : "text-slate-700"
+                      )}>
+                        {format(memoDate, 'd')}
+                      </p>
+                      <p className={cn(
+                        "text-xs",
+                        memoDate.getDay() === 0 ? "text-red-500" : memoDate.getDay() === 6 ? "text-blue-500" : "text-slate-500"
+                      )}>
+                        {format(memoDate, 'E', { locale: ja })}
+                      </p>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className={cn(
+                        "px-3 py-2 rounded-lg",
+                        colorClasses.bg
+                      )}>
+                        <div className="flex items-start gap-2">
+                          <span className={cn("w-2 h-2 rounded-full mt-1.5 flex-shrink-0", colorClasses.dot)} />
+                          <p className={cn("text-sm", colorClasses.text)}>{memo.content}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedDate(memoDate);
+                          setEditingMemo(memo);
+                          setFormData({ content: memo.content, color: memo.color || 'blue' });
+                          setIsModalOpen(true);
+                        }}
+                        className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg"
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                      <button
+                        onClick={(e) => handleDeleteMemo(memo.id, e)}
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        ) : (
+          <div className="p-12 text-center">
+            <div className="w-14 h-14 mx-auto mb-3 bg-slate-100 rounded-full flex items-center justify-center">
+              <StickyNote size={24} className="text-slate-400" />
+            </div>
+            <p className="text-slate-500 font-medium">メモはありません</p>
+            <p className="text-slate-400 text-sm mt-1">カレンダーの日付をクリックしてメモを追加</p>
+          </div>
+        )}
+      </div>
+
       {isListModalOpen && listDate && (
         <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl animate-slide-up max-h-[80vh] overflow-hidden flex flex-col">
