@@ -1,8 +1,8 @@
 import { db } from './db';
-import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, systemSettings, leads, leadActivities, clientProjects, clientInvoices, companies } from '../shared/schema';
+import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, systemSettings, leads, leadActivities, clientProjects, clientInvoices, companies, quickNotes } from '../shared/schema';
 import { eq, and, or, desc, sql, isNull, gte, lte, like, ilike } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, SystemSetting, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Company, InsertCompany } from '../shared/schema';
+import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, SystemSetting, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Company, InsertCompany, QuickNote, InsertQuickNote } from '../shared/schema';
 
 export const storage = {
   async getUser(id: number): Promise<User | undefined> {
@@ -711,6 +711,31 @@ export const storage = {
 
   async deleteCompany(id: number): Promise<boolean> {
     await db.delete(companies).where(eq(companies.id, id));
+    return true;
+  },
+
+  // Quick Notes
+  async getQuickNotes(userId: number): Promise<QuickNote[]> {
+    return db.select().from(quickNotes)
+      .where(eq(quickNotes.userId, userId))
+      .orderBy(desc(quickNotes.isPinned), desc(quickNotes.updatedAt));
+  },
+
+  async createQuickNote(data: InsertQuickNote): Promise<QuickNote> {
+    const [note] = await db.insert(quickNotes).values(data).returning();
+    return note;
+  },
+
+  async updateQuickNote(id: number, data: Partial<InsertQuickNote>): Promise<QuickNote | undefined> {
+    const [note] = await db.update(quickNotes)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(quickNotes.id, id))
+      .returning();
+    return note;
+  },
+
+  async deleteQuickNote(id: number): Promise<boolean> {
+    await db.delete(quickNotes).where(eq(quickNotes.id, id));
     return true;
   },
 };

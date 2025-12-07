@@ -365,3 +365,17 @@ export const companies = pgTable("companies", {
 
 export type Company = typeof companies.$inferSelect;
 export type InsertCompany = typeof companies.$inferInsert;
+
+export const quickNotes = pgTable("quick_notes", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }),
+  content: text("content").notNull(),
+  color: varchar("color", { length: 20 }).default("yellow"),
+  isPinned: boolean("is_pinned").default(false),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type QuickNote = typeof quickNotes.$inferSelect;
+export type InsertQuickNote = typeof quickNotes.$inferInsert;

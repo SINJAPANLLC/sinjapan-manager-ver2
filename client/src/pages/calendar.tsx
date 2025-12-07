@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight, Plus, X, Edit2, Trash2, StickyNote } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, X, Edit2, Trash2, StickyNote, Pin, PinOff } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek, isToday } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -11,12 +11,30 @@ interface Memo {
   color: string;
 }
 
+interface QuickNote {
+  id: number;
+  title?: string;
+  content: string;
+  color: string;
+  isPinned: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 const colors = [
   { id: 'blue', bg: 'bg-blue-100', text: 'text-blue-700', dot: 'bg-blue-500' },
   { id: 'green', bg: 'bg-emerald-100', text: 'text-emerald-700', dot: 'bg-emerald-500' },
   { id: 'amber', bg: 'bg-amber-100', text: 'text-amber-700', dot: 'bg-amber-500' },
   { id: 'red', bg: 'bg-red-100', text: 'text-red-700', dot: 'bg-red-500' },
   { id: 'purple', bg: 'bg-purple-100', text: 'text-purple-700', dot: 'bg-purple-500' },
+];
+
+const noteColors = [
+  { id: 'yellow', bg: 'bg-yellow-100', border: 'border-yellow-200' },
+  { id: 'blue', bg: 'bg-blue-100', border: 'border-blue-200' },
+  { id: 'green', bg: 'bg-emerald-100', border: 'border-emerald-200' },
+  { id: 'pink', bg: 'bg-pink-100', border: 'border-pink-200' },
+  { id: 'purple', bg: 'bg-purple-100', border: 'border-purple-200' },
 ];
 
 export function CalendarPage() {
@@ -30,9 +48,22 @@ export function CalendarPage() {
   const [isListModalOpen, setIsListModalOpen] = useState(false);
   const [listDate, setListDate] = useState<Date | null>(null);
 
+  const [quickNotes, setQuickNotes] = useState<QuickNote[]>([]);
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+  const [editingNote, setEditingNote] = useState<QuickNote | null>(null);
+  const [noteFormData, setNoteFormData] = useState({ title: '', content: '', color: 'yellow' });
+
   useEffect(() => {
     fetchMemos();
+    fetchQuickNotes();
   }, [currentDate]);
+
+  const fetchQuickNotes = async () => {
+    const res = await fetch('/api/quick-notes');
+    if (res.ok) {
+      setQuickNotes(await res.json());
+    }
+  };
 
   const fetchMemos = async () => {
     const start = startOfMonth(currentDate);
@@ -232,92 +263,185 @@ export function CalendarPage() {
       </div>
 
       <div className="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden">
-        <div className="p-4 border-b border-slate-100 bg-gradient-to-r from-amber-50 to-orange-50 flex items-center justify-between">
+        <div className="p-4 border-b border-slate-100 bg-gradient-to-r from-yellow-50 to-amber-50 flex items-center justify-between">
           <h3 className="font-bold text-slate-800 flex items-center gap-2">
             <StickyNote size={18} className="text-amber-600" />
-            {format(currentDate, 'M月', { locale: ja })}のメモ一覧
+            メモ帳
           </h3>
-          <span className="px-2.5 py-1 text-xs bg-amber-100 text-amber-700 rounded-full font-medium">
-            {memos.length}件
-          </span>
+          <button
+            onClick={() => {
+              setEditingNote(null);
+              setNoteFormData({ title: '', content: '', color: 'yellow' });
+              setIsNoteModalOpen(true);
+            }}
+            className="btn-primary text-sm flex items-center gap-1.5 py-2 px-3"
+          >
+            <Plus size={16} />
+            メモを追加
+          </button>
         </div>
-        {memos.length > 0 ? (
-          <div className="divide-y divide-slate-50 max-h-[400px] overflow-y-auto">
-            {memos
-              .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-              .map((memo) => {
-                const colorClasses = getColorClasses(memo.color);
-                const memoDate = new Date(memo.date);
-                return (
-                  <div
-                    key={memo.id}
-                    className="p-4 hover:bg-slate-50 transition-colors flex items-start gap-4 group cursor-pointer"
-                    onClick={() => {
-                      setSelectedDate(memoDate);
-                      setEditingMemo(memo);
-                      setFormData({ content: memo.content, color: memo.color || 'blue' });
-                      setIsModalOpen(true);
-                    }}
-                  >
-                    <div className="text-center min-w-[50px]">
-                      <p className={cn(
-                        "text-2xl font-bold",
-                        isToday(memoDate) ? "text-primary-600" : "text-slate-700"
-                      )}>
-                        {format(memoDate, 'd')}
-                      </p>
-                      <p className={cn(
-                        "text-xs",
-                        memoDate.getDay() === 0 ? "text-red-500" : memoDate.getDay() === 6 ? "text-blue-500" : "text-slate-500"
-                      )}>
-                        {format(memoDate, 'E', { locale: ja })}
-                      </p>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className={cn(
-                        "px-3 py-2 rounded-lg",
-                        colorClasses.bg
-                      )}>
-                        <div className="flex items-start gap-2">
-                          <span className={cn("w-2 h-2 rounded-full mt-1.5 flex-shrink-0", colorClasses.dot)} />
-                          <p className={cn("text-sm", colorClasses.text)}>{memo.content}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedDate(memoDate);
-                          setEditingMemo(memo);
-                          setFormData({ content: memo.content, color: memo.color || 'blue' });
-                          setIsModalOpen(true);
-                        }}
-                        className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg"
-                      >
-                        <Edit2 size={16} />
-                      </button>
-                      <button
-                        onClick={(e) => handleDeleteMemo(memo.id, e)}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+        {quickNotes.length > 0 ? (
+          <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[500px] overflow-y-auto">
+            {quickNotes.map((note) => {
+              const colorClass = noteColors.find(c => c.id === note.color) || noteColors[0];
+              return (
+                <div
+                  key={note.id}
+                  className={cn(
+                    "p-4 rounded-xl border-2 relative group cursor-pointer hover:shadow-md transition-all",
+                    colorClass.bg,
+                    colorClass.border
+                  )}
+                  onClick={() => {
+                    setEditingNote(note);
+                    setNoteFormData({ title: note.title || '', content: note.content, color: note.color });
+                    setIsNoteModalOpen(true);
+                  }}
+                >
+                  {note.isPinned && (
+                    <Pin size={14} className="absolute top-2 right-2 text-slate-500" />
+                  )}
+                  {note.title && (
+                    <h4 className="font-semibold text-slate-800 mb-2 pr-6">{note.title}</h4>
+                  )}
+                  <p className="text-sm text-slate-700 whitespace-pre-wrap line-clamp-4">{note.content}</p>
+                  <p className="text-xs text-slate-400 mt-3">
+                    {format(new Date(note.updatedAt), 'MM/dd HH:mm')}
+                  </p>
+                  <div className="absolute bottom-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        await fetch(`/api/quick-notes/${note.id}`, {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ isPinned: !note.isPinned }),
+                        });
+                        fetchQuickNotes();
+                      }}
+                      className="p-1.5 bg-white/70 hover:bg-white rounded-lg text-slate-500"
+                      title={note.isPinned ? 'ピン解除' : 'ピン留め'}
+                    >
+                      {note.isPinned ? <PinOff size={14} /> : <Pin size={14} />}
+                    </button>
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (!confirm('このメモを削除しますか？')) return;
+                        await fetch(`/api/quick-notes/${note.id}`, { method: 'DELETE' });
+                        fetchQuickNotes();
+                      }}
+                      className="p-1.5 bg-white/70 hover:bg-red-50 rounded-lg text-red-500"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
-                );
-              })}
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div className="p-12 text-center">
-            <div className="w-14 h-14 mx-auto mb-3 bg-slate-100 rounded-full flex items-center justify-center">
-              <StickyNote size={24} className="text-slate-400" />
+            <div className="w-14 h-14 mx-auto mb-3 bg-yellow-100 rounded-full flex items-center justify-center">
+              <StickyNote size={24} className="text-yellow-600" />
             </div>
             <p className="text-slate-500 font-medium">メモはありません</p>
-            <p className="text-slate-400 text-sm mt-1">カレンダーの日付をクリックしてメモを追加</p>
+            <p className="text-slate-400 text-sm mt-1">メモを追加ボタンから作成してください</p>
           </div>
         )}
       </div>
+
+      {isNoteModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl animate-slide-up">
+            <div className="flex justify-between items-center p-6 border-b border-slate-100">
+              <h2 className="text-xl font-bold text-slate-800">
+                {editingNote ? 'メモを編集' : '新規メモ'}
+              </h2>
+              <button
+                onClick={() => setIsNoteModalOpen(false)}
+                className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
+              >
+                <X size={20} className="text-slate-500" />
+              </button>
+            </div>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!noteFormData.content.trim()) return;
+                
+                const url = editingNote ? `/api/quick-notes/${editingNote.id}` : '/api/quick-notes';
+                const method = editingNote ? 'PATCH' : 'POST';
+                
+                await fetch(url, {
+                  method,
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(noteFormData),
+                });
+                
+                fetchQuickNotes();
+                setIsNoteModalOpen(false);
+              }}
+              className="p-6 space-y-4"
+            >
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">タイトル（任意）</label>
+                <input
+                  type="text"
+                  value={noteFormData.title}
+                  onChange={(e) => setNoteFormData({ ...noteFormData, title: e.target.value })}
+                  className="input-field"
+                  placeholder="メモのタイトル"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">内容</label>
+                <textarea
+                  value={noteFormData.content}
+                  onChange={(e) => setNoteFormData({ ...noteFormData, content: e.target.value })}
+                  rows={5}
+                  className="input-field resize-none"
+                  placeholder="メモの内容を入力..."
+                  required
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">カラー</label>
+                <div className="flex gap-2">
+                  {noteColors.map((color) => (
+                    <button
+                      key={color.id}
+                      type="button"
+                      onClick={() => setNoteFormData({ ...noteFormData, color: color.id })}
+                      className={cn(
+                        "w-8 h-8 rounded-lg transition-all border-2",
+                        color.bg,
+                        color.border,
+                        noteFormData.color === color.id
+                          ? "ring-2 ring-offset-2 ring-primary-500 scale-110"
+                          : "hover:scale-105"
+                      )}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsNoteModalOpen(false)}
+                  className="btn-secondary"
+                >
+                  キャンセル
+                </button>
+                <button type="submit" className="btn-primary">
+                  保存
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {isListModalOpen && listDate && (
         <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">

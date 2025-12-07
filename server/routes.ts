@@ -1765,6 +1765,50 @@ ${articleList}`
     }
   });
 
+  // Quick Notes API
+  app.get('/api/quick-notes', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const notes = await storage.getQuickNotes(req.session.userId!);
+      res.json(notes);
+    } catch (error) {
+      console.error('Get quick notes error:', error);
+      res.status(500).json([]);
+    }
+  });
+
+  app.post('/api/quick-notes', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const note = await storage.createQuickNote({
+        ...req.body,
+        userId: req.session.userId,
+      });
+      res.json(note);
+    } catch (error) {
+      console.error('Create quick note error:', error);
+      res.status(500).json({ error: 'メモの作成に失敗しました' });
+    }
+  });
+
+  app.patch('/api/quick-notes/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const note = await storage.updateQuickNote(parseInt(req.params.id), req.body);
+      res.json(note);
+    } catch (error) {
+      console.error('Update quick note error:', error);
+      res.status(500).json({ error: 'メモの更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/quick-notes/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteQuickNote(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete quick note error:', error);
+      res.status(500).json({ error: 'メモの削除に失敗しました' });
+    }
+  });
+
   // Lead Management API
   app.get('/api/leads', requireAuth, async (req: Request, res: Response) => {
     try {
