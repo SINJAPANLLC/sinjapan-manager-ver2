@@ -286,10 +286,10 @@ export function BusinessPage() {
                     href={business.url.startsWith('http') ? business.url : `https://${business.url}`} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700 mb-3"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white rounded-xl font-medium text-sm shadow-button hover:shadow-lg transition-all mb-3"
                   >
-                    <ExternalLink size={14} />
-                    {business.url}
+                    <ExternalLink size={16} />
+                    サイトを開く
                   </a>
                 )}
 
