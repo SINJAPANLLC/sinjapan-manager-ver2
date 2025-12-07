@@ -1117,40 +1117,32 @@ ${articleList}`
 
   app.post('/api/ai/voice', requireAuth, async (req: Request, res: Response) => {
     try {
-      const { text } = req.body;
-      const modelslabKey = process.env.MODELSLAB_API_KEY;
+      const { text, voice = 'alloy' } = req.body;
       
-      if (!modelslabKey) {
-        return res.status(400).json({ error: 'MODELSLAB APIキーが設定されていません。' });
-      }
-
-      const response = await fetch('https://modelslab.com/api/v6/voice/text_to_speech', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          key: modelslabKey,
-          prompt: text,
-          voice_id: 'yuki',
-          language: 'japanese',
-        }),
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
       });
 
-      const data = await response.json();
-      
-      if (data.status === 'success' && data.output) {
-        await storage.createAiLog({
-          type: 'voice',
-          prompt: text,
-          result: data.output,
-          status: 'success',
-          userId: req.session.userId,
-        });
-        res.json({ audioUrl: data.output });
-      } else {
-        res.status(400).json({ error: data.message || '音声生成に失敗しました' });
-      }
+      const mp3 = await openai.audio.speech.create({
+        model: 'tts-1',
+        voice: voice as 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer',
+        input: text,
+      });
+
+      const buffer = Buffer.from(await mp3.arrayBuffer());
+      const base64Audio = buffer.toString('base64');
+      const audioUrl = `data:audio/mpeg;base64,${base64Audio}`;
+
+      await storage.createAiLog({
+        type: 'voice',
+        prompt: `[${voice}] ${text}`,
+        result: 'audio generated',
+        status: 'success',
+        userId: req.session.userId,
+      });
+
+      return res.json({ audioUrl });
     } catch (error) {
       console.error('Voice generation error:', error);
       res.status(500).json({ error: '音声生成エラーが発生しました' });

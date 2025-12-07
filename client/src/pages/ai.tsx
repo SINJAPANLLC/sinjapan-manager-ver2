@@ -127,6 +127,16 @@ export function AiPage() {
 
   const [voiceText, setVoiceText] = useState('');
   const [voiceUrl, setVoiceUrl] = useState('');
+  const [selectedVoice, setSelectedVoice] = useState('alloy');
+  
+  const voiceOptions = [
+    { id: 'alloy', name: 'Alloy', description: '中性的で落ち着いた声' },
+    { id: 'echo', name: 'Echo', description: '男性的な深い声' },
+    { id: 'fable', name: 'Fable', description: '若々しく表現豊かな声' },
+    { id: 'onyx', name: 'Onyx', description: '低音で力強い男性の声' },
+    { id: 'nova', name: 'Nova', description: '明るく親しみやすい女性の声' },
+    { id: 'shimmer', name: 'Shimmer', description: '柔らかく優しい女性の声' },
+  ];
 
   const [listTopic, setListTopic] = useState('');
   const [listCount, setListCount] = useState('10');
@@ -568,7 +578,7 @@ export function AiPage() {
       const res = await fetch('/api/ai/voice', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: voiceText }),
+        body: JSON.stringify({ text: voiceText, voice: selectedVoice }),
       });
       const data = await res.json();
       if (data.audioUrl) {
@@ -1651,7 +1661,28 @@ export function AiPage() {
               <Mic className="text-primary-500" size={20} />
               音声生成
             </h2>
-            <p className="text-sm text-slate-500">テキストを自然な音声に変換します</p>
+            <p className="text-sm text-slate-500">テキストを自然な音声に変換します（OpenAI TTS）</p>
+            
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">声を選択</label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {voiceOptions.map((v) => (
+                  <button
+                    key={v.id}
+                    onClick={() => setSelectedVoice(v.id)}
+                    className={`p-3 rounded-xl border-2 text-left transition-all ${
+                      selectedVoice === v.id 
+                        ? 'border-primary-500 bg-primary-50' 
+                        : 'border-slate-200 hover:border-primary-300'
+                    }`}
+                  >
+                    <div className="font-medium text-slate-800">{v.name}</div>
+                    <div className="text-xs text-slate-500">{v.description}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+            
             <textarea
               value={voiceText}
               onChange={(e) => setVoiceText(e.target.value)}
