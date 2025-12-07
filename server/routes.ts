@@ -1761,7 +1761,7 @@ ${articleList}`
       const data = { ...req.body };
       if (data.capital === '' || data.capital === undefined) data.capital = null;
       if (data.establishedDate === '') data.establishedDate = null;
-      const company = await storage.updateCompany(parseInt(req.params.id), data);
+      const company = await storage.updateCompany(req.params.id, data);
       res.json(company);
     } catch (error) {
       console.error('Update company error:', error);
@@ -1771,7 +1771,7 @@ ${articleList}`
 
   app.delete('/api/companies/:id', requireRole('admin', 'ceo'), async (req: Request, res: Response) => {
     try {
-      await storage.deleteCompany(parseInt(req.params.id));
+      await storage.deleteCompany(req.params.id);
       res.json({ success: true });
     } catch (error) {
       console.error('Delete company error:', error);

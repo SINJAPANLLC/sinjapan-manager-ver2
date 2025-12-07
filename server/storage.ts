@@ -754,7 +754,7 @@ export const storage = {
     return company;
   },
 
-  async updateCompany(id: number, data: Partial<InsertCompany>): Promise<Company | undefined> {
+  async updateCompany(id: string, data: Partial<InsertCompany>): Promise<Company | undefined> {
     const updateData: any = { ...data, updatedAt: new Date() };
     if (data.establishedDate) {
       updateData.establishedDate = new Date(data.establishedDate as any);
@@ -766,7 +766,7 @@ export const storage = {
     return company;
   },
 
-  async deleteCompany(id: number): Promise<boolean> {
+  async deleteCompany(id: string): Promise<boolean> {
     // Delete related records first to avoid foreign key constraint violations
     await db.execute(sql`UPDATE businesses SET company_id = NULL WHERE company_id = ${id}`);
     await db.execute(sql`DELETE FROM saved_reports WHERE company_id = ${id}`);
