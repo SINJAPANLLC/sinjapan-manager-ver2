@@ -2263,71 +2263,179 @@ export function AiPage() {
         )}
 
         {activeTab === 'automation' && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-              <Zap className="text-primary-500" size={20} />
-              AI自動化
-            </h2>
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                <Zap className="text-primary-500" size={20} />
+                AI自動化
+              </h2>
+              <p className="text-sm text-slate-500 mt-1">各AI機能を自動化・一括実行できます</p>
+            </div>
+
             <div className="grid md:grid-cols-2 gap-4">
-              <div className="bg-slate-50 rounded-xl p-5">
+              <div 
+                className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-5 cursor-pointer hover:shadow-md transition-all border border-blue-200"
+                onClick={() => setActiveTab('seo')}
+              >
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-primary-100 rounded-lg">
-                    <FileText size={20} className="text-primary-600" />
+                  <div className="p-2 bg-blue-500 rounded-lg">
+                    <FileText size={20} className="text-white" />
                   </div>
-                  <h3 className="font-medium text-slate-800">自動レポート生成</h3>
+                  <h3 className="font-medium text-slate-800">SEO記事一括生成</h3>
                 </div>
-                <p className="text-sm text-slate-500 mb-3">
-                  毎日/毎週の業務レポートを自動生成
+                <p className="text-sm text-slate-600 mb-3">
+                  トピックリストから複数のSEO記事を自動生成（1日10〜30記事推奨）
                 </p>
-                <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-100 text-amber-700 text-sm rounded-full">
-                  <Zap size={14} />
-                  Coming Soon
-                </span>
+                <button className="btn-primary text-sm">
+                  SEO記事タブへ →
+                </button>
               </div>
-              <div className="bg-slate-50 rounded-xl p-5">
+
+              <div 
+                className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-5 cursor-pointer hover:shadow-md transition-all border border-green-200"
+                onClick={() => setActiveTab('list')}
+              >
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-primary-100 rounded-lg">
-                    <MessageSquare size={20} className="text-primary-600" />
+                  <div className="p-2 bg-green-500 rounded-lg">
+                    <Target size={20} className="text-white" />
                   </div>
-                  <h3 className="font-medium text-slate-800">自動返信</h3>
+                  <h3 className="font-medium text-slate-800">リード自動取得</h3>
                 </div>
-                <p className="text-sm text-slate-500 mb-3">
-                  メッセージへのAI自動返信設定
+                <p className="text-sm text-slate-600 mb-3">
+                  Googleマップから業種・地域を指定してビジネス情報を一括取得
                 </p>
-                <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-100 text-amber-700 text-sm rounded-full">
-                  <Zap size={14} />
-                  Coming Soon
-                </span>
+                <button className="btn-primary text-sm bg-green-500 hover:bg-green-600">
+                  リード取得タブへ →
+                </button>
               </div>
-              <div className="bg-slate-50 rounded-xl p-5">
+
+              <div 
+                className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-5 cursor-pointer hover:shadow-md transition-all border border-purple-200"
+                onClick={() => setActiveTab('document')}
+              >
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-primary-100 rounded-lg">
-                    <Bot size={20} className="text-primary-600" />
+                  <div className="p-2 bg-purple-500 rounded-lg">
+                    <FileSpreadsheet size={20} className="text-white" />
                   </div>
-                  <h3 className="font-medium text-slate-800">タスク自動割当</h3>
+                  <h3 className="font-medium text-slate-800">書類テンプレート生成</h3>
                 </div>
-                <p className="text-sm text-slate-500 mb-3">
-                  AIが最適なスタッフにタスクを割り当て
+                <p className="text-sm text-slate-600 mb-3">
+                  契約書、見積書、報告書など30種類以上の書類を自動生成
                 </p>
-                <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-100 text-amber-700 text-sm rounded-full">
-                  <Zap size={14} />
-                  Coming Soon
-                </span>
+                <button className="btn-primary text-sm bg-purple-500 hover:bg-purple-600">
+                  書類生成タブへ →
+                </button>
               </div>
-              <div className="bg-slate-50 rounded-xl p-5">
+
+              <div 
+                className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-5 cursor-pointer hover:shadow-md transition-all border border-orange-200"
+                onClick={() => setActiveTab('image')}
+              >
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-primary-100 rounded-lg">
-                    <ChevronRight size={20} className="text-primary-600" />
+                  <div className="p-2 bg-orange-500 rounded-lg">
+                    <Image size={20} className="text-white" />
                   </div>
-                  <h3 className="font-medium text-slate-800">ワークフロー自動化</h3>
+                  <h3 className="font-medium text-slate-800">画像生成</h3>
                 </div>
-                <p className="text-sm text-slate-500 mb-3">
-                  カスタムワークフローの自動実行
+                <p className="text-sm text-slate-600 mb-3">
+                  AIで商品画像、バナー、SNS用画像などを自動生成
                 </p>
-                <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-100 text-amber-700 text-sm rounded-full">
-                  <Zap size={14} />
-                  Coming Soon
-                </span>
+                <button className="btn-primary text-sm bg-orange-500 hover:bg-orange-600">
+                  画像生成タブへ →
+                </button>
+              </div>
+
+              <div 
+                className="bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl p-5 cursor-pointer hover:shadow-md transition-all border border-pink-200"
+                onClick={() => setActiveTab('voice')}
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 bg-pink-500 rounded-lg">
+                    <Mic size={20} className="text-white" />
+                  </div>
+                  <h3 className="font-medium text-slate-800">音声ナレーション生成</h3>
+                </div>
+                <p className="text-sm text-slate-600 mb-3">
+                  テキストから自然な音声を生成（6種類の声から選択）
+                </p>
+                <button className="btn-primary text-sm bg-pink-500 hover:bg-pink-600">
+                  音声生成タブへ →
+                </button>
+              </div>
+
+              <div 
+                className="bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-xl p-5 cursor-pointer hover:shadow-md transition-all border border-cyan-200"
+                onClick={() => setActiveTab('video')}
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 bg-cyan-500 rounded-lg">
+                    <Video size={20} className="text-white" />
+                  </div>
+                  <h3 className="font-medium text-slate-800">動画生成</h3>
+                </div>
+                <p className="text-sm text-slate-600 mb-3">
+                  プロンプトから動画コンテンツを自動生成
+                </p>
+                <button className="btn-primary text-sm bg-cyan-500 hover:bg-cyan-600">
+                  動画生成タブへ →
+                </button>
+              </div>
+
+              <div 
+                className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl p-5 cursor-pointer hover:shadow-md transition-all border border-indigo-200"
+                onClick={() => setActiveTab('chat')}
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 bg-indigo-500 rounded-lg">
+                    <MessageSquare size={20} className="text-white" />
+                  </div>
+                  <h3 className="font-medium text-slate-800">AIチャットアシスタント</h3>
+                </div>
+                <p className="text-sm text-slate-600 mb-3">
+                  AIと対話して業務のアイデア出しや質問に回答
+                </p>
+                <button className="btn-primary text-sm bg-indigo-500 hover:bg-indigo-600">
+                  AIチャットタブへ →
+                </button>
+              </div>
+
+              <div 
+                className="bg-gradient-to-br from-rose-50 to-rose-100 rounded-xl p-5 cursor-pointer hover:shadow-md transition-all border border-rose-200"
+                onClick={() => setActiveTab('voiceChat')}
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 bg-rose-500 rounded-lg">
+                    <Phone size={20} className="text-white" />
+                  </div>
+                  <h3 className="font-medium text-slate-800">音声会話AI</h3>
+                </div>
+                <p className="text-sm text-slate-600 mb-3">
+                  音声で話しかけてAIと会話（ハンズフリー対応）
+                </p>
+                <button className="btn-primary text-sm bg-rose-500 hover:bg-rose-600">
+                  音声会話タブへ →
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-slate-100 rounded-xl p-5 mt-6">
+              <h3 className="font-medium text-slate-800 mb-3 flex items-center gap-2">
+                <Sparkles size={18} className="text-amber-500" />
+                おすすめの自動化ワークフロー
+              </h3>
+              <div className="space-y-3 text-sm text-slate-600">
+                <div className="bg-white p-3 rounded-lg">
+                  <strong className="text-slate-800">1. SEO集客自動化</strong>
+                  <p>SEO記事一括生成 → 内部リンク自動挿入 → Googleインデックス送信 → インデックス率監視</p>
+                </div>
+                <div className="bg-white p-3 rounded-lg">
+                  <strong className="text-slate-800">2. リード獲得自動化</strong>
+                  <p>Googleマップからリード取得 → リード管理に登録 → 電話/メール/DMでアプローチ</p>
+                </div>
+                <div className="bg-white p-3 rounded-lg">
+                  <strong className="text-slate-800">3. コンテンツ制作自動化</strong>
+                  <p>画像生成 → 動画生成 → 音声ナレーション → SNS投稿用素材完成</p>
+                </div>
               </div>
             </div>
           </div>
