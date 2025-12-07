@@ -92,6 +92,8 @@ export function AiPage() {
   const [seoArticles, setSeoArticles] = useState<SeoArticle[]>([]);
   const [seoView, setSeoView] = useState<'list' | 'edit' | 'generate'>('list');
   const [editingArticle, setEditingArticle] = useState<SeoArticle | null>(null);
+  const [seoDomain, setSeoDomain] = useState('');
+  const [seoDomainSaving, setSeoDomainSaving] = useState(false);
   const [articleForm, setArticleForm] = useState({
     title: '',
     content: '',
@@ -136,6 +138,26 @@ export function AiPage() {
     const res = await fetch('/api/seo-articles');
     if (res.ok) {
       setSeoArticles(await res.json());
+    }
+    const settingsRes = await fetch('/api/settings');
+    if (settingsRes.ok) {
+      const settings = await settingsRes.json();
+      if (settings.seo_domain) {
+        setSeoDomain(settings.seo_domain);
+      }
+    }
+  };
+
+  const handleSaveSeoDomain = async () => {
+    setSeoDomainSaving(true);
+    try {
+      await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'seo_domain', value: seoDomain }),
+      });
+    } finally {
+      setSeoDomainSaving(false);
     }
   };
 
@@ -919,6 +941,31 @@ export function AiPage() {
                     <button onClick={startNewArticle} className="btn-primary flex items-center gap-2">
                       <Plus size={16} />
                       新規作成
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                  <h3 className="text-sm font-semibold text-blue-800 mb-2 flex items-center gap-2">
+                    <Globe size={16} />
+                    SEOドメイン設定
+                  </h3>
+                  <p className="text-xs text-blue-600 mb-3">公開記事やサイトマップで使用するドメインを設定します</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={seoDomain}
+                      onChange={(e) => setSeoDomain(e.target.value)}
+                      placeholder="https://example.com（未設定の場合はReplitドメイン）"
+                      className="input-field flex-1"
+                    />
+                    <button
+                      onClick={handleSaveSeoDomain}
+                      disabled={seoDomainSaving}
+                      className="btn-primary flex items-center gap-2 whitespace-nowrap"
+                    >
+                      {seoDomainSaving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+                      保存
                     </button>
                   </div>
                 </div>

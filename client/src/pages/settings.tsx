@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../hooks/use-auth';
-import { User, Lock, Save, Loader2, CheckCircle, Globe } from 'lucide-react';
+import { User, Lock, Save, Loader2, CheckCircle } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export function SettingsPage() {
@@ -18,44 +18,6 @@ export function SettingsPage() {
     newPassword: '',
     confirmPassword: '',
   });
-  const [seoDomain, setSeoDomain] = useState('');
-
-  useEffect(() => {
-    if (user?.role === 'admin' || user?.role === 'ceo') {
-      fetch('/api/settings')
-        .then(res => res.json())
-        .then(data => {
-          if (data.seo_domain) {
-            setSeoDomain(data.seo_domain);
-          }
-        })
-        .catch(() => {});
-    }
-  }, [user]);
-
-  const handleSeoDomainSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setMessage(null);
-
-    try {
-      const res = await fetch('/api/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: 'seo_domain', value: seoDomain }),
-      });
-
-      if (res.ok) {
-        setMessage({ type: 'success', text: 'SEOドメインを更新しました' });
-      } else {
-        setMessage({ type: 'error', text: '更新に失敗しました' });
-      }
-    } catch {
-      setMessage({ type: 'error', text: 'エラーが発生しました' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -244,55 +206,6 @@ export function SettingsPage() {
           </div>
         </form>
       </div>
-
-      {(user?.role === 'admin' || user?.role === 'ceo') && (
-        <div className="card overflow-hidden">
-          <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-blue-50 to-white flex items-center gap-3">
-            <div className="p-2.5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-soft">
-              <Globe size={20} className="text-white" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-slate-800">SEO設定</h2>
-              <p className="text-xs text-slate-500">公開記事やサイトマップで使用するドメイン</p>
-            </div>
-          </div>
-          <form onSubmit={handleSeoDomainSubmit} className="p-6 space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">独自ドメイン</label>
-              <input
-                type="url"
-                value={seoDomain}
-                onChange={(e) => setSeoDomain(e.target.value)}
-                placeholder="https://example.com"
-                className="input-field"
-              />
-              <p className="text-xs text-slate-500 mt-2">
-                SEO記事の公開ページ、canonical URL、サイトマップで使用されるドメインを設定します。<br />
-                設定しない場合は現在のReplit URLが使用されます。
-              </p>
-            </div>
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
-              <p className="text-sm text-amber-800">
-                <strong>独自ドメインを設定するには：</strong><br />
-                1. アプリを公開（デプロイ）する<br />
-                2. Replit の「Deployments」タブで「Link a domain」を選択<br />
-                3. ドメインレジストラで A/TXT レコードを設定<br />
-                4. 上記の入力欄に独自ドメインを入力して保存
-              </p>
-            </div>
-            <div className="flex justify-end pt-4 border-t border-slate-100">
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="btn-primary flex items-center gap-2"
-              >
-                {isLoading ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
-                保存
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
     </div>
   );
 }
