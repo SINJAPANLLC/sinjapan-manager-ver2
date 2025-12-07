@@ -1737,7 +1737,10 @@ ${articleList}`
 
   app.post('/api/companies', requireRole('admin', 'ceo'), async (req: Request, res: Response) => {
     try {
-      const company = await storage.createCompany(req.body);
+      const data = { ...req.body };
+      if (data.capital === '' || data.capital === undefined) data.capital = null;
+      if (data.establishedDate === '') data.establishedDate = null;
+      const company = await storage.createCompany(data);
       res.json(company);
     } catch (error) {
       console.error('Create company error:', error);
@@ -1747,7 +1750,10 @@ ${articleList}`
 
   app.put('/api/companies/:id', requireRole('admin', 'ceo'), async (req: Request, res: Response) => {
     try {
-      const company = await storage.updateCompany(parseInt(req.params.id), req.body);
+      const data = { ...req.body };
+      if (data.capital === '' || data.capital === undefined) data.capital = null;
+      if (data.establishedDate === '') data.establishedDate = null;
+      const company = await storage.updateCompany(parseInt(req.params.id), data);
       res.json(company);
     } catch (error) {
       console.error('Update company error:', error);
@@ -1781,11 +1787,11 @@ ${articleList}`
     try {
       const { businessId, type, category, amount, description, investmentDate } = req.body;
       const investment = await storage.createInvestment({
-        businessId,
+        businessId: businessId || null,
         type,
-        category,
+        category: category || null,
         amount,
-        description,
+        description: description || null,
         investmentDate: investmentDate ? new Date(investmentDate) : new Date(),
         createdBy: req.session.userId,
       });
