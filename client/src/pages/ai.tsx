@@ -143,6 +143,8 @@ export function AiPage() {
   const [listTopic, setListTopic] = useState('');
   const [listCount, setListCount] = useState('10');
   const [generatedList, setGeneratedList] = useState('');
+  const [generatedLeads, setGeneratedLeads] = useState<Array<{name: string; company?: string; phone?: string; email?: string; source: string}>>([]);
+  const [isImportingLeads, setIsImportingLeads] = useState(false);
 
   const [docType, setDocType] = useState('contract');
   const [docDetails, setDocDetails] = useState('');
@@ -599,21 +601,49 @@ export function AiPage() {
     if (!listTopic.trim() || isLoading) return;
     setIsLoading(true);
     setGeneratedList('');
+    setGeneratedLeads([]);
 
     try {
       const res = await fetch('/api/ai/list', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic: listTopic, count: parseInt(listCount) }),
+        body: JSON.stringify({ topic: listTopic, count: parseInt(listCount), forLeads: true }),
       });
       const data = await res.json();
       if (data.list) {
         setGeneratedList(data.list);
       }
+      if (data.leads && Array.isArray(data.leads)) {
+        setGeneratedLeads(data.leads);
+      }
     } catch (err) {
       alert('リスト生成に失敗しました');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleImportLeadsFromList = async () => {
+    if (generatedLeads.length === 0) return;
+    setIsImportingLeads(true);
+    try {
+      const res = await fetch('/api/leads/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leads: generatedLeads }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(`${data.imported}件のリードを登録しました`);
+        setGeneratedLeads([]);
+        setGeneratedList('');
+      } else {
+        alert(data.error || 'インポートに失敗しました');
+      }
+    } catch (err) {
+      alert('リードのインポートに失敗しました');
+    } finally {
+      setIsImportingLeads(false);
     }
   };
 
@@ -1760,6 +1790,34 @@ export function AiPage() {
                 </div>
                 <pre className="whitespace-pre-wrap text-sm text-slate-700 bg-white p-4 rounded-lg border">{generatedList}</pre>
                 <ShareButtons content={generatedList} type="text" />
+              </div>
+            )}
+
+            {generatedLeads.length > 0 && (
+              <div className="mt-4 bg-blue-50 rounded-xl p-4 border border-blue-200">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-sm font-medium text-blue-700 flex items-center gap-2">
+                    <Target size={16} />
+                    リード候補 ({generatedLeads.length}件)
+                  </span>
+                  <button
+                    onClick={handleImportLeadsFromList}
+                    disabled={isImportingLeads}
+                    className="btn-primary text-sm py-1.5 px-3 flex items-center gap-2"
+                  >
+                    {isImportingLeads ? <Loader2 className="animate-spin" size={14} /> : <Plus size={14} />}
+                    リードに一括登録
+                  </button>
+                </div>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {generatedLeads.map((lead, index) => (
+                    <div key={index} className="bg-white p-3 rounded-lg border text-sm">
+                      <div className="font-medium text-slate-800">{lead.company || lead.name}</div>
+                      {lead.phone && <div className="text-slate-500 text-xs">電話: {lead.phone}</div>}
+                      {lead.email && <div className="text-slate-500 text-xs">メール: {lead.email}</div>}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 

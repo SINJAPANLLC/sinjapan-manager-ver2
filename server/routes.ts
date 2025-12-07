@@ -1150,18 +1150,41 @@ ${articleList}`
 
   app.post('/api/ai/list', requireAuth, async (req: Request, res: Response) => {
     try {
-      const { topic, count } = req.body;
+      const { topic, count, forLeads } = req.body;
       const openai = new OpenAI({
         apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
         baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
       });
+
+      const systemPrompt = forLeads 
+        ? `あなたはビジネスリード（見込み客）リスト生成の専門家です。指定されたトピック（業種・地域など）について、${count || 10}件の架空のビジネスリード情報を生成してください。
+
+以下の2つの形式で出力してください：
+
+【テキスト形式】
+番号付きリストで各会社/店舗の情報を記載
+
+【JSON形式】
+\`\`\`json
+[
+  {"name": "担当者名", "company": "会社名/店舗名", "phone": "電話番号", "email": "メールアドレス", "source": "ai_generated"},
+  ...
+]
+\`\`\`
+
+注意：
+- 電話番号は日本の形式（例：03-XXXX-XXXX、090-XXXX-XXXX）
+- メールアドレスは架空のもの
+- 会社名/店舗名は業種に合ったリアルな名前を生成
+- sourceは必ず "ai_generated" にする`
+        : `あなたはリスト生成の専門家です。指定されたトピックについて、${count || 10}項目のリストを作成してください。各項目は簡潔で有用な情報を含めてください。番号付きリストで出力してください。`;
 
       const completion = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
-            content: `あなたはリスト生成の専門家です。指定されたトピックについて、${count || 10}項目のリストを作成してください。各項目は簡潔で有用な情報を含めてください。番号付きリストで出力してください。`
+            content: systemPrompt
           },
           {
             role: 'user',
@@ -1170,7 +1193,22 @@ ${articleList}`
         ],
       });
 
-      const list = completion.choices[0]?.message?.content || '';
+      const fullResponse = completion.choices[0]?.message?.content || '';
+      
+      let list = fullResponse;
+      let leads: Array<{name: string; company?: string; phone?: string; email?: string; source: string}> = [];
+      
+      if (forLeads) {
+        const jsonMatch = fullResponse.match(/```json\s*([\s\S]*?)\s*```/);
+        if (jsonMatch && jsonMatch[1]) {
+          try {
+            leads = JSON.parse(jsonMatch[1]);
+          } catch (e) {
+            console.error('Failed to parse leads JSON:', e);
+          }
+        }
+        list = fullResponse.replace(/```json[\s\S]*?```/g, '').trim();
+      }
 
       await storage.createAiLog({
         type: 'list',
@@ -1180,7 +1218,7 @@ ${articleList}`
         userId: req.session.userId,
       });
 
-      res.json({ list });
+      res.json({ list, leads });
     } catch (error) {
       console.error('List generation error:', error);
       res.status(500).json({ error: 'リスト生成エラーが発生しました' });
