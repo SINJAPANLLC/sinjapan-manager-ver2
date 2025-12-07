@@ -214,3 +214,11 @@ export const seoArticles = pgTable("seo_articles", {
 
 export type SeoArticle = typeof seoArticles.$inferSelect;
 export type InsertSeoArticle = typeof seoArticles.$inferInsert;
+
+export const systemSettings = pgTable("system_settings", {
+  key: varchar("key", { length: 255 }).primaryKey(),
+  value: text("value"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type SystemSetting = typeof systemSettings.$inferSelect;

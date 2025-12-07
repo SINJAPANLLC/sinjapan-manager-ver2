@@ -1193,6 +1193,33 @@ SEO最適化のポイント：
     }
   });
 
+  // System Settings API
+  app.get('/api/settings', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const settings = await storage.getAllSettings();
+      const settingsObj: Record<string, string> = {};
+      settings.forEach(s => { settingsObj[s.key] = s.value || ''; });
+      res.json(settingsObj);
+    } catch (error) {
+      console.error('Get settings error:', error);
+      res.status(500).json({});
+    }
+  });
+
+  app.put('/api/settings', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { key, value } = req.body;
+      if (!key) {
+        return res.status(400).json({ error: 'キーが必要です' });
+      }
+      await storage.setSetting(key, value || '');
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Update setting error:', error);
+      res.status(500).json({ error: '設定の更新に失敗しました' });
+    }
+  });
+
   // SEO Articles API
   app.get('/api/seo-articles', requireAuth, async (req: Request, res: Response) => {
     try {
@@ -1219,7 +1246,7 @@ SEO最適化のポイント：
 
   app.post('/api/seo-articles', requireAuth, async (req: Request, res: Response) => {
     try {
-      const { title, slug, content, metaTitle, metaDescription, keywords } = req.body;
+      const { title, slug, content, metaTitle, metaDescription, keywords, ctaUrl, ctaText } = req.body;
       const article = await storage.createSeoArticle({
         title,
         slug,
@@ -1227,6 +1254,8 @@ SEO最適化のポイント：
         metaTitle,
         metaDescription,
         keywords,
+        ctaUrl,
+        ctaText,
         userId: req.session.userId,
       });
       res.json(article);
@@ -1241,7 +1270,7 @@ SEO最適化のポイント：
 
   app.put('/api/seo-articles/:id', requireAuth, async (req: Request, res: Response) => {
     try {
-      const { title, slug, content, metaTitle, metaDescription, keywords, isPublished } = req.body;
+      const { title, slug, content, metaTitle, metaDescription, keywords, isPublished, ctaUrl, ctaText } = req.body;
       const article = await storage.updateSeoArticle(req.params.id, {
         title,
         slug,
@@ -1250,6 +1279,8 @@ SEO最適化のポイント：
         metaDescription,
         keywords,
         isPublished,
+        ctaUrl,
+        ctaText,
       });
       res.json(article);
     } catch (error: any) {
@@ -1373,6 +1404,8 @@ ${articlesContext}
   app.get('/articles/:slug', async (req: Request, res: Response) => {
     try {
       const article = await storage.getSeoArticleBySlug(req.params.slug);
+      const seoDomain = await storage.getSetting('seo_domain') || `https://${req.get('host')}`;
+      
       if (!article || !article.isPublished) {
         return res.status(404).send(`
           <!DOCTYPE html>
@@ -1416,11 +1449,11 @@ ${articlesContext}
           <title>${article.title} | SIN JAPAN</title>
           <meta name="description" content="${article.metaDescription || article.content.substring(0, 160)}">
           <meta name="keywords" content="${article.keywords || ''}">
-          <link rel="canonical" href="https://${req.get('host')}/articles/${article.slug}">
+          <link rel="canonical" href="${seoDomain}/articles/${article.slug}">
           <meta property="og:title" content="${article.title}">
           <meta property="og:description" content="${article.metaDescription || article.content.substring(0, 160)}">
           <meta property="og:type" content="article">
-          <meta property="og:url" content="https://${req.get('host')}/articles/${article.slug}">
+          <meta property="og:url" content="${seoDomain}/articles/${article.slug}">
           <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
           <style>
             * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1683,7 +1716,8 @@ ${articlesContext}
   app.get('/sitemap.xml', async (req: Request, res: Response) => {
     try {
       const articles = await storage.getPublishedSeoArticles();
-      const baseUrl = `https://${req.get('host')}`;
+      const seoDomain = await storage.getSetting('seo_domain');
+      const baseUrl = seoDomain || `https://${req.get('host')}`;
       
       let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
       xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';

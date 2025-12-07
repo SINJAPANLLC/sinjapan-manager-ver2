@@ -1,8 +1,8 @@
 import { db } from './db';
-import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, seoArticles } from '../shared/schema';
+import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, seoArticles, systemSettings } from '../shared/schema';
 import { eq, and, or, desc, sql, isNull, gte, lte } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, SeoArticle, InsertSeoArticle } from '../shared/schema';
+import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, SeoArticle, InsertSeoArticle, SystemSetting } from '../shared/schema';
 
 export const storage = {
   async getUser(id: number): Promise<User | undefined> {
@@ -398,5 +398,20 @@ export const storage = {
       .where(eq(seoArticles.id, id))
       .returning();
     return article;
+  },
+
+  async getSetting(key: string): Promise<string | null> {
+    const [setting] = await db.select().from(systemSettings).where(eq(systemSettings.key, key));
+    return setting?.value || null;
+  },
+
+  async setSetting(key: string, value: string): Promise<void> {
+    await db.insert(systemSettings)
+      .values({ key, value, updatedAt: new Date() })
+      .onConflictDoUpdate({ target: systemSettings.key, set: { value, updatedAt: new Date() } });
+  },
+
+  async getAllSettings(): Promise<SystemSetting[]> {
+    return db.select().from(systemSettings);
   },
 };
