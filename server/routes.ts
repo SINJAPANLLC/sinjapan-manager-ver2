@@ -1120,8 +1120,7 @@ ${articleList}`
       const { text, voice = 'alloy' } = req.body;
       
       const openai = new OpenAI({
-        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+        apiKey: process.env.OPENAI_API_KEY,
       });
 
       const mp3 = await openai.audio.speech.create({
