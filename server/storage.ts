@@ -266,11 +266,59 @@ export const storage = {
     const unreadNotifications = await db.select({ count: sql<number>`count(*)` }).from(notifications)
       .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const todayMemos = await db.select().from(memos)
+      .where(and(
+        eq(memos.userId, userId),
+        gte(memos.date, today),
+        lte(memos.date, tomorrow)
+      ));
+
+    const recentTasks = role === 'admin' || role === 'ceo' || role === 'manager'
+      ? await db.select().from(tasks).orderBy(desc(tasks.createdAt)).limit(5)
+      : await db.select().from(tasks)
+          .where(or(eq(tasks.assignedTo, userId), eq(tasks.createdBy, userId)))
+          .orderBy(desc(tasks.createdAt)).limit(5);
+
+    const recentNotifications = await db.select().from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt)).limit(5);
+
+    let totalRevenue = '0';
+    let totalExpense = '0';
+    if (role === 'admin' || role === 'ceo' || role === 'manager') {
+      const revenueResult = await db.select({ total: sql<string>`COALESCE(SUM(amount), 0)` })
+        .from(businessSales).where(eq(businessSales.type, 'revenue'));
+      const expenseResult = await db.select({ total: sql<string>`COALESCE(SUM(amount), 0)` })
+        .from(businessSales).where(eq(businessSales.type, 'expense'));
+      totalRevenue = revenueResult[0]?.total || '0';
+      totalExpense = expenseResult[0]?.total || '0';
+    }
+
+    const aiLogCount = await db.select({ count: sql<number>`count(*)` }).from(aiLogs)
+      .where(eq(aiLogs.userId, userId));
+
+    const seoArticleCount = await db.select({ count: sql<number>`count(*)` }).from(seoArticles);
+    const publishedArticleCount = await db.select({ count: sql<number>`count(*)` }).from(seoArticles)
+      .where(eq(seoArticles.status, 'published'));
+
     return {
       customers: Number(customerCount[0]?.count || 0),
       tasks: Number(taskCount[0]?.count || 0),
       pendingTasks: Number(pendingTasks[0]?.count || 0),
       unreadNotifications: Number(unreadNotifications[0]?.count || 0),
+      todayMemos,
+      recentTasks,
+      recentNotifications,
+      totalRevenue,
+      totalExpense,
+      aiLogCount: Number(aiLogCount[0]?.count || 0),
+      seoArticleCount: Number(seoArticleCount[0]?.count || 0),
+      publishedArticleCount: Number(publishedArticleCount[0]?.count || 0),
     };
   },
 
