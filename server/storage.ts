@@ -220,6 +220,10 @@ export const storage = {
     return sale;
   },
 
+  async deleteAgencySale(id: number): Promise<void> {
+    await db.delete(agencySales).where(eq(agencySales.id, id));
+  },
+
   async getDashboardStats(userId: number, role: string) {
     const customerCount = role === 'admin' || role === 'ceo' || role === 'manager'
       ? await db.select({ count: sql<number>`count(*)` }).from(customers)

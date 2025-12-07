@@ -171,7 +171,7 @@ export function AgencyPage() {
 
   const handleDeleteSale = async (id: number) => {
     if (!confirm('この売上記録を削除しますか？')) return;
-    const res = await fetch(`/api/agency-sales/${id}`, { method: 'DELETE', credentials: 'include' });
+    const res = await fetch(`/api/agency/sales/${id}`, { method: 'DELETE', credentials: 'include' });
     if (res.ok) {
       fetchSales();
     }

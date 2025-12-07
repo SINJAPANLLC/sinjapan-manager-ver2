@@ -334,6 +334,11 @@ export function registerRoutes(app: Express) {
     res.json(sale);
   });
 
+  app.delete('/api/agency/sales/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    await storage.deleteAgencySale(parseInt(req.params.id));
+    res.json({ message: '削除しました' });
+  });
+
   app.get('/api/dashboard/stats', requireAuth, async (req: Request, res: Response) => {
     const user = await storage.getUser(req.session.userId!);
     if (!user) {
