@@ -121,6 +121,9 @@ export function AiPage() {
   const [bulkKeywords, setBulkKeywords] = useState('');
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0, generating: false });
 
+  const [siteName, setSiteName] = useState('');
+  const [seoDomain, setSeoDomain] = useState('');
+
   const [voiceText, setVoiceText] = useState('');
   const [voiceUrl, setVoiceUrl] = useState('');
 
@@ -166,10 +169,42 @@ export function AiPage() {
     }
   };
 
+  const fetchSeoSettings = async () => {
+    const [siteRes, domainRes] = await Promise.all([
+      fetch('/api/settings/site_name'),
+      fetch('/api/settings/seo_domain'),
+    ]);
+    if (siteRes.ok) {
+      const data = await siteRes.json();
+      setSiteName(data.value || '');
+    }
+    if (domainRes.ok) {
+      const data = await domainRes.json();
+      setSeoDomain(data.value || '');
+    }
+  };
+
+  const saveSeoSettings = async () => {
+    await Promise.all([
+      fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'site_name', value: siteName }),
+      }),
+      fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'seo_domain', value: seoDomain }),
+      }),
+    ]);
+    alert('設定を保存しました');
+  };
+
   useEffect(() => {
     if (activeTab === 'seo') {
       fetchSeoArticles();
       fetchSeoCategories();
+      fetchSeoSettings();
     }
   }, [activeTab]);
 
@@ -1391,6 +1426,40 @@ export function AiPage() {
                         <p className="text-xs text-blue-600 mt-1">
                           Google Search Consoleにサイトマップを送信することでインデックス率が向上します
                         </p>
+                      </div>
+
+                      <div className="bg-white border rounded-xl p-4">
+                        <h3 className="font-medium text-slate-700 mb-3">サイト設定</h3>
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-sm font-medium text-slate-600 mb-1">サイト名</label>
+                            <input
+                              type="text"
+                              value={siteName}
+                              onChange={(e) => setSiteName(e.target.value)}
+                              placeholder="例: SIN JAPAN"
+                              className="input-field"
+                            />
+                            <p className="text-xs text-slate-400 mt-1">公開記事ページに表示されるサイト名</p>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-600 mb-1">サイトドメイン</label>
+                            <input
+                              type="text"
+                              value={seoDomain}
+                              onChange={(e) => setSeoDomain(e.target.value)}
+                              placeholder="例: https://example.com"
+                              className="input-field"
+                            />
+                            <p className="text-xs text-slate-400 mt-1">canonical URLやGoogle Indexing APIで使用</p>
+                          </div>
+                          <button
+                            onClick={saveSeoSettings}
+                            className="btn-primary text-sm"
+                          >
+                            設定を保存
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );

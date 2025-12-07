@@ -1272,6 +1272,16 @@ ${articleList}`
     }
   });
 
+  app.get('/api/settings/:key', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const value = await storage.getSetting(req.params.key);
+      res.json({ value: value || '' });
+    } catch (error) {
+      console.error('Get setting error:', error);
+      res.status(500).json({ value: '' });
+    }
+  });
+
   app.put('/api/settings', requireAuth, async (req: Request, res: Response) => {
     try {
       const { key, value } = req.body;
@@ -1602,6 +1612,7 @@ ${articlesContext}
     try {
       const article = await storage.getSeoArticleBySlug(req.params.slug);
       const globalDomain = await storage.getSetting('seo_domain');
+      const siteName = await storage.getSetting('site_name') || 'SIN JAPAN';
       const seoDomain = article?.domain || globalDomain || `https://${req.get('host')}`;
       
       if (!article || !article.isPublished) {
@@ -1644,7 +1655,7 @@ ${articlesContext}
         <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>${article.title} | SIN JAPAN</title>
+          <title>${article.title} | ${siteName}</title>
           <meta name="description" content="${article.metaDescription || article.content.substring(0, 160)}">
           <meta name="keywords" content="${article.keywords || ''}">
           <link rel="canonical" href="${seoDomain}/articles/${article.slug}">
@@ -2042,13 +2053,13 @@ ${articlesContext}
         <body>
           <nav>
             <div class="container">
-              <a href="/" class="logo">SIN <span>JAPAN</span></a>
+              <a href="/" class="logo">${siteName}</a>
             </div>
           </nav>
           
           <div class="hero">
             <div class="hero-content">
-              <span class="hero-badge">SIN JAPAN BLOG</span>
+              <span class="hero-badge">${siteName} BLOG</span>
               <h1>${article.title}</h1>
               <p class="hero-description">${article.metaDescription || ''}</p>
               <div class="hero-meta">
@@ -2075,7 +2086,7 @@ ${articlesContext}
           </main>
           
           <footer>
-            <p>&copy; ${new Date().getFullYear()} SIN JAPAN. All rights reserved.</p>
+            <p>&copy; ${new Date().getFullYear()} ${siteName}. All rights reserved.</p>
           </footer>
           
           <script>
