@@ -28,7 +28,9 @@ import {
   Globe,
   Eye,
   Save,
-  ArrowLeft
+  ArrowLeft,
+  BarChart3,
+  FolderOpen
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
@@ -996,31 +998,48 @@ export function AiPage() {
           <div className="space-y-4">
             {seoView === 'list' && (
               <>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                      <FileText className="text-primary-500" size={20} />
-                      SEO記事管理
-                    </h2>
-                    <p className="text-sm text-slate-500">記事の作成・編集・公開を管理します</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button onClick={() => setSeoView('stats')} className="btn-secondary flex items-center gap-2 text-sm">
-                      インデックス監視
-                    </button>
-                    <button onClick={() => setSeoView('categories')} className="btn-secondary flex items-center gap-2 text-sm">
-                      カテゴリ管理
-                    </button>
-                    <button onClick={() => setSeoView('bulk')} className="btn-secondary flex items-center gap-2 text-sm">
-                      一括生成
-                    </button>
-                    <button onClick={() => setSeoView('generate')} className="btn-secondary flex items-center gap-2">
-                      <Sparkles size={16} />
-                      AI生成
-                    </button>
-                    <button onClick={startNewArticle} className="btn-primary flex items-center gap-2">
+                <div className="space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                        <FileText className="text-primary-500" size={24} />
+                        SEO記事管理
+                      </h2>
+                      <p className="text-sm text-slate-500 mt-1">記事の作成・編集・公開を管理します</p>
+                    </div>
+                    <button onClick={startNewArticle} className="btn-primary flex items-center gap-2 shrink-0">
                       <Plus size={16} />
                       新規作成
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-4">
+                    <button 
+                      onClick={() => setSeoView('stats')} 
+                      className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium transition-colors flex items-center gap-2"
+                    >
+                      <BarChart3 size={16} />
+                      インデックス監視
+                    </button>
+                    <button 
+                      onClick={() => setSeoView('categories')} 
+                      className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium transition-colors flex items-center gap-2"
+                    >
+                      <FolderOpen size={16} />
+                      カテゴリ管理
+                    </button>
+                    <button 
+                      onClick={() => setSeoView('bulk')} 
+                      className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium transition-colors flex items-center gap-2"
+                    >
+                      <FileText size={16} />
+                      一括生成
+                    </button>
+                    <button 
+                      onClick={() => setSeoView('generate')} 
+                      className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white text-sm font-medium transition-colors flex items-center gap-2"
+                    >
+                      <Sparkles size={16} />
+                      AI生成
                     </button>
                   </div>
                 </div>
