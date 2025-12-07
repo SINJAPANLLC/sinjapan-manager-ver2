@@ -1400,11 +1400,10 @@ ${articlesContext}
       const contentHtml = article.content
         .replace(/^### (.+)$/gm, '<h3>$1</h3>')
         .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-        .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+        .replace(/^# (.+)$/gm, '')
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.+?)\*/g, '<em>$1</em>')
         .replace(/^- (.+)$/gm, '<li>$1</li>')
-        .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
         .replace(/\n\n/g, '</p><p>')
         .replace(/\n/g, '<br>');
 
@@ -1422,59 +1421,247 @@ ${articlesContext}
           <meta property="og:description" content="${article.metaDescription || article.content.substring(0, 160)}">
           <meta property="og:type" content="article">
           <meta property="og:url" content="https://${req.get('host')}/articles/${article.slug}">
+          <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
           <style>
-            * { box-sizing: border-box; }
+            * { box-sizing: border-box; margin: 0; padding: 0; }
             body { 
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Hiragino Sans', sans-serif; 
-              max-width: 800px; 
-              margin: 0 auto; 
-              padding: 40px 20px; 
+              font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
               line-height: 1.8;
               color: #1e293b;
-              background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 100%);
-              min-height: 100vh;
+              background: #f8fafc;
             }
-            header { 
-              border-bottom: 1px solid #e2e8f0; 
-              padding-bottom: 20px; 
-              margin-bottom: 30px;
+            
+            /* Hero Section */
+            .hero {
+              background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0ea5e9 100%);
+              padding: 80px 20px 100px;
+              text-align: center;
+              position: relative;
+              overflow: hidden;
             }
-            .logo { 
-              font-size: 1.5rem; 
-              font-weight: bold; 
-              background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-              -webkit-background-clip: text;
-              -webkit-text-fill-color: transparent;
+            .hero::before {
+              content: '';
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+              opacity: 0.5;
+            }
+            .hero-content {
+              position: relative;
+              z-index: 1;
+              max-width: 900px;
+              margin: 0 auto;
+            }
+            .hero-badge {
+              display: inline-block;
+              background: rgba(255,255,255,0.15);
+              backdrop-filter: blur(10px);
+              color: #e0f2fe;
+              padding: 8px 20px;
+              border-radius: 50px;
+              font-size: 0.875rem;
+              font-weight: 500;
+              margin-bottom: 24px;
+              border: 1px solid rgba(255,255,255,0.2);
+            }
+            .hero h1 {
+              font-size: clamp(2rem, 5vw, 3.5rem);
+              font-weight: 900;
+              color: white;
+              margin-bottom: 20px;
+              text-shadow: 0 2px 20px rgba(0,0,0,0.3);
+              letter-spacing: -0.02em;
+            }
+            .hero-description {
+              font-size: 1.125rem;
+              color: #cbd5e1;
+              max-width: 600px;
+              margin: 0 auto 30px;
+            }
+            .hero-meta {
+              color: #94a3b8;
+              font-size: 0.875rem;
+            }
+            
+            /* Navigation */
+            nav {
+              position: fixed;
+              top: 0;
+              left: 0;
+              right: 0;
+              background: rgba(15, 23, 42, 0.95);
+              backdrop-filter: blur(10px);
+              padding: 16px 20px;
+              z-index: 1000;
+              border-bottom: 1px solid rgba(255,255,255,0.1);
+            }
+            nav .container {
+              max-width: 1200px;
+              margin: 0 auto;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            }
+            .logo {
+              font-size: 1.25rem;
+              font-weight: 700;
+              color: white;
               text-decoration: none;
             }
-            article { 
-              background: white; 
-              padding: 40px; 
-              border-radius: 16px; 
-              box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            .logo span {
+              background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+              -webkit-background-clip: text;
+              -webkit-text-fill-color: transparent;
             }
-            h1 { font-size: 2rem; color: #0f172a; margin-bottom: 10px; }
-            h2 { font-size: 1.5rem; color: #1e293b; margin-top: 30px; border-bottom: 2px solid #3b82f6; padding-bottom: 8px; }
-            h3 { font-size: 1.25rem; color: #334155; margin-top: 24px; }
-            p { color: #475569; margin: 16px 0; }
-            ul { padding-left: 24px; }
-            li { margin: 8px 0; color: #475569; }
-            .meta { color: #94a3b8; font-size: 0.875rem; margin-bottom: 24px; }
-            footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center; color: #94a3b8; font-size: 0.875rem; }
-            a { color: #3b82f6; }
+            
+            /* Main Content */
+            main {
+              max-width: 800px;
+              margin: -60px auto 0;
+              padding: 0 20px 60px;
+              position: relative;
+              z-index: 10;
+            }
+            .content-card {
+              background: white;
+              border-radius: 24px;
+              box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+              padding: 50px;
+              margin-bottom: 30px;
+            }
+            .content-card h2 {
+              font-size: 1.75rem;
+              font-weight: 700;
+              color: #0f172a;
+              margin: 40px 0 20px;
+              padding-bottom: 12px;
+              border-bottom: 3px solid #0ea5e9;
+              display: inline-block;
+            }
+            .content-card h3 {
+              font-size: 1.25rem;
+              font-weight: 600;
+              color: #1e293b;
+              margin: 30px 0 15px;
+            }
+            .content-card p {
+              color: #475569;
+              margin: 16px 0;
+              font-size: 1.0625rem;
+            }
+            .content-card ul {
+              margin: 20px 0;
+              padding-left: 0;
+              list-style: none;
+            }
+            .content-card li {
+              position: relative;
+              padding-left: 28px;
+              margin: 12px 0;
+              color: #475569;
+            }
+            .content-card li::before {
+              content: '';
+              position: absolute;
+              left: 0;
+              top: 10px;
+              width: 8px;
+              height: 8px;
+              background: linear-gradient(135deg, #0ea5e9, #38bdf8);
+              border-radius: 50%;
+            }
+            .content-card strong {
+              color: #0f172a;
+              font-weight: 600;
+            }
+            
+            /* CTA Section */
+            .cta-section {
+              background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+              border-radius: 20px;
+              padding: 50px;
+              text-align: center;
+              color: white;
+            }
+            .cta-section h2 {
+              font-size: 1.75rem;
+              font-weight: 700;
+              margin-bottom: 15px;
+              border: none;
+              color: white;
+            }
+            .cta-section p {
+              color: rgba(255,255,255,0.9);
+              margin-bottom: 25px;
+            }
+            .cta-button {
+              display: inline-block;
+              background: white;
+              color: #0284c7;
+              padding: 16px 40px;
+              border-radius: 50px;
+              font-weight: 700;
+              font-size: 1.125rem;
+              text-decoration: none;
+              transition: all 0.3s ease;
+              box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            }
+            .cta-button:hover {
+              transform: translateY(-3px);
+              box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+            }
+            
+            /* Footer */
+            footer {
+              background: #0f172a;
+              color: #94a3b8;
+              padding: 40px 20px;
+              text-align: center;
+            }
+            footer a {
+              color: #38bdf8;
+              text-decoration: none;
+            }
+            
+            /* Responsive */
+            @media (max-width: 768px) {
+              .hero { padding: 100px 20px 80px; }
+              .content-card { padding: 30px 25px; border-radius: 16px; }
+              main { margin-top: -40px; }
+            }
           </style>
         </head>
         <body>
-          <header>
-            <a href="/" class="logo">SIN JAPAN</a>
-          </header>
-          <article>
-            <h1>${article.title}</h1>
-            <p class="meta">公開日: ${article.publishedAt ? new Date(article.publishedAt).toLocaleDateString('ja-JP') : new Date(article.createdAt).toLocaleDateString('ja-JP')}</p>
-            <div class="content">
+          <nav>
+            <div class="container">
+              <a href="/" class="logo">SIN <span>JAPAN</span></a>
+            </div>
+          </nav>
+          
+          <div class="hero">
+            <div class="hero-content">
+              <span class="hero-badge">SIN JAPAN BLOG</span>
+              <h1>${article.title}</h1>
+              <p class="hero-description">${article.metaDescription || ''}</p>
+              <p class="hero-meta">公開日: ${article.publishedAt ? new Date(article.publishedAt).toLocaleDateString('ja-JP') : new Date(article.createdAt).toLocaleDateString('ja-JP')}</p>
+            </div>
+          </div>
+          
+          <main>
+            <div class="content-card">
               <p>${contentHtml}</p>
             </div>
-          </article>
+            
+            <div class="cta-section">
+              <h2>お問い合わせはこちら</h2>
+              <p>ご質問やご相談がございましたら、お気軽にお問い合わせください。</p>
+              <a href="/" class="cta-button">詳しく見る</a>
+            </div>
+          </main>
+          
           <footer>
             <p>&copy; ${new Date().getFullYear()} SIN JAPAN. All rights reserved.</p>
           </footer>
