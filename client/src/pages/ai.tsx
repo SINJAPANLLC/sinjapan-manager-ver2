@@ -118,6 +118,7 @@ export function AiPage() {
   const [newCategorySlug, setNewCategorySlug] = useState('');
   const [bulkTopics, setBulkTopics] = useState('');
   const [bulkCategoryId, setBulkCategoryId] = useState<number | undefined>(undefined);
+  const [bulkKeywords, setBulkKeywords] = useState('');
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0, generating: false });
 
   const [voiceText, setVoiceText] = useState('');
@@ -285,7 +286,7 @@ export function AiPage() {
         const res = await fetch('/api/ai/seo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ topic, keywords: '' }),
+          body: JSON.stringify({ topic, keywords: bulkKeywords }),
         });
         const data = await res.json();
         if (data.article) {
@@ -298,7 +299,7 @@ export function AiPage() {
               slug,
               content: data.article,
               metaDescription: `${topic}についての詳細記事`,
-              keywords: '',
+              keywords: bulkKeywords,
               categoryId: bulkCategoryId,
             }),
           });
@@ -1276,6 +1277,19 @@ export function AiPage() {
                         <option key={cat.id} value={cat.id}>{cat.name}</option>
                       ))}
                     </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">キーワード（オプション・カンマ区切り）</label>
+                    <input
+                      type="text"
+                      value={bulkKeywords}
+                      onChange={(e) => setBulkKeywords(e.target.value)}
+                      placeholder="SEO, マーケティング, Web集客"
+                      className="input-field"
+                      disabled={bulkProgress.generating}
+                    />
+                    <p className="text-xs text-slate-400 mt-1">全記事に共通で適用されます</p>
                   </div>
 
                   {bulkProgress.generating && (
