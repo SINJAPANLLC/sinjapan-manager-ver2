@@ -1326,6 +1326,82 @@ ${articleList}`
     }
   });
 
+  // Google Places API - Real Business Search
+  app.post('/api/places/search', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { query, location, maxResults = 10 } = req.body;
+      const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+      
+      if (!apiKey) {
+        return res.status(400).json({ error: 'Google Places API キーが設定されていません' });
+      }
+
+      const searchQuery = `${query} ${location}`;
+      const textSearchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(searchQuery)}&language=ja&key=${apiKey}`;
+      
+      const searchResponse = await fetch(textSearchUrl);
+      const searchData = await searchResponse.json();
+      
+      if (searchData.status !== 'OK' && searchData.status !== 'ZERO_RESULTS') {
+        console.error('Places API error:', searchData);
+        return res.status(400).json({ error: `Google Places API エラー: ${searchData.status}` });
+      }
+
+      const places: Array<{
+        name: string;
+        company: string;
+        phone?: string;
+        email?: string;
+        address?: string;
+        website?: string;
+        source: string;
+      }> = [];
+
+      const results = (searchData.results || []).slice(0, Math.min(maxResults, 20));
+      
+      for (const place of results) {
+        const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${place.place_id}&fields=name,formatted_phone_number,formatted_address,website&language=ja&key=${apiKey}`;
+        
+        try {
+          const detailsResponse = await fetch(detailsUrl);
+          const detailsData = await detailsResponse.json();
+          
+          if (detailsData.status === 'OK' && detailsData.result) {
+            const detail = detailsData.result;
+            places.push({
+              name: detail.name || place.name,
+              company: detail.name || place.name,
+              phone: detail.formatted_phone_number || undefined,
+              address: detail.formatted_address || place.formatted_address,
+              website: detail.website || undefined,
+              source: 'google_places',
+            });
+          }
+        } catch (detailError) {
+          places.push({
+            name: place.name,
+            company: place.name,
+            address: place.formatted_address,
+            source: 'google_places',
+          });
+        }
+      }
+
+      await storage.createAiLog({
+        type: 'places_search',
+        prompt: `${query} in ${location}`,
+        result: `Found ${places.length} places`,
+        status: 'success',
+        userId: req.session.userId,
+      });
+
+      res.json({ places, total: places.length });
+    } catch (error) {
+      console.error('Places search error:', error);
+      res.status(500).json({ error: 'ビジネス情報の検索に失敗しました' });
+    }
+  });
+
   // Lead Management API
   app.get('/api/leads', requireAuth, async (req: Request, res: Response) => {
     try {
