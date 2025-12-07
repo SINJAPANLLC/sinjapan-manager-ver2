@@ -304,7 +304,11 @@ export const storage = {
   },
 
   async createBusinessSale(data: InsertBusinessSale): Promise<BusinessSale> {
-    const [sale] = await db.insert(businessSales).values(data).returning();
+    const saleData = {
+      ...data,
+      saleDate: data.saleDate ? new Date(data.saleDate as any) : new Date(),
+    };
+    const [sale] = await db.insert(businessSales).values(saleData).returning();
     return sale;
   },
 
