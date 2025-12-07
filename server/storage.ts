@@ -346,7 +346,7 @@ export const storage = {
       .orderBy(desc(seoArticles.publishedAt));
   },
 
-  async getSeoArticle(id: number): Promise<SeoArticle | undefined> {
+  async getSeoArticle(id: string): Promise<SeoArticle | undefined> {
     const [article] = await db.select().from(seoArticles).where(eq(seoArticles.id, id));
     return article;
   },
@@ -357,11 +357,12 @@ export const storage = {
   },
 
   async createSeoArticle(data: InsertSeoArticle): Promise<SeoArticle> {
-    const [article] = await db.insert(seoArticles).values(data).returning();
+    const id = `seo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const [article] = await db.insert(seoArticles).values({ ...data, id }).returning();
     return article;
   },
 
-  async updateSeoArticle(id: number, data: Partial<InsertSeoArticle>): Promise<SeoArticle | undefined> {
+  async updateSeoArticle(id: string, data: Partial<InsertSeoArticle>): Promise<SeoArticle | undefined> {
     const [article] = await db.update(seoArticles)
       .set({ ...data, updatedAt: new Date() })
       .where(eq(seoArticles.id, id))
@@ -369,12 +370,12 @@ export const storage = {
     return article;
   },
 
-  async deleteSeoArticle(id: number): Promise<boolean> {
+  async deleteSeoArticle(id: string): Promise<boolean> {
     await db.delete(seoArticles).where(eq(seoArticles.id, id));
     return true;
   },
 
-  async publishSeoArticle(id: number): Promise<SeoArticle | undefined> {
+  async publishSeoArticle(id: string): Promise<SeoArticle | undefined> {
     const [article] = await db.update(seoArticles)
       .set({ isPublished: true, publishedAt: new Date(), updatedAt: new Date() })
       .where(eq(seoArticles.id, id))
@@ -382,7 +383,7 @@ export const storage = {
     return article;
   },
 
-  async unpublishSeoArticle(id: number): Promise<SeoArticle | undefined> {
+  async unpublishSeoArticle(id: string): Promise<SeoArticle | undefined> {
     const [article] = await db.update(seoArticles)
       .set({ isPublished: false, publishedAt: null, updatedAt: new Date() })
       .where(eq(seoArticles.id, id))
@@ -390,7 +391,7 @@ export const storage = {
     return article;
   },
 
-  async updateIndexingStatus(id: number, status: string): Promise<SeoArticle | undefined> {
+  async updateIndexingStatus(id: string, status: string): Promise<SeoArticle | undefined> {
     const [article] = await db.update(seoArticles)
       .set({ indexingStatus: status, indexedAt: status === 'sent' ? new Date() : null, updatedAt: new Date() })
       .where(eq(seoArticles.id, id))

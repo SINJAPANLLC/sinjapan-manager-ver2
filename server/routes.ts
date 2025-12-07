@@ -1206,7 +1206,7 @@ SEO最適化のポイント：
 
   app.get('/api/seo-articles/:id', requireAuth, async (req: Request, res: Response) => {
     try {
-      const article = await storage.getSeoArticle(parseInt(req.params.id));
+      const article = await storage.getSeoArticle(req.params.id);
       if (!article) {
         return res.status(404).json({ error: '記事が見つかりません' });
       }
@@ -1241,14 +1241,15 @@ SEO最適化のポイント：
 
   app.put('/api/seo-articles/:id', requireAuth, async (req: Request, res: Response) => {
     try {
-      const { title, slug, content, metaTitle, metaDescription, keywords } = req.body;
-      const article = await storage.updateSeoArticle(parseInt(req.params.id), {
+      const { title, slug, content, metaTitle, metaDescription, keywords, isPublished } = req.body;
+      const article = await storage.updateSeoArticle(req.params.id, {
         title,
         slug,
         content,
         metaTitle,
         metaDescription,
         keywords,
+        isPublished,
       });
       res.json(article);
     } catch (error: any) {
@@ -1262,7 +1263,7 @@ SEO最適化のポイント：
 
   app.delete('/api/seo-articles/:id', requireAuth, async (req: Request, res: Response) => {
     try {
-      await storage.deleteSeoArticle(parseInt(req.params.id));
+      await storage.deleteSeoArticle(req.params.id);
       res.json({ success: true });
     } catch (error) {
       console.error('Delete SEO article error:', error);
@@ -1272,7 +1273,7 @@ SEO最適化のポイント：
 
   app.post('/api/seo-articles/:id/publish', requireAuth, async (req: Request, res: Response) => {
     try {
-      const article = await storage.publishSeoArticle(parseInt(req.params.id));
+      const article = await storage.publishSeoArticle(req.params.id);
       res.json(article);
     } catch (error) {
       console.error('Publish SEO article error:', error);
@@ -1282,7 +1283,7 @@ SEO最適化のポイント：
 
   app.post('/api/seo-articles/:id/unpublish', requireAuth, async (req: Request, res: Response) => {
     try {
-      const article = await storage.unpublishSeoArticle(parseInt(req.params.id));
+      const article = await storage.unpublishSeoArticle(req.params.id);
       res.json(article);
     } catch (error) {
       console.error('Unpublish SEO article error:', error);
@@ -1417,13 +1418,13 @@ ${articlesContext}
   // Google Indexing API (placeholder - requires service account setup)
   app.post('/api/seo-articles/:id/index', requireAuth, async (req: Request, res: Response) => {
     try {
-      const article = await storage.getSeoArticle(parseInt(req.params.id));
+      const article = await storage.getSeoArticle(req.params.id);
       if (!article || !article.isPublished) {
         return res.status(400).json({ error: '公開されている記事のみインデックス送信できます' });
       }
 
       // Update status to sent (actual API integration would go here)
-      await storage.updateIndexingStatus(parseInt(req.params.id), 'sent');
+      await storage.updateIndexingStatus(req.params.id, 'sent');
       
       res.json({ success: true, message: 'インデックス送信をリクエストしました' });
     } catch (error) {

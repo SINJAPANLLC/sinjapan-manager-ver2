@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Image,
   Video,
@@ -21,7 +21,14 @@ import {
   X,
   Share2,
   Mail,
-  ExternalLink
+  ExternalLink,
+  Plus,
+  Edit,
+  Trash2,
+  Globe,
+  Eye,
+  Save,
+  ArrowLeft
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
@@ -35,6 +42,19 @@ interface AiLog {
   result?: string;
   status: string;
   createdAt: string;
+}
+
+interface SeoArticle {
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  metaDescription: string;
+  keywords: string;
+  isPublished: boolean;
+  indexingStatus: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface LogDetailModalProps {
@@ -69,6 +89,15 @@ export function AiPage() {
   const [seoTopic, setSeoTopic] = useState('');
   const [seoKeywords, setSeoKeywords] = useState('');
   const [seoArticle, setSeoArticle] = useState('');
+  const [seoArticles, setSeoArticles] = useState<SeoArticle[]>([]);
+  const [seoView, setSeoView] = useState<'list' | 'edit' | 'generate'>('list');
+  const [editingArticle, setEditingArticle] = useState<SeoArticle | null>(null);
+  const [articleForm, setArticleForm] = useState({
+    title: '',
+    content: '',
+    metaDescription: '',
+    keywords: '',
+  });
 
   const [voiceText, setVoiceText] = useState('');
   const [voiceUrl, setVoiceUrl] = useState('');
@@ -98,6 +127,119 @@ export function AiPage() {
     const res = await fetch('/api/ai/logs');
     if (res.ok) {
       setLogs(await res.json());
+    }
+  };
+
+  const fetchSeoArticles = async () => {
+    const res = await fetch('/api/seo-articles');
+    if (res.ok) {
+      setSeoArticles(await res.json());
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'seo') {
+      fetchSeoArticles();
+    }
+  }, [activeTab]);
+
+  const handleSaveArticle = async () => {
+    if (!articleForm.title.trim() || !articleForm.content.trim()) return;
+    setIsLoading(true);
+    try {
+      const url = editingArticle 
+        ? `/api/seo-articles/${editingArticle.id}` 
+        : '/api/seo-articles';
+      const method = editingArticle ? 'PUT' : 'POST';
+      
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(articleForm),
+      });
+      
+      if (res.ok) {
+        await fetchSeoArticles();
+        setSeoView('list');
+        setEditingArticle(null);
+        setArticleForm({ title: '', content: '', metaDescription: '', keywords: '' });
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteArticle = async (id: string) => {
+    if (!confirm('この記事を削除しますか？')) return;
+    const res = await fetch(`/api/seo-articles/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      await fetchSeoArticles();
+    }
+  };
+
+  const handleTogglePublish = async (article: SeoArticle) => {
+    const res = await fetch(`/api/seo-articles/${article.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...article, isPublished: !article.isPublished }),
+    });
+    if (res.ok) {
+      await fetchSeoArticles();
+    }
+  };
+
+  const handleIndexArticle = async (id: string) => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(`/api/seo-articles/${id}/index`, { method: 'POST' });
+      if (res.ok) {
+        await fetchSeoArticles();
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const startEditArticle = (article: SeoArticle) => {
+    setEditingArticle(article);
+    setArticleForm({
+      title: article.title,
+      content: article.content,
+      metaDescription: article.metaDescription || '',
+      keywords: article.keywords || '',
+    });
+    setSeoView('edit');
+  };
+
+  const startNewArticle = () => {
+    setEditingArticle(null);
+    setArticleForm({ title: '', content: '', metaDescription: '', keywords: '' });
+    setSeoView('edit');
+  };
+
+  const handleGenerateAndSave = async () => {
+    if (!seoTopic.trim()) return;
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/ai/seo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic: seoTopic, keywords: seoKeywords }),
+      });
+      const data = await res.json();
+      if (data.article) {
+        setArticleForm({
+          title: seoTopic,
+          content: data.article,
+          metaDescription: `${seoTopic}についての詳細記事`,
+          keywords: seoKeywords,
+        });
+        setSeoView('edit');
+        setSeoTopic('');
+        setSeoKeywords('');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -753,51 +895,235 @@ export function AiPage() {
 
         {activeTab === 'seo' && (
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-              <FileText className="text-primary-500" size={20} />
-              SEO記事生成
-            </h2>
-            <p className="text-sm text-slate-500">SEOに最適化された記事を自動生成します</p>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">トピック *</label>
-                <input
-                  type="text"
-                  value={seoTopic}
-                  onChange={(e) => setSeoTopic(e.target.value)}
-                  placeholder="例: AIを活用したマーケティング戦略"
-                  className="input-field"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">キーワード</label>
-                <input
-                  type="text"
-                  value={seoKeywords}
-                  onChange={(e) => setSeoKeywords(e.target.value)}
-                  placeholder="例: AI, マーケティング, 自動化"
-                  className="input-field"
-                />
-              </div>
-            </div>
-            <button
-              onClick={handleSeoGenerate}
-              disabled={isLoading || !seoTopic.trim()}
-              className="btn-primary flex items-center gap-2"
-            >
-              {isLoading ? <Loader2 className="animate-spin" size={18} /> : <FileText size={18} />}
-              記事を生成
-            </button>
-            {seoArticle && (
-              <div className="mt-4 bg-slate-50 rounded-xl p-4">
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-sm font-medium text-slate-700">生成された記事</span>
+            {seoView === 'list' && (
+              <>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                      <FileText className="text-primary-500" size={20} />
+                      SEO記事管理
+                    </h2>
+                    <p className="text-sm text-slate-500">記事の作成・編集・公開を管理します</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => setSeoView('generate')} className="btn-secondary flex items-center gap-2">
+                      <Sparkles size={16} />
+                      AI生成
+                    </button>
+                    <button onClick={startNewArticle} className="btn-primary flex items-center gap-2">
+                      <Plus size={16} />
+                      新規作成
+                    </button>
+                  </div>
                 </div>
-                <div className="prose prose-sm max-w-none">
-                  <pre className="whitespace-pre-wrap text-sm text-slate-700 bg-white p-4 rounded-lg border">{seoArticle}</pre>
+
+                <div className="grid gap-4">
+                  {seoArticles.length === 0 ? (
+                    <div className="text-center py-12 bg-slate-50 rounded-xl">
+                      <FileText className="mx-auto text-slate-300 mb-3" size={48} />
+                      <p className="text-slate-500">記事がありません</p>
+                      <p className="text-sm text-slate-400">「新規作成」または「AI生成」で記事を作成してください</p>
+                    </div>
+                  ) : (
+                    seoArticles.map((article) => (
+                      <div key={article.id} className="bg-white border rounded-xl p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-slate-800">{article.title}</h3>
+                            <p className="text-sm text-slate-500 mt-1 line-clamp-2">{article.metaDescription || article.content.substring(0, 100)}</p>
+                            <div className="flex items-center gap-2 mt-2">
+                              <span className={cn(
+                                "text-xs px-2 py-0.5 rounded-full",
+                                article.isPublished ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600"
+                              )}>
+                                {article.isPublished ? '公開中' : '下書き'}
+                              </span>
+                              {article.indexingStatus === 'sent' && (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                                  インデックス済
+                                </span>
+                              )}
+                              <span className="text-xs text-slate-400">
+                                {format(new Date(article.updatedAt), 'yyyy/MM/dd HH:mm')}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 ml-4">
+                            {article.isPublished && (
+                              <a
+                                href={`/articles/${article.slug}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                                title="記事を見る"
+                              >
+                                <Eye size={18} />
+                              </a>
+                            )}
+                            <button
+                              onClick={() => handleTogglePublish(article)}
+                              className={cn(
+                                "p-2 rounded-lg transition-colors",
+                                article.isPublished 
+                                  ? "text-green-600 hover:bg-green-50" 
+                                  : "text-slate-400 hover:text-green-600 hover:bg-green-50"
+                              )}
+                              title={article.isPublished ? '非公開にする' : '公開する'}
+                            >
+                              <Globe size={18} />
+                            </button>
+                            {article.isPublished && article.indexingStatus !== 'sent' && (
+                              <button
+                                onClick={() => handleIndexArticle(article.id)}
+                                disabled={isLoading}
+                                className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="インデックス送信"
+                              >
+                                <Send size={18} />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => startEditArticle(article)}
+                              className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                              title="編集"
+                            >
+                              <Edit size={18} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteArticle(article.id)}
+                              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="削除"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
-                <ShareButtons content={seoArticle} type="text" />
-              </div>
+
+                <div className="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
+                  <p className="text-sm text-blue-700">
+                    <span className="font-medium">サイトマップ:</span>{' '}
+                    <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer" className="underline hover:no-underline">
+                      /sitemap.xml
+                    </a>
+                  </p>
+                </div>
+              </>
+            )}
+
+            {seoView === 'generate' && (
+              <>
+                <button onClick={() => setSeoView('list')} className="flex items-center gap-2 text-slate-600 hover:text-primary-600 mb-4">
+                  <ArrowLeft size={18} />
+                  記事一覧に戻る
+                </button>
+                <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                  <Sparkles className="text-primary-500" size={20} />
+                  AI記事生成
+                </h2>
+                <p className="text-sm text-slate-500">トピックを入力するとAIがSEO最適化された記事を生成します</p>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">トピック *</label>
+                    <input
+                      type="text"
+                      value={seoTopic}
+                      onChange={(e) => setSeoTopic(e.target.value)}
+                      placeholder="例: AIを活用したマーケティング戦略"
+                      className="input-field"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">キーワード</label>
+                    <input
+                      type="text"
+                      value={seoKeywords}
+                      onChange={(e) => setSeoKeywords(e.target.value)}
+                      placeholder="例: AI, マーケティング, 自動化"
+                      className="input-field"
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={handleGenerateAndSave}
+                  disabled={isLoading || !seoTopic.trim()}
+                  className="btn-primary flex items-center gap-2"
+                >
+                  {isLoading ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
+                  記事を生成して編集
+                </button>
+              </>
+            )}
+
+            {seoView === 'edit' && (
+              <>
+                <button onClick={() => setSeoView('list')} className="flex items-center gap-2 text-slate-600 hover:text-primary-600 mb-4">
+                  <ArrowLeft size={18} />
+                  記事一覧に戻る
+                </button>
+                <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                  <FileText className="text-primary-500" size={20} />
+                  {editingArticle ? '記事を編集' : '新規記事作成'}
+                </h2>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">タイトル *</label>
+                    <input
+                      type="text"
+                      value={articleForm.title}
+                      onChange={(e) => setArticleForm({ ...articleForm, title: e.target.value })}
+                      placeholder="記事のタイトル"
+                      className="input-field"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">本文 *</label>
+                    <textarea
+                      value={articleForm.content}
+                      onChange={(e) => setArticleForm({ ...articleForm, content: e.target.value })}
+                      placeholder="記事の本文"
+                      rows={12}
+                      className="input-field resize-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">メタディスクリプション</label>
+                    <input
+                      type="text"
+                      value={articleForm.metaDescription}
+                      onChange={(e) => setArticleForm({ ...articleForm, metaDescription: e.target.value })}
+                      placeholder="検索結果に表示される説明文"
+                      className="input-field"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">キーワード</label>
+                    <input
+                      type="text"
+                      value={articleForm.keywords}
+                      onChange={(e) => setArticleForm({ ...articleForm, keywords: e.target.value })}
+                      placeholder="カンマ区切りでキーワードを入力"
+                      className="input-field"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleSaveArticle}
+                      disabled={isLoading || !articleForm.title.trim() || !articleForm.content.trim()}
+                      className="btn-primary flex items-center gap-2"
+                    >
+                      {isLoading ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+                      保存
+                    </button>
+                    <button onClick={() => setSeoView('list')} className="btn-secondary">
+                      キャンセル
+                    </button>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         )}
