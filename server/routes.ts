@@ -1765,6 +1765,57 @@ ${articleList}`
     }
   });
 
+  // Investments API
+  app.get('/api/investments', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { businessId } = req.query;
+      const invests = await storage.getInvestments(businessId as string | undefined);
+      res.json(invests);
+    } catch (error) {
+      console.error('Get investments error:', error);
+      res.status(500).json([]);
+    }
+  });
+
+  app.post('/api/investments', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const { businessId, type, category, amount, description, investmentDate } = req.body;
+      const investment = await storage.createInvestment({
+        businessId,
+        type,
+        category,
+        amount,
+        description,
+        investmentDate: investmentDate ? new Date(investmentDate) : new Date(),
+        createdBy: req.session.userId,
+      });
+      res.json(investment);
+    } catch (error) {
+      console.error('Create investment error:', error);
+      res.status(500).json({ error: '投資記録の作成に失敗しました' });
+    }
+  });
+
+  app.delete('/api/investments/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      await storage.deleteInvestment(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete investment error:', error);
+      res.status(500).json({ error: '投資記録の削除に失敗しました' });
+    }
+  });
+
+  app.get('/api/investments/totals', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const totals = await storage.getInvestmentTotals();
+      res.json(totals);
+    } catch (error) {
+      console.error('Get investment totals error:', error);
+      res.status(500).json({ total: 0 });
+    }
+  });
+
   // Quick Notes API
   app.get('/api/quick-notes', requireAuth, async (req: Request, res: Response) => {
     try {

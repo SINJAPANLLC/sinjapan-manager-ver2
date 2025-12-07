@@ -379,3 +379,18 @@ export const quickNotes = pgTable("quick_notes", {
 
 export type QuickNote = typeof quickNotes.$inferSelect;
 export type InsertQuickNote = typeof quickNotes.$inferInsert;
+
+export const investments = pgTable("investments", {
+  id: serial("id").primaryKey(),
+  businessId: varchar("business_id").references(() => businesses.id, { onDelete: "cascade" }),
+  type: varchar("type", { length: 50 }).notNull().default("asset_purchase"),
+  category: varchar("category", { length: 100 }),
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+  description: text("description"),
+  investmentDate: timestamp("investment_date").defaultNow().notNull(),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type Investment = typeof investments.$inferSelect;
+export type InsertInvestment = typeof investments.$inferInsert;

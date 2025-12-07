@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { FileSpreadsheet, TrendingUp, TrendingDown, DollarSign, Wallet, ArrowUpRight, ArrowDownRight, Building2 } from 'lucide-react';
+import { FileSpreadsheet, TrendingUp, TrendingDown, DollarSign, Wallet, ArrowUpRight, ArrowDownRight, Building2, Plus, X, Trash2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 
@@ -18,6 +18,16 @@ interface Sale {
   saleDate: string;
 }
 
+interface Investment {
+  id: number;
+  businessId?: string;
+  type: string;
+  category?: string;
+  amount: string;
+  description?: string;
+  investmentDate: string;
+}
+
 type TabType = 'pl' | 'bs' | 'cf';
 
 export function FinancialsPage() {
@@ -25,6 +35,16 @@ export function FinancialsPage() {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [selectedBusiness, setSelectedBusiness] = useState<string>('all');
   const [sales, setSales] = useState<Sale[]>([]);
+  const [investments, setInvestments] = useState<Investment[]>([]);
+  const [isInvestModalOpen, setIsInvestModalOpen] = useState(false);
+  const [investFormData, setInvestFormData] = useState({
+    businessId: '',
+    type: 'asset_purchase',
+    category: '',
+    amount: '',
+    description: '',
+    investmentDate: format(new Date(), 'yyyy-MM-dd'),
+  });
   const [dateRange, setDateRange] = useState({
     start: format(new Date(new Date().getFullYear(), 0, 1), 'yyyy-MM-dd'),
     end: format(new Date(), 'yyyy-MM-dd'),
@@ -32,6 +52,7 @@ export function FinancialsPage() {
 
   useEffect(() => {
     fetchBusinesses();
+    fetchInvestments();
   }, []);
 
   useEffect(() => {
@@ -41,6 +62,41 @@ export function FinancialsPage() {
       setSales([]);
     }
   }, [selectedBusiness]);
+
+  const fetchInvestments = async () => {
+    const res = await fetch('/api/investments');
+    if (res.ok) {
+      setInvestments(await res.json());
+    }
+  };
+
+  const handleInvestSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!investFormData.amount) return;
+    
+    await fetch('/api/investments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(investFormData),
+    });
+    
+    fetchInvestments();
+    setIsInvestModalOpen(false);
+    setInvestFormData({
+      businessId: '',
+      type: 'asset_purchase',
+      category: '',
+      amount: '',
+      description: '',
+      investmentDate: format(new Date(), 'yyyy-MM-dd'),
+    });
+  };
+
+  const handleDeleteInvestment = async (id: number) => {
+    if (!confirm('この投資記録を削除しますか？')) return;
+    await fetch(`/api/investments/${id}`, { method: 'DELETE' });
+    fetchInvestments();
+  };
 
   const fetchBusinesses = async () => {
     const res = await fetch('/api/businesses');
@@ -346,6 +402,46 @@ export function FinancialsPage() {
 
       {activeTab === 'cf' && (
         <div className="space-y-6">
+          <div className="flex justify-end">
+            <button
+              onClick={() => setIsInvestModalOpen(true)}
+              className="btn-primary flex items-center gap-2"
+            >
+              <Plus size={18} />
+              投資を記録
+            </button>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-white rounded-2xl p-5 shadow-soft border border-slate-100">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2.5 bg-blue-100 rounded-xl">
+                  <TrendingUp size={18} className="text-blue-600" />
+                </div>
+                <span className="text-sm text-slate-500">営業CF</span>
+              </div>
+              <p className={cn("text-xl font-bold", totalProfit >= 0 ? "text-blue-600" : "text-red-600")}>{formatCurrency(totalProfit)}</p>
+            </div>
+            <div className="bg-white rounded-2xl p-5 shadow-soft border border-slate-100">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2.5 bg-emerald-100 rounded-xl">
+                  <Building2 size={18} className="text-emerald-600" />
+                </div>
+                <span className="text-sm text-slate-500">投資CF</span>
+              </div>
+              <p className="text-xl font-bold text-red-600">-{formatCurrency(investments.reduce((sum, i) => sum + parseFloat(i.amount), 0))}</p>
+            </div>
+            <div className="bg-white rounded-2xl p-5 shadow-soft border border-slate-100">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2.5 bg-purple-100 rounded-xl">
+                  <Wallet size={18} className="text-purple-600" />
+                </div>
+                <span className="text-sm text-slate-500">財務CF</span>
+              </div>
+              <p className="text-xl font-bold text-slate-600">¥0</p>
+            </div>
+          </div>
+
           <div className="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden">
             <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-purple-50 to-white">
               <h3 className="font-bold text-slate-800 flex items-center gap-2">
@@ -380,13 +476,21 @@ export function FinancialsPage() {
                   <tr>
                     <td colSpan={2} className="py-3 font-bold text-slate-800 bg-emerald-50">投資活動によるキャッシュフロー</td>
                   </tr>
-                  <tr className="border-b border-slate-50">
-                    <td className="py-2 pl-4 text-slate-600">固定資産の取得</td>
-                    <td className="py-2 text-right font-medium">¥0</td>
-                  </tr>
+                  {investments.map((inv) => (
+                    <tr key={inv.id} className="border-b border-slate-50">
+                      <td className="py-2 pl-4 text-slate-600">{inv.description || inv.category || '投資'}</td>
+                      <td className="py-2 text-right font-medium text-red-600">-{formatCurrency(parseFloat(inv.amount))}</td>
+                    </tr>
+                  ))}
+                  {investments.length === 0 && (
+                    <tr className="border-b border-slate-50">
+                      <td className="py-2 pl-4 text-slate-400 italic">投資記録なし</td>
+                      <td className="py-2 text-right font-medium">¥0</td>
+                    </tr>
+                  )}
                   <tr className="border-b border-slate-100 bg-slate-50">
                     <td className="py-3 font-semibold text-slate-800">投資活動CF小計</td>
-                    <td className="py-3 text-right font-semibold text-slate-600">¥0</td>
+                    <td className="py-3 text-right font-semibold text-red-600">-{formatCurrency(investments.reduce((sum, i) => sum + parseFloat(i.amount), 0))}</td>
                   </tr>
                   <tr>
                     <td colSpan={2} className="py-3 font-bold text-slate-800 bg-purple-50">財務活動によるキャッシュフロー</td>
@@ -401,41 +505,145 @@ export function FinancialsPage() {
                   </tr>
                   <tr className="bg-primary-100">
                     <td className="py-4 font-bold text-slate-800 text-lg">現金及び現金同等物の増減額</td>
-                    <td className={cn("py-4 text-right font-bold text-lg", totalProfit >= 0 ? "text-primary-600" : "text-red-600")}>{formatCurrency(totalProfit)}</td>
+                    <td className={cn("py-4 text-right font-bold text-lg", (totalProfit - investments.reduce((sum, i) => sum + parseFloat(i.amount), 0)) >= 0 ? "text-primary-600" : "text-red-600")}>
+                      {formatCurrency(totalProfit - investments.reduce((sum, i) => sum + parseFloat(i.amount), 0))}
+                    </td>
                   </tr>
                 </tbody>
               </table>
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-white rounded-2xl p-5 shadow-soft border border-slate-100">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2.5 bg-blue-100 rounded-xl">
-                  <TrendingUp size={18} className="text-blue-600" />
-                </div>
-                <span className="text-sm text-slate-500">営業CF</span>
+          {investments.length > 0 && (
+            <div className="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden">
+              <div className="p-5 border-b border-slate-100">
+                <h3 className="font-bold text-slate-800">投資記録一覧</h3>
               </div>
-              <p className={cn("text-xl font-bold", totalProfit >= 0 ? "text-blue-600" : "text-red-600")}>{formatCurrency(totalProfit)}</p>
-            </div>
-            <div className="bg-white rounded-2xl p-5 shadow-soft border border-slate-100">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2.5 bg-emerald-100 rounded-xl">
-                  <Building2 size={18} className="text-emerald-600" />
-                </div>
-                <span className="text-sm text-slate-500">投資CF</span>
+              <div className="divide-y divide-slate-50 max-h-96 overflow-y-auto">
+                {investments.map((inv) => (
+                  <div key={inv.id} className="p-4 flex items-center justify-between hover:bg-slate-50">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-emerald-100">
+                        <Building2 size={16} className="text-emerald-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-slate-800">{inv.description || inv.category || '投資'}</p>
+                        <p className="text-xs text-slate-500">
+                          {format(new Date(inv.investmentDate), 'yyyy/MM/dd')}
+                          {inv.businessId && businesses.find(b => b.id === inv.businessId) && ` - ${businesses.find(b => b.id === inv.businessId)?.name}`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <p className="font-semibold text-red-600">-{formatCurrency(parseFloat(inv.amount))}</p>
+                      <button
+                        onClick={() => handleDeleteInvestment(inv.id)}
+                        className="p-2 hover:bg-red-50 rounded-lg text-red-500"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <p className="text-xl font-bold text-slate-600">¥0</p>
             </div>
-            <div className="bg-white rounded-2xl p-5 shadow-soft border border-slate-100">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2.5 bg-purple-100 rounded-xl">
-                  <Wallet size={18} className="text-purple-600" />
-                </div>
-                <span className="text-sm text-slate-500">財務CF</span>
+          )}
+        </div>
+      )}
+
+      {isInvestModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl animate-slide-up">
+            <div className="flex justify-between items-center p-6 border-b border-slate-100">
+              <h2 className="text-xl font-bold text-slate-800">投資を記録</h2>
+              <button
+                onClick={() => setIsInvestModalOpen(false)}
+                className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
+              >
+                <X size={20} className="text-slate-500" />
+              </button>
+            </div>
+            <form onSubmit={handleInvestSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">投資先事業（任意）</label>
+                <select
+                  value={investFormData.businessId}
+                  onChange={(e) => setInvestFormData({ ...investFormData, businessId: e.target.value })}
+                  className="input-field"
+                >
+                  <option value="">選択しない</option>
+                  {businesses.map((b) => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
               </div>
-              <p className="text-xl font-bold text-slate-600">¥0</p>
-            </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">投資種類</label>
+                <select
+                  value={investFormData.type}
+                  onChange={(e) => setInvestFormData({ ...investFormData, type: e.target.value })}
+                  className="input-field"
+                >
+                  <option value="asset_purchase">固定資産の取得</option>
+                  <option value="asset_sale">固定資産の売却</option>
+                  <option value="securities">有価証券</option>
+                  <option value="reinvestment">利益再投資</option>
+                  <option value="other">その他投資</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">カテゴリ</label>
+                <input
+                  type="text"
+                  value={investFormData.category}
+                  onChange={(e) => setInvestFormData({ ...investFormData, category: e.target.value })}
+                  className="input-field"
+                  placeholder="例: 機械設備、ソフトウェア"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">金額 *</label>
+                <input
+                  type="number"
+                  value={investFormData.amount}
+                  onChange={(e) => setInvestFormData({ ...investFormData, amount: e.target.value })}
+                  className="input-field"
+                  placeholder="0"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">説明</label>
+                <textarea
+                  value={investFormData.description}
+                  onChange={(e) => setInvestFormData({ ...investFormData, description: e.target.value })}
+                  className="input-field resize-none"
+                  rows={2}
+                  placeholder="投資内容の詳細"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">投資日</label>
+                <input
+                  type="date"
+                  value={investFormData.investmentDate}
+                  onChange={(e) => setInvestFormData({ ...investFormData, investmentDate: e.target.value })}
+                  className="input-field"
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsInvestModalOpen(false)}
+                  className="btn-secondary"
+                >
+                  キャンセル
+                </button>
+                <button type="submit" className="btn-primary">
+                  記録
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

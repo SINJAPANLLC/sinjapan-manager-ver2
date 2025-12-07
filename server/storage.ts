@@ -1,8 +1,8 @@
 import { db } from './db';
-import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, systemSettings, leads, leadActivities, clientProjects, clientInvoices, companies, quickNotes } from '../shared/schema';
+import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, systemSettings, leads, leadActivities, clientProjects, clientInvoices, companies, quickNotes, investments } from '../shared/schema';
 import { eq, and, or, desc, sql, isNull, gte, lte, like, ilike } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, SystemSetting, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Company, InsertCompany, QuickNote, InsertQuickNote } from '../shared/schema';
+import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, SystemSetting, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Company, InsertCompany, QuickNote, InsertQuickNote, Investment, InsertInvestment } from '../shared/schema';
 
 export const storage = {
   async getUser(id: number): Promise<User | undefined> {
@@ -736,5 +736,32 @@ export const storage = {
   async deleteQuickNote(id: number): Promise<boolean> {
     await db.delete(quickNotes).where(eq(quickNotes.id, id));
     return true;
+  },
+
+  // Investments
+  async getInvestments(businessId?: string): Promise<Investment[]> {
+    if (businessId) {
+      return db.select().from(investments)
+        .where(eq(investments.businessId, businessId))
+        .orderBy(desc(investments.investmentDate));
+    }
+    return db.select().from(investments).orderBy(desc(investments.investmentDate));
+  },
+
+  async createInvestment(data: InsertInvestment): Promise<Investment> {
+    const [investment] = await db.insert(investments).values(data).returning();
+    return investment;
+  },
+
+  async deleteInvestment(id: number): Promise<boolean> {
+    await db.delete(investments).where(eq(investments.id, id));
+    return true;
+  },
+
+  async getInvestmentTotals(): Promise<{ total: number }> {
+    const result = await db.select({
+      total: sql<number>`COALESCE(SUM(${investments.amount}), 0)`,
+    }).from(investments);
+    return { total: parseFloat(String(result[0]?.total || 0)) };
   },
 };
