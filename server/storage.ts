@@ -558,7 +558,12 @@ export const storage = {
   },
 
   async createClientProject(data: InsertClientProject): Promise<ClientProject> {
-    const [project] = await db.insert(clientProjects).values(data).returning();
+    const projectData = {
+      ...data,
+      startDate: data.startDate ? new Date(data.startDate as any) : null,
+      endDate: data.endDate ? new Date(data.endDate as any) : null,
+    };
+    const [project] = await db.insert(clientProjects).values(projectData).returning();
     return project;
   },
 
@@ -581,7 +586,12 @@ export const storage = {
   },
 
   async createClientInvoice(data: InsertClientInvoice): Promise<ClientInvoice> {
-    const [invoice] = await db.insert(clientInvoices).values(data).returning();
+    const invoiceData = {
+      ...data,
+      dueDate: data.dueDate ? new Date(data.dueDate as any) : new Date(),
+      paidDate: data.paidDate ? new Date(data.paidDate as any) : null,
+    };
+    const [invoice] = await db.insert(clientInvoices).values(invoiceData).returning();
     return invoice;
   },
 

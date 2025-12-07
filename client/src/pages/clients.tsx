@@ -293,7 +293,7 @@ export function ClientsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="stat-card">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -341,7 +341,7 @@ export function ClientsPage() {
       </div>
 
       <div className="card p-4">
-        <div className="flex gap-4">
+        <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
             <input
@@ -352,26 +352,28 @@ export function ClientsPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <button
-            onClick={() => {
-              setProjectForm({ ...projectForm, clientId: 0 });
-              setShowProjectModal(true);
-            }}
-            className="btn-secondary flex items-center gap-2"
-          >
-            <FileText size={18} />
-            案件追加
-          </button>
-          <button
-            onClick={() => {
-              setInvoiceForm({ ...invoiceForm, clientId: 0 });
-              setShowInvoiceModal(true);
-            }}
-            className="btn-secondary flex items-center gap-2"
-          >
-            <Receipt size={18} />
-            請求追加
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setProjectForm({ ...projectForm, clientId: 0 });
+                setShowProjectModal(true);
+              }}
+              className="btn-secondary flex items-center gap-2 whitespace-nowrap"
+            >
+              <FileText size={18} />
+              案件追加
+            </button>
+            <button
+              onClick={() => {
+                setInvoiceForm({ ...invoiceForm, clientId: 0 });
+                setShowInvoiceModal(true);
+              }}
+              className="btn-secondary flex items-center gap-2 whitespace-nowrap"
+            >
+              <Receipt size={18} />
+              請求追加
+            </button>
+          </div>
         </div>
       </div>
 
