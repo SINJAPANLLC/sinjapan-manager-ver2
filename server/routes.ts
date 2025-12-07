@@ -97,10 +97,12 @@ export function registerRoutes(app: Express) {
 
   app.post('/api/users', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     try {
+      console.log('Creating user with data:', JSON.stringify(req.body, null, 2));
       const user = await storage.createUser(req.body);
       const { password: _, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
     } catch (error: any) {
+      console.error('User creation error:', error);
       if (error.message?.includes('unique')) {
         return res.status(400).json({ message: 'このメールアドレスは既に使用されています' });
       }
