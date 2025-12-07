@@ -291,10 +291,15 @@ export const storage = {
     let totalRevenue = '0';
     let totalExpense = '0';
     if (role === 'admin' || role === 'ceo' || role === 'manager') {
+      // Get first day of current month
+      const firstDayOfMonth = new Date();
+      firstDayOfMonth.setDate(1);
+      firstDayOfMonth.setHours(0, 0, 0, 0);
+      
       const revenueResult = await db.select({ total: sql<string>`COALESCE(SUM(amount), 0)` })
-        .from(businessSales).where(eq(businessSales.type, 'revenue'));
+        .from(businessSales).where(and(eq(businessSales.type, 'revenue'), gte(businessSales.saleDate, firstDayOfMonth)));
       const expenseResult = await db.select({ total: sql<string>`COALESCE(SUM(amount), 0)` })
-        .from(businessSales).where(eq(businessSales.type, 'expense'));
+        .from(businessSales).where(and(eq(businessSales.type, 'expense'), gte(businessSales.saleDate, firstDayOfMonth)));
       totalRevenue = revenueResult[0]?.total || '0';
       totalExpense = expenseResult[0]?.total || '0';
     }
