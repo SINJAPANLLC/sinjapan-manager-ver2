@@ -4,6 +4,7 @@ import OpenAI from 'openai';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { google } from 'googleapis';
 
 const uploadDir = path.join(process.cwd(), 'uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -1455,12 +1456,37 @@ ${articleList}
         const baseUrl = seoDomain || `https://${host}`;
         const articleUrl = `${baseUrl}/articles/${article!.slug}`;
 
-        // Note: Google Indexing API requires service account setup
-        // For now, we mark as 'sent' and log the URL
-        await storage.updateIndexingStatus(articleId, 'sent');
-        console.log(`[Indexing API] Article published and marked for indexing: ${articleUrl}`);
-      } catch (indexError) {
-        console.log('Indexing API auto-send skipped:', indexError);
+        // Check if Google service account is configured
+        const serviceAccountJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+        if (serviceAccountJson) {
+          const serviceAccount = JSON.parse(serviceAccountJson);
+          
+          const jwtClient = new google.auth.JWT({
+            email: serviceAccount.client_email,
+            key: serviceAccount.private_key,
+            scopes: ['https://www.googleapis.com/auth/indexing'],
+          });
+
+          await jwtClient.authorize();
+          
+          const indexing = google.indexing({ version: 'v3', auth: jwtClient });
+          
+          await indexing.urlNotifications.publish({
+            requestBody: {
+              url: articleUrl,
+              type: 'URL_UPDATED'
+            }
+          });
+          
+          await storage.updateIndexingStatus(articleId, 'sent');
+          console.log(`[Indexing API] Successfully sent to Google: ${articleUrl}`);
+        } else {
+          console.log('[Indexing API] Service account not configured, skipping');
+        }
+      } catch (indexError: any) {
+        console.log('Indexing API error:', indexError.message || indexError);
+        // Still mark as sent for tracking purposes
+        await storage.updateIndexingStatus(articleId, 'error');
       }
 
       res.json(article);
