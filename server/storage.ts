@@ -207,7 +207,11 @@ export const storage = {
   },
 
   async createAgencySale(data: InsertAgencySale): Promise<AgencySale> {
-    const [sale] = await db.insert(agencySales).values(data).returning();
+    const saleData = {
+      ...data,
+      saleDate: data.saleDate ? new Date(data.saleDate as any) : new Date(),
+    };
+    const [sale] = await db.insert(agencySales).values(saleData).returning();
     return sale;
   },
 
