@@ -235,3 +235,44 @@ export const systemSettings = pgTable("system_settings", {
 });
 
 export type SystemSetting = typeof systemSettings.$inferSelect;
+
+export const leads = pgTable("leads", {
+  id: varchar("id", { length: 255 }).primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  company: varchar("company", { length: 255 }),
+  title: varchar("title", { length: 255 }),
+  phone: varchar("phone", { length: 50 }),
+  email: varchar("email", { length: 255 }),
+  website: text("website"),
+  address: text("address"),
+  category: varchar("category", { length: 100 }),
+  source: varchar("source", { length: 100 }),
+  instagramUrl: text("instagram_url"),
+  twitterUrl: text("twitter_url"),
+  facebookUrl: text("facebook_url"),
+  lineId: varchar("line_id", { length: 100 }),
+  googleMapsUrl: text("google_maps_url"),
+  status: varchar("status", { length: 50 }).default("new"),
+  notes: text("notes"),
+  score: integer("score").default(0),
+  lastContactedAt: timestamp("last_contacted_at"),
+  assignedTo: varchar("assigned_to", { length: 255 }),
+  customerId: varchar("customer_id", { length: 255 }),
+  convertedToDealId: varchar("converted_to_deal_id", { length: 255 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const leadActivities = pgTable("lead_activities", {
+  id: serial("id").primaryKey(),
+  leadId: varchar("lead_id", { length: 255 }).notNull(),
+  type: varchar("type", { length: 50 }).notNull(),
+  description: text("description"),
+  userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type Lead = typeof leads.$inferSelect;
+export type InsertLead = typeof leads.$inferInsert;
+export type LeadActivity = typeof leadActivities.$inferSelect;
+export type InsertLeadActivity = typeof leadActivities.$inferInsert;
