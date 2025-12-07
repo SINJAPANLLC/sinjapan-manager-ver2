@@ -186,19 +186,32 @@ export function AiPage() {
   };
 
   const saveSeoSettings = async () => {
-    await Promise.all([
-      fetch('/api/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: 'site_name', value: siteName }),
-      }),
-      fetch('/api/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: 'seo_domain', value: seoDomain }),
-      }),
-    ]);
-    alert('設定を保存しました');
+    try {
+      const results = await Promise.all([
+        fetch('/api/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ key: 'site_name', value: siteName }),
+        }),
+        fetch('/api/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ key: 'seo_domain', value: seoDomain }),
+        }),
+      ]);
+      
+      const allOk = results.every(r => r.ok);
+      if (allOk) {
+        alert('設定を保存しました');
+      } else {
+        const errorData = await results[0].json().catch(() => ({}));
+        alert('保存に失敗しました: ' + (errorData.message || '不明なエラー'));
+      }
+    } catch (error) {
+      alert('保存に失敗しました');
+    }
   };
 
   useEffect(() => {
