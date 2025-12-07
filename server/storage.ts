@@ -1,8 +1,8 @@
 import { db } from './db';
-import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, systemSettings, leads, leadActivities, clientProjects, clientInvoices } from '../shared/schema';
+import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, systemSettings, leads, leadActivities, clientProjects, clientInvoices, companies } from '../shared/schema';
 import { eq, and, or, desc, sql, isNull, gte, lte, like, ilike } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, SystemSetting, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice } from '../shared/schema';
+import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, SystemSetting, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Company, InsertCompany } from '../shared/schema';
 
 export const storage = {
   async getUser(id: number): Promise<User | undefined> {
@@ -164,7 +164,25 @@ export const storage = {
   },
 
   async getChatPartners(userId: number): Promise<User[]> {
-    const partners = await db.selectDistinct({ id: users.id, email: users.email, name: users.name, role: users.role, avatarUrl: users.avatarUrl, phone: users.phone, department: users.department, position: users.position, isActive: users.isActive, createdAt: users.createdAt, updatedAt: users.updatedAt, password: users.password })
+    const partners = await db.selectDistinct({ 
+      id: users.id, 
+      email: users.email, 
+      name: users.name, 
+      role: users.role, 
+      avatarUrl: users.avatarUrl, 
+      phone: users.phone, 
+      department: users.department, 
+      position: users.position, 
+      isActive: users.isActive, 
+      createdAt: users.createdAt, 
+      updatedAt: users.updatedAt, 
+      password: users.password,
+      bankName: users.bankName,
+      bankBranch: users.bankBranch,
+      bankAccountType: users.bankAccountType,
+      bankAccountNumber: users.bankAccountNumber,
+      bankAccountHolder: users.bankAccountHolder,
+    })
       .from(chatMessages)
       .innerJoin(users, or(
         and(eq(chatMessages.senderId, userId), eq(chatMessages.receiverId, users.id)),
@@ -609,6 +627,42 @@ export const storage = {
 
   async deleteClientInvoice(id: number): Promise<boolean> {
     await db.delete(clientInvoices).where(eq(clientInvoices.id, id));
+    return true;
+  },
+
+  // Companies
+  async getCompanies(): Promise<Company[]> {
+    return db.select().from(companies).orderBy(desc(companies.createdAt));
+  },
+
+  async getCompany(id: number): Promise<Company | undefined> {
+    const [company] = await db.select().from(companies).where(eq(companies.id, id));
+    return company;
+  },
+
+  async createCompany(data: InsertCompany): Promise<Company> {
+    const companyData = {
+      ...data,
+      establishedDate: data.establishedDate ? new Date(data.establishedDate as any) : null,
+    };
+    const [company] = await db.insert(companies).values(companyData).returning();
+    return company;
+  },
+
+  async updateCompany(id: number, data: Partial<InsertCompany>): Promise<Company | undefined> {
+    const updateData: any = { ...data, updatedAt: new Date() };
+    if (data.establishedDate) {
+      updateData.establishedDate = new Date(data.establishedDate as any);
+    }
+    const [company] = await db.update(companies)
+      .set(updateData)
+      .where(eq(companies.id, id))
+      .returning();
+    return company;
+  },
+
+  async deleteCompany(id: number): Promise<boolean> {
+    await db.delete(companies).where(eq(companies.id, id));
     return true;
   },
 };

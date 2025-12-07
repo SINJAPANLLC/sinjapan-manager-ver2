@@ -340,3 +340,28 @@ export const clientInvoices = pgTable("client_invoices", {
 
 export type ClientInvoice = typeof clientInvoices.$inferSelect;
 export type InsertClientInvoice = typeof clientInvoices.$inferInsert;
+
+export const companies = pgTable("companies", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  address: text("address"),
+  phone: text("phone"),
+  fax: text("fax"),
+  email: text("email"),
+  website: text("website"),
+  representativeName: text("representative_name"),
+  establishedDate: timestamp("established_date"),
+  capital: decimal("capital", { precision: 15, scale: 2 }),
+  businessDescription: text("business_description"),
+  bankName: text("bank_name"),
+  bankBranch: text("bank_branch"),
+  bankAccountType: text("bank_account_type"),
+  bankAccountNumber: text("bank_account_number"),
+  bankAccountHolder: text("bank_account_holder"),
+  logoUrl: text("logo_url"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type Company = typeof companies.$inferSelect;
+export type InsertCompany = typeof companies.$inferInsert;

@@ -1711,6 +1711,60 @@ ${articleList}`
     }
   });
 
+  // Companies API
+  app.get('/api/companies', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const companies = await storage.getCompanies();
+      res.json(companies);
+    } catch (error) {
+      console.error('Get companies error:', error);
+      res.status(500).json([]);
+    }
+  });
+
+  app.get('/api/companies/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const company = await storage.getCompany(parseInt(req.params.id));
+      if (!company) {
+        return res.status(404).json({ error: '会社が見つかりません' });
+      }
+      res.json(company);
+    } catch (error) {
+      console.error('Get company error:', error);
+      res.status(500).json({ error: '会社の取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/companies', requireRole('admin', 'ceo'), async (req: Request, res: Response) => {
+    try {
+      const company = await storage.createCompany(req.body);
+      res.json(company);
+    } catch (error) {
+      console.error('Create company error:', error);
+      res.status(500).json({ error: '会社の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/companies/:id', requireRole('admin', 'ceo'), async (req: Request, res: Response) => {
+    try {
+      const company = await storage.updateCompany(parseInt(req.params.id), req.body);
+      res.json(company);
+    } catch (error) {
+      console.error('Update company error:', error);
+      res.status(500).json({ error: '会社の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/companies/:id', requireRole('admin', 'ceo'), async (req: Request, res: Response) => {
+    try {
+      await storage.deleteCompany(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete company error:', error);
+      res.status(500).json({ error: '会社の削除に失敗しました' });
+    }
+  });
+
   // Lead Management API
   app.get('/api/leads', requireAuth, async (req: Request, res: Response) => {
     try {
