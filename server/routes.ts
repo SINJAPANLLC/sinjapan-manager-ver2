@@ -1612,7 +1612,8 @@ ${articlesContext}
     try {
       const article = await storage.getSeoArticleBySlug(req.params.slug);
       const globalDomain = await storage.getSetting('seo_domain');
-      const siteName = await storage.getSetting('site_name') || 'SIN JAPAN';
+      const globalSiteName = await storage.getSetting('site_name') || 'SIN JAPAN';
+      const siteName = (article as any)?.siteName || globalSiteName;
       const seoDomain = article?.domain || globalDomain || `https://${req.get('host')}`;
       
       if (!article || !article.isPublished) {

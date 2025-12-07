@@ -211,6 +211,7 @@ export const seoArticles = pgTable("seo_articles", {
   ctaUrl: text("cta_url"),
   ctaText: text("cta_text").default("お問い合わせはこちら"),
   domain: text("domain"),
+  siteName: text("site_name"),
   categoryId: integer("category_id").references(() => seoCategories.id),
   status: varchar("status", { length: 50 }).default("draft"),
   isPublished: boolean("is_published").default(false),

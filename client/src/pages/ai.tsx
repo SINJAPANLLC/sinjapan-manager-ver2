@@ -112,6 +112,7 @@ export function AiPage() {
     ctaUrl: '',
     ctaText: 'お問い合わせはこちら',
     domain: '',
+    siteName: '',
     categoryId: undefined as number | undefined,
   });
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -227,7 +228,7 @@ export function AiPage() {
         await fetchSeoArticles();
         setSeoView('list');
         setEditingArticle(null);
-        setArticleForm({ title: '', content: '', metaDescription: '', keywords: '', ctaUrl: '', ctaText: 'お問い合わせはこちら', domain: '', categoryId: undefined });
+        setArticleForm({ title: '', content: '', metaDescription: '', keywords: '', ctaUrl: '', ctaText: 'お問い合わせはこちら', domain: '', siteName: '', categoryId: undefined });
       }
     } finally {
       setIsLoading(false);
@@ -275,6 +276,7 @@ export function AiPage() {
       ctaUrl: (article as any).ctaUrl || '',
       ctaText: (article as any).ctaText || 'お問い合わせはこちら',
       domain: (article as any).domain || '',
+      siteName: (article as any).siteName || '',
       categoryId: article.categoryId,
     });
     setSeoView('edit');
@@ -282,7 +284,7 @@ export function AiPage() {
 
   const startNewArticle = () => {
     setEditingArticle(null);
-    setArticleForm({ title: '', content: '', metaDescription: '', keywords: '', ctaUrl: '', ctaText: 'お問い合わせはこちら', domain: '', categoryId: undefined });
+    setArticleForm({ title: '', content: '', metaDescription: '', keywords: '', ctaUrl: '', ctaText: 'お問い合わせはこちら', domain: '', siteName: '', categoryId: undefined });
     setSeoView('edit');
   };
 
@@ -369,6 +371,7 @@ export function AiPage() {
           ctaUrl: '',
           ctaText: 'お問い合わせはこちら',
           domain: '',
+          siteName: '',
           categoryId: undefined,
         });
         setSeoView('edit');
@@ -1580,23 +1583,35 @@ export function AiPage() {
                   <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
                     <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
                       <Globe size={16} />
-                      ドメイン設定（この記事用）
+                      記事個別設定
                     </h3>
-                    <div>
-                      <input
-                        type="url"
-                        value={articleForm.domain}
-                        onChange={(e) => setArticleForm({ ...articleForm, domain: e.target.value })}
-                        placeholder="https://example.com（未設定の場合は公開ドメインを使用）"
-                        className="input-field"
-                      />
-                      <p className="text-xs text-slate-500 mt-2">
-                        設定例: <code className="bg-slate-200 px-1 rounded">https://sinjapan.work</code> → 記事URLは <code className="bg-slate-200 px-1 rounded">https://sinjapan.work/articles/スラッグ</code> になります
-                      </p>
-                      <p className="text-xs text-amber-600 mt-1">
-                        ※ 独自ドメインを使用するには、アプリ公開後にReplitでドメイン接続（DNS設定）が必要です
-                      </p>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-600 mb-1">サイト名（この記事用）</label>
+                        <input
+                          type="text"
+                          value={articleForm.siteName}
+                          onChange={(e) => setArticleForm({ ...articleForm, siteName: e.target.value })}
+                          placeholder="例: My Brand（未設定の場合はグローバル設定を使用）"
+                          className="input-field"
+                        />
+                        <p className="text-xs text-slate-500 mt-1">公開ページのロゴ・タイトルに表示</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-600 mb-1">ドメイン（この記事用）</label>
+                        <input
+                          type="url"
+                          value={articleForm.domain}
+                          onChange={(e) => setArticleForm({ ...articleForm, domain: e.target.value })}
+                          placeholder="https://example.com（未設定の場合はグローバル設定を使用）"
+                          className="input-field"
+                        />
+                        <p className="text-xs text-slate-500 mt-1">canonical URLやGoogle Indexing APIで使用</p>
+                      </div>
                     </div>
+                    <p className="text-xs text-amber-600 mt-3">
+                      ※ 独自ドメインを使用するには、アプリ公開後にReplitでドメイン接続（DNS設定）が必要です
+                    </p>
                   </div>
                   <div className="flex gap-2">
                     <button
