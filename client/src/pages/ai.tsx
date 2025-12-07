@@ -1878,11 +1878,35 @@ export function AiPage() {
                 className="input-field"
               >
                 <option value="contract">契約書</option>
+                <option value="nda">秘密保持契約書（NDA）</option>
+                <option value="employment">雇用契約書</option>
+                <option value="subcontract">業務委託契約書</option>
+                <option value="lease">賃貸借契約書</option>
                 <option value="proposal">提案書</option>
+                <option value="quotation">見積書</option>
                 <option value="invoice">請求書</option>
+                <option value="receipt">領収書</option>
                 <option value="report">報告書</option>
+                <option value="weekly_report">週報</option>
+                <option value="monthly_report">月報</option>
+                <option value="progress_report">進捗報告書</option>
                 <option value="email">ビジネスメール</option>
+                <option value="apology_email">お詫びメール</option>
+                <option value="thanks_email">お礼メール</option>
+                <option value="follow_up_email">フォローアップメール</option>
                 <option value="minutes">議事録</option>
+                <option value="agenda">会議アジェンダ</option>
+                <option value="resume">履歴書</option>
+                <option value="cover_letter">送付状・カバーレター</option>
+                <option value="introduction">会社案内</option>
+                <option value="press_release">プレスリリース</option>
+                <option value="manual">マニュアル・手順書</option>
+                <option value="specification">仕様書</option>
+                <option value="terms">利用規約</option>
+                <option value="privacy_policy">プライバシーポリシー</option>
+                <option value="notice">お知らせ・通知文</option>
+                <option value="greeting">挨拶状</option>
+                <option value="complaint">クレーム対応文</option>
               </select>
             </div>
             <div>
