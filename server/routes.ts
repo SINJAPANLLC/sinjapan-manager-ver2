@@ -155,8 +155,10 @@ export function registerRoutes(app: Express) {
 
   app.post('/api/users', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     try {
-      console.log('Creating user with data:', JSON.stringify(req.body, null, 2));
-      const user = await storage.createUser(req.body);
+      const companyId = getCompanyId(req);
+      const userData = companyId ? { ...req.body, companyId } : req.body;
+      console.log('Creating user with data:', JSON.stringify(userData, null, 2));
+      const user = await storage.createUser(userData);
       const { password: _, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
     } catch (error: any) {
