@@ -5,6 +5,11 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { google } from 'googleapis';
+import { SquareClient } from 'square';
+
+const squareClient = new SquareClient({
+  token: process.env.SQUARE_ACCESS_TOKEN,
+});
 
 const uploadDir = path.join(process.cwd(), 'uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -1819,6 +1824,70 @@ ${articleList}`
     } catch (error) {
       console.error('Get investment totals error:', error);
       res.status(500).json({ total: 0 });
+    }
+  });
+
+  // Square API
+  app.get('/api/square/status', requireRole('admin', 'ceo'), async (req: Request, res: Response) => {
+    try {
+      const hasToken = !!process.env.SQUARE_ACCESS_TOKEN;
+      const hasAppId = !!process.env.SQUARE_APPLICATION_ID;
+      
+      if (!hasToken || !hasAppId) {
+        return res.json({ connected: false, message: 'Square APIキーが設定されていません' });
+      }
+      
+      const { locations } = await squareClient.locations.list();
+      
+      res.json({
+        connected: true,
+        locations: (locations || []).map(loc => ({
+          id: loc.id,
+          name: loc.name,
+          address: loc.address,
+          status: loc.status,
+        })),
+      });
+    } catch (error: any) {
+      console.error('Square status error:', error);
+      res.json({ connected: false, message: error.message || 'Square APIへの接続に失敗しました' });
+    }
+  });
+
+  app.get('/api/square/customers', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const { customers } = await squareClient.customers.list();
+      res.json(customers || []);
+    } catch (error: any) {
+      console.error('Square customers error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/square/payments', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const { payments } = await squareClient.payments.list();
+      res.json(payments || []);
+    } catch (error: any) {
+      console.error('Square payments error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/square/invoices', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const { locations } = await squareClient.locations.list();
+      const locationId = locations?.[0]?.id;
+      
+      if (!locationId) {
+        return res.json([]);
+      }
+      
+      const { invoices } = await squareClient.invoices.list({ locationId });
+      res.json(invoices || []);
+    } catch (error: any) {
+      console.error('Square invoices error:', error);
+      res.status(500).json({ error: error.message });
     }
   });
 

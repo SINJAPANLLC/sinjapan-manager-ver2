@@ -152,6 +152,13 @@ Optional (for AI features):
 
 ## Recent Changes (2025-12-07)
 
+### Square決済連携
+- Square SDK（v40+）を使用してAPI連携
+- 設定ページの決済管理タブでSquare接続状態を表示
+- 店舗情報（ロケーション）の取得・表示
+- 顧客管理、決済履歴、請求書のAPIエンドポイント追加
+- 必要な環境変数: SQUARE_ACCESS_TOKEN, SQUARE_APPLICATION_ID
+
 ### 設定ページのユーザー管理機能
 - 設定ページに「ユーザー管理」タブを追加（admin/ceoのみ表示）
 - ユーザー一覧の表示（名前、メール、ロール、部署、役職）

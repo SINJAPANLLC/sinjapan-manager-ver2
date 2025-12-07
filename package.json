@@ -35,6 +35,7 @@
     "postcss": "^8.5.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "square": "^43.2.1",
     "tailwind-merge": "^3.4.0",
     "tailwindcss": "^3.4.0",
     "wouter": "^3.8.1",

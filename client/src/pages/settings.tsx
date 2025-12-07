@@ -1,8 +1,173 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/use-auth';
-import { User, Lock, Save, Loader2, CheckCircle, Building2, CreditCard, Plus, Pencil, Trash2, X, Phone, Mail, Globe, Landmark, Calendar, Users, Shield } from 'lucide-react';
+import { User, Lock, Save, Loader2, CheckCircle, Building2, CreditCard, Plus, Pencil, Trash2, X, Phone, Mail, Globe, Landmark, Calendar, Users, Shield, CheckCircle2, XCircle, MapPin, RefreshCw } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
+
+interface SquareLocation {
+  id: string;
+  name: string;
+  status: string;
+  address?: {
+    addressLine1?: string;
+    locality?: string;
+    country?: string;
+  };
+}
+
+interface SquareStatus {
+  connected: boolean;
+  message?: string;
+  locations?: SquareLocation[];
+}
+
+function PaymentTab() {
+  const [status, setStatus] = useState<SquareStatus | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchStatus = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/square/status');
+      if (res.ok) {
+        setStatus(await res.json());
+      }
+    } catch {
+      setStatus({ connected: false, message: 'Square APIへの接続に失敗しました' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStatus();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="animate-spin text-primary-600" size={32} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className={cn(
+              "w-12 h-12 rounded-xl flex items-center justify-center",
+              status?.connected ? "bg-green-100" : "bg-red-100"
+            )}>
+              {status?.connected ? (
+                <CheckCircle2 size={24} className="text-green-600" />
+              ) : (
+                <XCircle size={24} className="text-red-600" />
+              )}
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-800">Square 決済</h3>
+              <p className={cn(
+                "text-sm",
+                status?.connected ? "text-green-600" : "text-red-600"
+              )}>
+                {status?.connected ? '接続済み' : (status?.message || '未接続')}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={fetchStatus}
+            className="btn-secondary flex items-center gap-2"
+          >
+            <RefreshCw size={16} />
+            更新
+          </button>
+        </div>
+
+        {status?.connected && status.locations && status.locations.length > 0 && (
+          <div className="mt-6">
+            <h4 className="text-sm font-medium text-slate-700 mb-3">店舗情報</h4>
+            <div className="space-y-3">
+              {status.locations.map((loc) => (
+                <div key={loc.id} className="p-4 bg-slate-50 rounded-xl flex items-center gap-3">
+                  <div className="p-2 bg-white rounded-lg">
+                    <MapPin size={18} className="text-primary-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-slate-800">{loc.name}</p>
+                    {loc.address && (
+                      <p className="text-sm text-slate-500">
+                        {loc.address.addressLine1}
+                        {loc.address.locality && `, ${loc.address.locality}`}
+                      </p>
+                    )}
+                  </div>
+                  <span className={cn(
+                    "ml-auto px-2 py-1 rounded-full text-xs font-medium",
+                    loc.status === 'ACTIVE' ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600"
+                  )}>
+                    {loc.status === 'ACTIVE' ? '稼働中' : loc.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {status?.connected && (
+        <div className="grid grid-cols-3 gap-4">
+          <div className="card p-5">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Users size={18} className="text-blue-600" />
+              </div>
+              <span className="text-sm text-slate-500">顧客管理</span>
+            </div>
+            <p className="text-sm text-slate-600">Squareの顧客データと連携</p>
+          </div>
+          <div className="card p-5">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <CreditCard size={18} className="text-green-600" />
+              </div>
+              <span className="text-sm text-slate-500">決済履歴</span>
+            </div>
+            <p className="text-sm text-slate-600">過去の決済を確認</p>
+          </div>
+          <div className="card p-5">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <Mail size={18} className="text-purple-600" />
+              </div>
+              <span className="text-sm text-slate-500">請求書</span>
+            </div>
+            <p className="text-sm text-slate-600">請求書の作成・送信</p>
+          </div>
+        </div>
+      )}
+
+      {!status?.connected && (
+        <div className="card p-6 bg-amber-50 border-amber-200">
+          <h4 className="font-medium text-amber-800 mb-2">Square APIキーの設定</h4>
+          <p className="text-sm text-amber-700">
+            Square決済を利用するには、管理者がSquare Developer DashboardからAPIキーを取得し、
+            環境変数に設定する必要があります。
+          </p>
+          <a
+            href="https://developer.squareup.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block mt-3 text-sm text-amber-800 font-medium hover:underline"
+          >
+            Square Developer Dashboard →
+          </a>
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface Company {
   id: number;
@@ -761,16 +926,7 @@ export function SettingsPage() {
       )}
 
       {activeTab === 'payment' && (
-        <div className="max-w-2xl">
-          <div className="card p-8 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 bg-slate-100 rounded-full flex items-center justify-center">
-              <CreditCard size={28} className="text-slate-400" />
-            </div>
-            <h3 className="text-lg font-bold text-slate-800 mb-2">決済管理</h3>
-            <p className="text-slate-500 mb-4">Square決済の連携設定を行います</p>
-            <p className="text-sm text-slate-400">Coming Soon - Square APIキーの設定機能を準備中です</p>
-          </div>
-        </div>
+        <PaymentTab />
       )}
 
       {isCompanyModalOpen && (
