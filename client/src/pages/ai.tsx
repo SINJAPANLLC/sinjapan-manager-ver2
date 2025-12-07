@@ -1265,21 +1265,6 @@ export function AiPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">カテゴリ（オプション）</label>
-                    <select
-                      value={bulkCategoryId || ''}
-                      onChange={(e) => setBulkCategoryId(e.target.value ? parseInt(e.target.value) : undefined)}
-                      className="input-field"
-                      disabled={bulkProgress.generating}
-                    >
-                      <option value="">カテゴリなし</option>
-                      {seoCategories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">キーワード（オプション・カンマ区切り）</label>
                     <input
                       type="text"
