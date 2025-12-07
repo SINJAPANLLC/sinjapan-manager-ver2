@@ -94,6 +94,8 @@ SIN JAPAN 業務管理システム - ロールベースアクセス制御を備�
 | business_sales | Business revenue/expense records |
 | memos | Calendar memos |
 | ai_logs | AI usage logs |
+| ai_conversations | AI conversation memory |
+| ai_knowledge | AI knowledge base |
 
 ## Role Permissions
 

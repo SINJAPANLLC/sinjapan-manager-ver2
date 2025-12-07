@@ -192,6 +192,31 @@ export const aiLogs = pgTable("ai_logs", {
 export type AiLog = typeof aiLogs.$inferSelect;
 export type InsertAiLog = typeof aiLogs.$inferInsert;
 
+export const aiConversations = pgTable("ai_conversations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
+  role: text("role").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type AiConversation = typeof aiConversations.$inferSelect;
+export type InsertAiConversation = typeof aiConversations.$inferInsert;
+
+export const aiKnowledge = pgTable("ai_knowledge", {
+  id: serial("id").primaryKey(),
+  category: text("category").notNull(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type AiKnowledge = typeof aiKnowledge.$inferSelect;
+export type InsertAiKnowledge = typeof aiKnowledge.$inferInsert;
+
 export const seoCategories = pgTable("seo_categories", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),

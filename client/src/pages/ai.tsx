@@ -32,12 +32,23 @@ import {
   ArrowLeft,
   BarChart3,
   FolderOpen,
-  Target
+  Target,
+  BookOpen,
+  RefreshCw
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 
-type TabType = 'image' | 'video' | 'seo' | 'voice' | 'list' | 'document' | 'chat' | 'voiceChat' | 'logs' | 'automation';
+type TabType = 'image' | 'video' | 'seo' | 'voice' | 'list' | 'document' | 'chat' | 'voiceChat' | 'logs' | 'automation' | 'knowledge';
+
+interface AiKnowledge {
+  id: number;
+  category: string;
+  title: string;
+  content: string;
+  isActive: boolean;
+  createdAt: string;
+}
 
 interface AiLog {
   id: number;
@@ -127,6 +138,10 @@ export function AiPage() {
   const [siteName, setSiteName] = useState('');
   const [seoDomain, setSeoDomain] = useState('');
 
+  const [knowledgeList, setKnowledgeList] = useState<AiKnowledge[]>([]);
+  const [knowledgeForm, setKnowledgeForm] = useState({ category: '', title: '', content: '' });
+  const [editingKnowledge, setEditingKnowledge] = useState<AiKnowledge | null>(null);
+
   const [voiceText, setVoiceText] = useState('');
   const [voiceUrl, setVoiceUrl] = useState('');
   
@@ -166,6 +181,7 @@ export function AiPage() {
     { id: 'list' as TabType, label: 'リスト生成', icon: List },
     { id: 'document' as TabType, label: '書類生成', icon: FileSpreadsheet },
     { id: 'voiceChat' as TabType, label: '音声会話', icon: Phone },
+    { id: 'knowledge' as TabType, label: '知識ベース', icon: BookOpen },
     { id: 'logs' as TabType, label: 'ログ', icon: History },
     { id: 'automation' as TabType, label: 'AI自動化', icon: Zap },
   ];
@@ -206,6 +222,21 @@ export function AiPage() {
     }
   };
 
+  const fetchKnowledge = async () => {
+    const res = await fetch('/api/ai/knowledge?activeOnly=false');
+    if (res.ok) {
+      setKnowledgeList(await res.json());
+    }
+  };
+
+  const clearConversationHistory = async () => {
+    if (!confirm('会話履歴をすべてクリアしますか？AIは過去の会話を忘れます。')) return;
+    const res = await fetch('/api/ai/conversations', { method: 'DELETE', credentials: 'include' });
+    if (res.ok) {
+      alert('会話履歴をクリアしました');
+    }
+  };
+
   const saveSeoSettings = async () => {
     try {
       const results = await Promise.all([
@@ -240,6 +271,9 @@ export function AiPage() {
       fetchSeoArticles();
       fetchSeoCategories();
       fetchSeoSettings();
+    }
+    if (activeTab === 'knowledge') {
+      fetchKnowledge();
     }
   }, [activeTab]);
 
@@ -2127,6 +2161,174 @@ export function AiPage() {
                 会話をクリア
               </button>
             )}
+          </div>
+        )}
+
+        {activeTab === 'knowledge' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                <BookOpen className="text-primary-500" size={20} />
+                知識ベース
+              </h2>
+              <div className="flex gap-2">
+                <button onClick={fetchKnowledge} className="btn-secondary text-sm flex items-center gap-1">
+                  <RefreshCw size={14} />
+                  更新
+                </button>
+                <button onClick={clearConversationHistory} className="btn-secondary text-sm flex items-center gap-1 text-red-600 border-red-300 hover:bg-red-50">
+                  <Trash2 size={14} />
+                  会話履歴クリア
+                </button>
+              </div>
+            </div>
+
+            <div className="card p-4 bg-blue-50 border border-blue-200">
+              <h3 className="font-medium text-blue-800 mb-2">知識ベースについて</h3>
+              <p className="text-sm text-blue-700">
+                ここで登録した情報は、AIチャットや音声会話の応答に自動的に反映されます。
+                会社の情報、業務ルール、よくある質問への回答などを登録することで、AIがより的確に回答できるようになります。
+              </p>
+            </div>
+
+            <div className="card p-4">
+              <h3 className="font-medium text-slate-700 mb-3">
+                {editingKnowledge ? '知識を編集' : '新しい知識を追加'}
+              </h3>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm text-slate-600 mb-1">カテゴリ</label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      placeholder="例: 会社情報、業務ルール、FAQ"
+                      value={knowledgeForm.category}
+                      onChange={(e) => setKnowledgeForm({ ...knowledgeForm, category: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-slate-600 mb-1">タイトル</label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      placeholder="例: 営業時間"
+                      value={knowledgeForm.title}
+                      onChange={(e) => setKnowledgeForm({ ...knowledgeForm, title: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-600 mb-1">内容</label>
+                  <textarea
+                    className="input-field min-h-[100px]"
+                    placeholder="AIに覚えてほしい情報を入力..."
+                    value={knowledgeForm.content}
+                    onChange={(e) => setKnowledgeForm({ ...knowledgeForm, content: e.target.value })}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={async () => {
+                      if (!knowledgeForm.category || !knowledgeForm.title || !knowledgeForm.content) {
+                        alert('すべての項目を入力してください');
+                        return;
+                      }
+                      const url = editingKnowledge ? `/api/ai/knowledge/${editingKnowledge.id}` : '/api/ai/knowledge';
+                      const method = editingKnowledge ? 'PUT' : 'POST';
+                      const res = await fetch(url, {
+                        method,
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify(knowledgeForm),
+                      });
+                      if (res.ok) {
+                        setKnowledgeForm({ category: '', title: '', content: '' });
+                        setEditingKnowledge(null);
+                        fetchKnowledge();
+                      }
+                    }}
+                    className="btn-primary"
+                  >
+                    {editingKnowledge ? '更新' : '追加'}
+                  </button>
+                  {editingKnowledge && (
+                    <button
+                      onClick={() => {
+                        setEditingKnowledge(null);
+                        setKnowledgeForm({ category: '', title: '', content: '' });
+                      }}
+                      className="btn-secondary"
+                    >
+                      キャンセル
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="card p-4">
+              <h3 className="font-medium text-slate-700 mb-3">登録済みの知識 ({knowledgeList.length}件)</h3>
+              {knowledgeList.length === 0 ? (
+                <p className="text-slate-500 text-center py-4">まだ知識が登録されていません</p>
+              ) : (
+                <div className="space-y-2">
+                  {knowledgeList.map((k) => (
+                    <div key={k.id} className={cn(
+                      "p-3 border rounded-lg",
+                      k.isActive ? "border-slate-200 bg-white" : "border-slate-100 bg-slate-50 opacity-60"
+                    )}>
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs px-2 py-0.5 bg-primary-100 text-primary-700 rounded">{k.category}</span>
+                            <span className="font-medium text-slate-800">{k.title}</span>
+                            {!k.isActive && <span className="text-xs text-red-500">(無効)</span>}
+                          </div>
+                          <p className="text-sm text-slate-600 line-clamp-2">{k.content}</p>
+                        </div>
+                        <div className="flex gap-1 ml-2">
+                          <button
+                            onClick={() => {
+                              setEditingKnowledge(k);
+                              setKnowledgeForm({ category: k.category, title: k.title, content: k.content });
+                            }}
+                            className="p-1 text-slate-500 hover:text-primary-600"
+                          >
+                            <Edit size={16} />
+                          </button>
+                          <button
+                            onClick={async () => {
+                              await fetch(`/api/ai/knowledge/${k.id}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                credentials: 'include',
+                                body: JSON.stringify({ isActive: !k.isActive }),
+                              });
+                              fetchKnowledge();
+                            }}
+                            className={cn("p-1", k.isActive ? "text-green-500 hover:text-red-500" : "text-slate-400 hover:text-green-500")}
+                            title={k.isActive ? '無効にする' : '有効にする'}
+                          >
+                            <Eye size={16} />
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (!confirm('この知識を削除しますか？')) return;
+                              await fetch(`/api/ai/knowledge/${k.id}`, { method: 'DELETE', credentials: 'include' });
+                              fetchKnowledge();
+                            }}
+                            className="p-1 text-slate-500 hover:text-red-600"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

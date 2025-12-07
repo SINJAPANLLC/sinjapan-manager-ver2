@@ -1,8 +1,8 @@
 import { db } from './db';
-import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, seoArticles, seoCategories, systemSettings, leads, leadActivities } from '../shared/schema';
+import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, systemSettings, leads, leadActivities } from '../shared/schema';
 import { eq, and, or, desc, sql, isNull, gte, lte, like, ilike } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, SystemSetting, Lead, InsertLead, LeadActivity, InsertLeadActivity } from '../shared/schema';
+import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, SystemSetting, Lead, InsertLead, LeadActivity, InsertLeadActivity } from '../shared/schema';
 
 export const storage = {
   async getUser(id: number): Promise<User | undefined> {
@@ -492,5 +492,51 @@ export const storage = {
     }));
     const result = await db.insert(leads).values(leadsToInsert).returning();
     return result;
+  },
+
+  // AI Conversations (Memory)
+  async getAiConversations(userId: number, limit: number = 50): Promise<AiConversation[]> {
+    return db.select().from(aiConversations)
+      .where(eq(aiConversations.userId, userId))
+      .orderBy(desc(aiConversations.createdAt))
+      .limit(limit);
+  },
+
+  async addAiConversation(data: InsertAiConversation): Promise<AiConversation> {
+    const [conversation] = await db.insert(aiConversations).values(data).returning();
+    return conversation;
+  },
+
+  async clearAiConversations(userId: number): Promise<boolean> {
+    await db.delete(aiConversations).where(eq(aiConversations.userId, userId));
+    return true;
+  },
+
+  // AI Knowledge Base
+  async getAiKnowledge(activeOnly: boolean = true): Promise<AiKnowledge[]> {
+    if (activeOnly) {
+      return db.select().from(aiKnowledge)
+        .where(eq(aiKnowledge.isActive, true))
+        .orderBy(aiKnowledge.category, aiKnowledge.title);
+    }
+    return db.select().from(aiKnowledge).orderBy(aiKnowledge.category, aiKnowledge.title);
+  },
+
+  async addAiKnowledge(data: InsertAiKnowledge): Promise<AiKnowledge> {
+    const [knowledge] = await db.insert(aiKnowledge).values(data).returning();
+    return knowledge;
+  },
+
+  async updateAiKnowledge(id: number, data: Partial<InsertAiKnowledge>): Promise<AiKnowledge | undefined> {
+    const [knowledge] = await db.update(aiKnowledge)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(aiKnowledge.id, id))
+      .returning();
+    return knowledge;
+  },
+
+  async deleteAiKnowledge(id: number): Promise<boolean> {
+    await db.delete(aiKnowledge).where(eq(aiKnowledge.id, id));
+    return true;
   },
 };

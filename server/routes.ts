@@ -485,14 +485,38 @@ JSON形式で出力してください:
 
   app.post('/api/ai/chat', requireAuth, async (req: Request, res: Response) => {
     try {
-      const { message, history } = req.body;
+      const { message, history, useMemory = true } = req.body;
       const openai = new OpenAI({
         apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
         baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
       });
 
+      // Get knowledge base for context
+      const knowledge = await storage.getAiKnowledge(true);
+      let knowledgeContext = '';
+      if (knowledge.length > 0) {
+        knowledgeContext = '\n\n【参考情報（知識ベース）】\n' + knowledge.map(k => 
+          `[${k.category}] ${k.title}: ${k.content}`
+        ).join('\n');
+      }
+
+      // Get past conversations for memory (if enabled)
+      let pastConversations: any[] = [];
+      if (useMemory) {
+        const savedConversations = await storage.getAiConversations(req.session.userId!, 20);
+        pastConversations = savedConversations.reverse().map(c => ({
+          role: c.role as 'user' | 'assistant',
+          content: c.content,
+        }));
+      }
+
+      const systemPrompt = `あなたは親切で知識豊富なAIアシスタントです。日本語で回答してください。
+過去の会話を覚えており、ユーザーとの継続的な関係を築いています。
+以下の知識ベースの情報を参考にして回答してください。${knowledgeContext}`;
+
       const messages = [
-        { role: 'system' as const, content: 'あなたは親切で知識豊富なAIアシスタントです。日本語で回答してください。' },
+        { role: 'system' as const, content: systemPrompt },
+        ...pastConversations,
         ...(history || []).map((m: any) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
         { role: 'user' as const, content: message }
       ];
@@ -503,6 +527,20 @@ JSON形式で出力してください:
       });
 
       const reply = completion.choices[0]?.message?.content || '';
+
+      // Save conversation to memory
+      if (useMemory) {
+        await storage.addAiConversation({
+          userId: req.session.userId!,
+          role: 'user',
+          content: message,
+        });
+        await storage.addAiConversation({
+          userId: req.session.userId!,
+          role: 'assistant',
+          content: reply,
+        });
+      }
 
       await storage.createAiLog({
         type: 'chat',
@@ -1369,6 +1407,94 @@ ${articleList}`
     } catch (error) {
       console.error('Get AI logs error:', error);
       res.status(500).json([]);
+    }
+  });
+
+  // AI Conversations (Memory)
+  app.get('/api/ai/conversations', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 50;
+      const conversations = await storage.getAiConversations(req.session.userId!, limit);
+      res.json(conversations.reverse());
+    } catch (error) {
+      console.error('Get AI conversations error:', error);
+      res.status(500).json([]);
+    }
+  });
+
+  app.post('/api/ai/conversations', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { role, content } = req.body;
+      const conversation = await storage.addAiConversation({
+        userId: req.session.userId!,
+        role,
+        content,
+      });
+      res.json(conversation);
+    } catch (error) {
+      console.error('Add AI conversation error:', error);
+      res.status(500).json({ error: '会話の保存に失敗しました' });
+    }
+  });
+
+  app.delete('/api/ai/conversations', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.clearAiConversations(req.session.userId!);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Clear AI conversations error:', error);
+      res.status(500).json({ error: '会話履歴のクリアに失敗しました' });
+    }
+  });
+
+  // AI Knowledge Base
+  app.get('/api/ai/knowledge', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const activeOnly = req.query.activeOnly !== 'false';
+      const knowledge = await storage.getAiKnowledge(activeOnly);
+      res.json(knowledge);
+    } catch (error) {
+      console.error('Get AI knowledge error:', error);
+      res.status(500).json([]);
+    }
+  });
+
+  app.post('/api/ai/knowledge', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { category, title, content } = req.body;
+      const knowledge = await storage.addAiKnowledge({
+        category,
+        title,
+        content,
+        createdBy: req.session.userId,
+      });
+      res.json(knowledge);
+    } catch (error) {
+      console.error('Add AI knowledge error:', error);
+      res.status(500).json({ error: '知識の追加に失敗しました' });
+    }
+  });
+
+  app.put('/api/ai/knowledge/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { category, title, content, isActive } = req.body;
+      const knowledge = await storage.updateAiKnowledge(id, { category, title, content, isActive });
+      res.json(knowledge);
+    } catch (error) {
+      console.error('Update AI knowledge error:', error);
+      res.status(500).json({ error: '知識の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/ai/knowledge/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteAiKnowledge(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete AI knowledge error:', error);
+      res.status(500).json({ error: '知識の削除に失敗しました' });
     }
   });
 
