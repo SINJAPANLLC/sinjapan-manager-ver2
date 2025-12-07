@@ -1,5 +1,7 @@
 import { Express, Request, Response, NextFunction } from 'express';
 import { storage } from './storage';
+import { createTenantStorage } from './tenant-storage';
+import { getCompanyId } from './tenant';
 import OpenAI from 'openai';
 import multer from 'multer';
 import path from 'path';
@@ -33,6 +35,8 @@ const upload = multer({
 declare module 'express-session' {
   interface SessionData {
     userId?: number;
+    companyId?: string;
+    companySlug?: string;
   }
 }
 
@@ -58,6 +62,33 @@ const requireRole = (...roles: string[]) => {
 };
 
 export function registerRoutes(app: Express) {
+  app.get('/api/tenant', async (req: Request, res: Response) => {
+    try {
+      const tenant = (req as any).tenant;
+      if (tenant) {
+        res.json({
+          id: tenant.id,
+          name: tenant.name,
+          slug: tenant.slug,
+          logoUrl: tenant.logoUrl,
+          primaryColor: tenant.primaryColor,
+          secondaryColor: tenant.secondaryColor,
+        });
+      } else {
+        res.json({
+          id: null,
+          name: 'SIN JAPAN Manager',
+          slug: null,
+          logoUrl: null,
+          primaryColor: '#3B82F6',
+          secondaryColor: '#1E40AF',
+        });
+      }
+    } catch (error) {
+      res.status(500).json({ message: 'サーバーエラーが発生しました' });
+    }
+  });
+
   app.post('/api/auth/login', async (req: Request, res: Response) => {
     try {
       const { email, password } = req.body;
@@ -72,9 +103,14 @@ export function registerRoutes(app: Express) {
       if (!user.isActive) {
         return res.status(401).json({ message: 'このアカウントは無効です' });
       }
+      const tenant = (req as any).tenant;
+      if (tenant && user.companyId && user.companyId !== tenant.id) {
+        return res.status(401).json({ message: 'この会社のアカウントではありません' });
+      }
       req.session.userId = user.id;
+      req.session.companyId = user.companyId || tenant?.id;
       const { password: _, ...userWithoutPassword } = user;
-      res.json(userWithoutPassword);
+      res.json({ ...userWithoutPassword, tenant });
     } catch (error) {
       res.status(500).json({ message: 'サーバーエラーが発生しました' });
     }
@@ -94,12 +130,14 @@ export function registerRoutes(app: Express) {
     if (!user) {
       return res.status(401).json({ message: 'ユーザーが見つかりません' });
     }
+    const tenant = (req as any).tenant;
     const { password: _, ...userWithoutPassword } = user;
-    res.json(userWithoutPassword);
+    res.json({ ...userWithoutPassword, tenant });
   });
 
   app.get('/api/users', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
-    const users = await storage.getAllUsers();
+    const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+    const users = await tenantStorage.getAllUsers();
     res.json(users.map(u => ({ ...u, password: undefined })));
   });
 
@@ -149,8 +187,9 @@ export function registerRoutes(app: Express) {
   });
 
   app.get('/api/customers', requireAuth, async (req: Request, res: Response) => {
+    const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
     const user = await storage.getUser(req.session.userId!);
-    const customers = await storage.getCustomers(req.session.userId!, user?.role);
+    const customers = await tenantStorage.getCustomers(req.session.userId!, user?.role);
     res.json(customers);
   });
 
@@ -169,7 +208,8 @@ export function registerRoutes(app: Express) {
   });
 
   app.post('/api/customers', requireRole('admin', 'ceo', 'manager', 'staff'), async (req: Request, res: Response) => {
-    const customer = await storage.createCustomer({ ...req.body, assignedTo: req.session.userId });
+    const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+    const customer = await tenantStorage.createCustomer({ ...req.body, assignedTo: req.session.userId });
     res.json(customer);
   });
 
@@ -192,13 +232,15 @@ export function registerRoutes(app: Express) {
   });
 
   app.get('/api/tasks', requireAuth, async (req: Request, res: Response) => {
+    const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
     const user = await storage.getUser(req.session.userId!);
-    const tasks = await storage.getTasks(req.session.userId!, user?.role);
+    const tasks = await tenantStorage.getTasks(req.session.userId!, user?.role);
     res.json(tasks);
   });
 
   app.post('/api/tasks', requireRole('admin', 'ceo', 'manager', 'staff'), async (req: Request, res: Response) => {
-    const task = await storage.createTask({ ...req.body, createdBy: req.session.userId });
+    const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+    const task = await tenantStorage.createTask({ ...req.body, createdBy: req.session.userId });
     res.json(task);
   });
 
@@ -307,12 +349,14 @@ export function registerRoutes(app: Express) {
   });
 
   app.get('/api/employees', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
-    const employees = await storage.getAllEmployees();
+    const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+    const employees = await tenantStorage.getEmployees();
     res.json(employees);
   });
 
   app.post('/api/employees', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
-    const employee = await storage.createEmployee(req.body);
+    const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+    const employee = await tenantStorage.createEmployee(req.body);
     res.json(employee);
   });
 
@@ -362,12 +406,14 @@ export function registerRoutes(app: Express) {
   });
 
   app.get('/api/businesses', requireAuth, async (req: Request, res: Response) => {
-    const businesses = await storage.getBusinesses();
+    const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+    const businesses = await tenantStorage.getBusinesses();
     res.json(businesses);
   });
 
   app.post('/api/businesses', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
-    const business = await storage.createBusiness(req.body);
+    const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+    const business = await tenantStorage.createBusiness(req.body);
     res.json(business);
   });
 

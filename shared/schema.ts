@@ -3,10 +3,11 @@ import { relations } from "drizzle-orm";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  email: text("email").notNull().unique(),
+  email: text("email").notNull(),
   password: text("password").notNull(),
   name: text("name").notNull(),
   role: text("role").notNull().default("client"),
+  companyId: varchar("company_id", { length: 255 }),
   avatarUrl: text("avatar_url"),
   phone: text("phone"),
   department: text("department"),
@@ -23,6 +24,7 @@ export const users = pgTable("users", {
 
 export const customers = pgTable("customers", {
   id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
   companyName: text("company_name").notNull(),
   contactName: text("contact_name"),
   email: text("email"),
@@ -41,7 +43,8 @@ export const customers = pgTable("customers", {
 });
 
 export const businesses = pgTable("businesses", {
-  id: serial("id").primaryKey(),
+  id: varchar("id", { length: 255 }).primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
   name: text("name").notNull(),
   description: text("description"),
   url: text("url"),
@@ -53,6 +56,7 @@ export const businesses = pgTable("businesses", {
 
 export const businessSales = pgTable("business_sales", {
   id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
   businessId: text("business_id").notNull(),
   type: text("type").notNull().default("revenue"),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
@@ -64,6 +68,7 @@ export const businessSales = pgTable("business_sales", {
 
 export const memos = pgTable("memos", {
   id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
   date: timestamp("date").notNull(),
   content: text("content").notNull(),
   color: text("color").default("blue"),
@@ -74,6 +79,7 @@ export const memos = pgTable("memos", {
 
 export const tasks = pgTable("tasks", {
   id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
   title: text("title").notNull(),
   description: text("description"),
   status: text("status").notNull().default("pending"),
@@ -90,6 +96,7 @@ export const tasks = pgTable("tasks", {
 
 export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
   title: text("title").notNull(),
   message: text("message").notNull(),
   type: text("type").notNull().default("info"),
@@ -101,6 +108,7 @@ export const notifications = pgTable("notifications", {
 
 export const chatMessages = pgTable("chat_messages", {
   id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
   content: text("content").notNull(),
   senderId: integer("sender_id").references(() => users.id, { onDelete: "set null" }),
   receiverId: integer("receiver_id").references(() => users.id, { onDelete: "set null" }),
@@ -112,8 +120,9 @@ export const chatMessages = pgTable("chat_messages", {
 
 export const employees = pgTable("employees", {
   id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
   userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
-  employeeNumber: text("employee_number").unique(),
+  employeeNumber: text("employee_number"),
   hireDate: timestamp("hire_date"),
   salary: decimal("salary", { precision: 12, scale: 2 }),
   bankName: text("bank_name"),
@@ -130,6 +139,7 @@ export const employees = pgTable("employees", {
 
 export const agencySales = pgTable("agency_sales", {
   id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
   agencyId: integer("agency_id").references(() => users.id, { onDelete: "cascade" }),
   businessId: text("business_id"),
   customerId: integer("customer_id").references(() => customers.id, { onDelete: "set null" }),
@@ -188,6 +198,7 @@ export type InsertMemo = typeof memos.$inferInsert;
 
 export const aiLogs = pgTable("ai_logs", {
   id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
   type: text("type").notNull(),
   prompt: text("prompt"),
   result: text("result"),
@@ -202,6 +213,7 @@ export type InsertAiLog = typeof aiLogs.$inferInsert;
 
 export const aiConversations = pgTable("ai_conversations", {
   id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
   userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
   role: text("role").notNull(),
   content: text("content").notNull(),
@@ -213,6 +225,7 @@ export type InsertAiConversation = typeof aiConversations.$inferInsert;
 
 export const aiKnowledge = pgTable("ai_knowledge", {
   id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
   category: text("category").notNull(),
   title: text("title").notNull(),
   content: text("content").notNull(),
@@ -227,16 +240,18 @@ export type InsertAiKnowledge = typeof aiKnowledge.$inferInsert;
 
 export const seoCategories = pgTable("seo_categories", {
   id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
   name: varchar("name", { length: 255 }).notNull(),
-  slug: varchar("slug", { length: 255 }).notNull().unique(),
+  slug: varchar("slug", { length: 255 }).notNull(),
   description: text("description"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const seoArticles = pgTable("seo_articles", {
   id: varchar("id", { length: 255 }).primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
   title: varchar("title", { length: 255 }).notNull(),
-  slug: varchar("slug", { length: 255 }).notNull().unique(),
+  slug: varchar("slug", { length: 255 }).notNull(),
   content: text("content").notNull(),
   metaTitle: varchar("meta_title", { length: 255 }),
   metaDescription: text("meta_description"),
@@ -271,6 +286,7 @@ export type SystemSetting = typeof systemSettings.$inferSelect;
 
 export const leads = pgTable("leads", {
   id: varchar("id", { length: 255 }).primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
   name: varchar("name", { length: 255 }).notNull(),
   company: varchar("company", { length: 255 }),
   title: varchar("title", { length: 255 }),
@@ -298,6 +314,7 @@ export const leads = pgTable("leads", {
 
 export const leadActivities = pgTable("lead_activities", {
   id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
   leadId: varchar("lead_id", { length: 255 }).notNull(),
   type: varchar("type", { length: 50 }).notNull(),
   description: text("description"),
@@ -312,6 +329,7 @@ export type InsertLeadActivity = typeof leadActivities.$inferInsert;
 
 export const clientProjects = pgTable("client_projects", {
   id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
   clientId: integer("client_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
@@ -328,6 +346,7 @@ export type InsertClientProject = typeof clientProjects.$inferInsert;
 
 export const clientInvoices = pgTable("client_invoices", {
   id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
   clientId: integer("client_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
   invoiceNumber: varchar("invoice_number", { length: 50 }).notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
@@ -342,8 +361,9 @@ export type ClientInvoice = typeof clientInvoices.$inferSelect;
 export type InsertClientInvoice = typeof clientInvoices.$inferInsert;
 
 export const companies = pgTable("companies", {
-  id: serial("id").primaryKey(),
+  id: varchar("id", { length: 255 }).primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 100 }).unique(),
   address: text("address"),
   phone: text("phone"),
   fax: text("fax"),
@@ -359,6 +379,8 @@ export const companies = pgTable("companies", {
   bankAccountNumber: text("bank_account_number"),
   bankAccountHolder: text("bank_account_holder"),
   logoUrl: text("logo_url"),
+  primaryColor: varchar("primary_color", { length: 20 }).default("#3B82F6"),
+  secondaryColor: varchar("secondary_color", { length: 20 }).default("#1E40AF"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -368,6 +390,7 @@ export type InsertCompany = typeof companies.$inferInsert;
 
 export const quickNotes = pgTable("quick_notes", {
   id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
   title: varchar("title", { length: 255 }),
   content: text("content").notNull(),
   color: varchar("color", { length: 20 }).default("yellow"),
@@ -382,7 +405,8 @@ export type InsertQuickNote = typeof quickNotes.$inferInsert;
 
 export const investments = pgTable("investments", {
   id: serial("id").primaryKey(),
-  businessId: varchar("business_id").references(() => businesses.id, { onDelete: "cascade" }),
+  companyId: varchar("company_id", { length: 255 }),
+  businessId: varchar("business_id"),
   type: varchar("type", { length: 50 }).notNull().default("asset_purchase"),
   category: varchar("category", { length: 100 }),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),

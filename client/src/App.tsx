@@ -1,5 +1,6 @@
 import { Route, Switch } from 'wouter';
 import { AuthProvider, useAuth } from './hooks/use-auth';
+import { TenantProvider } from './hooks/use-tenant';
 import { Layout } from './components/layout';
 import { LoginPage } from './pages/login';
 import { DashboardPage } from './pages/dashboard';
@@ -72,9 +73,11 @@ function AppRoutes() {
 
 function App() {
   return (
-    <AuthProvider>
-      <AppRoutes />
-    </AuthProvider>
+    <TenantProvider>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </TenantProvider>
   );
 }
 

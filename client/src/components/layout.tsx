@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useAuth } from '../hooks/use-auth';
+import { useTenant } from '../hooks/use-tenant';
 import {
   Home,
   Users,
@@ -25,6 +26,7 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuth();
+  const { tenant } = useTenant();
   const [location] = useLocation();
 
   const menuItems = [
@@ -48,8 +50,17 @@ export function Layout({ children }: LayoutProps) {
         <div className="flex flex-col h-full">
           <div className="p-6 border-b border-slate-100">
             <div className="flex items-center gap-3">
+              {tenant?.logoUrl && (
+                <img 
+                  src={tenant.logoUrl} 
+                  alt={tenant.name} 
+                  className="w-10 h-10 object-contain rounded-lg"
+                />
+              )}
               <div>
-                <h1 className="text-xl font-bold gradient-text">SIN JAPAN</h1>
+                <h1 className="text-xl font-bold gradient-text">
+                  {tenant?.name || 'SIN JAPAN'}
+                </h1>
                 <p className="text-slate-400 text-xs font-medium tracking-wide">MANAGER SYSTEM</p>
               </div>
             </div>

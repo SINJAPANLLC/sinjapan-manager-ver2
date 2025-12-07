@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../hooks/use-auth';
+import { useTenant } from '../hooks/use-tenant';
 import { Loader2, ArrowRight, Shield, User, Building2, Users } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -12,6 +13,7 @@ const roleOptions = [
 
 export function LoginPage() {
   const { login } = useAuth();
+  const { tenant } = useTenant();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
@@ -38,7 +40,14 @@ export function LoginPage() {
       
       <div className="w-full max-w-md relative z-10 animate-slide-up">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold gradient-text">SIN JAPAN</h1>
+          {tenant?.logoUrl && (
+            <img 
+              src={tenant.logoUrl} 
+              alt={tenant.name} 
+              className="w-16 h-16 object-contain mx-auto mb-4 rounded-xl"
+            />
+          )}
+          <h1 className="text-3xl font-bold gradient-text">{tenant?.name || 'SIN JAPAN'}</h1>
           <p className="text-slate-400 mt-2 font-medium tracking-wide text-sm">MANAGER SYSTEM</p>
         </div>
 

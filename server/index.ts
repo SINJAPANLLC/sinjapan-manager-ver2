@@ -2,6 +2,7 @@ import express from 'express';
 import session from 'express-session';
 import createMemoryStore from 'memorystore';
 import { registerRoutes } from './routes';
+import { tenantMiddleware } from './tenant';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -16,6 +17,9 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
+const ROOT_DOMAIN = process.env.ROOT_DOMAIN || 'sinjapan-manager.com';
+const cookieDomain = process.env.NODE_ENV === 'production' ? `.${ROOT_DOMAIN}` : undefined;
+
 app.use(session({
   secret: process.env.SESSION_SECRET || 'sin-japan-manager-secret-key-2024',
   resave: false,
@@ -24,11 +28,14 @@ app.use(session({
     checkPeriod: 86400000
   }),
   cookie: {
-    secure: false,
+    secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000
+    maxAge: 24 * 60 * 60 * 1000,
+    domain: cookieDomain,
   }
 }));
+
+app.use(tenantMiddleware);
 
 registerRoutes(app);
 

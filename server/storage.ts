@@ -169,6 +169,7 @@ export const storage = {
       email: users.email, 
       name: users.name, 
       role: users.role, 
+      companyId: users.companyId,
       avatarUrl: users.avatarUrl, 
       phone: users.phone, 
       department: users.department, 
@@ -331,7 +332,7 @@ export const storage = {
     return db.select().from(businesses).orderBy(desc(businesses.createdAt));
   },
 
-  async getBusiness(id: number): Promise<Business | undefined> {
+  async getBusiness(id: string): Promise<Business | undefined> {
     const [business] = await db.select().from(businesses).where(eq(businesses.id, id));
     return business;
   },
@@ -740,7 +741,7 @@ export const storage = {
     return db.select().from(companies).orderBy(desc(companies.createdAt));
   },
 
-  async getCompany(id: number): Promise<Company | undefined> {
+  async getCompany(id: string): Promise<Company | undefined> {
     const [company] = await db.select().from(companies).where(eq(companies.id, id));
     return company;
   },
