@@ -1160,7 +1160,12 @@ export function AiPage() {
                         placeholder="https://example.com（未設定の場合は公開ドメインを使用）"
                         className="input-field"
                       />
-                      <p className="text-xs text-slate-500 mt-1">記事ごとに異なるドメインを設定できます。未設定の場合は公開されているReplitドメインを使用します。</p>
+                      <p className="text-xs text-slate-500 mt-2">
+                        設定例: <code className="bg-slate-200 px-1 rounded">https://sinjapan.work</code> → 記事URLは <code className="bg-slate-200 px-1 rounded">https://sinjapan.work/articles/スラッグ</code> になります
+                      </p>
+                      <p className="text-xs text-amber-600 mt-1">
+                        ※ 独自ドメインを使用するには、アプリ公開後にReplitでドメイン接続（DNS設定）が必要です
+                      </p>
                     </div>
                   </div>
                   <div className="flex gap-2">
