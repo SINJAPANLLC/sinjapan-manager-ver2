@@ -141,7 +141,7 @@ export function ChatPage() {
           <h2 className="text-lg font-bold text-slate-800 mb-3">コミュニケーション</h2>
           <div className="flex gap-2 mb-4">
             <a
-              href="https://chromewebstore.google.com/detail/line/ophjlpahpchlmihnnnihgmmeilfjmjjc"
+              href="https://developers.line.biz/"
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 bg-[#06C755] hover:bg-[#05b34c] text-white rounded-xl font-medium text-sm transition-colors"
