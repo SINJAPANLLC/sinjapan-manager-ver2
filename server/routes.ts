@@ -135,6 +135,18 @@ export function registerRoutes(app: Express) {
     res.json({ ...userWithoutPassword, tenant });
   });
 
+  app.get('/api/debug/session', requireAuth, async (req: Request, res: Response) => {
+    const user = await storage.getUser(req.session.userId!);
+    const companyId = getCompanyId(req);
+    res.json({
+      sessionUserId: req.session.userId,
+      sessionCompanyId: req.session.companyId,
+      tenantId: req.tenant?.id,
+      resolvedCompanyId: companyId,
+      userCompanyId: user?.companyId,
+    });
+  });
+
   app.get('/api/users', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
     const users = await tenantStorage.getAllUsers();
