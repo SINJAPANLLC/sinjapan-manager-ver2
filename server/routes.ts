@@ -1374,9 +1374,116 @@ ${articlesContext}
     try {
       const article = await storage.getSeoArticleBySlug(req.params.slug);
       if (!article || !article.isPublished) {
-        return res.status(404).send('記事が見つかりません');
+        return res.status(404).send(`
+          <!DOCTYPE html>
+          <html lang="ja">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>記事が見つかりません</title>
+            <style>
+              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px 20px; text-align: center; }
+              h1 { color: #1e293b; }
+              p { color: #64748b; }
+              a { color: #3b82f6; text-decoration: none; }
+            </style>
+          </head>
+          <body>
+            <h1>404 - 記事が見つかりません</h1>
+            <p>お探しの記事は存在しないか、非公開になっています。</p>
+            <a href="/">ホームに戻る</a>
+          </body>
+          </html>
+        `);
       }
-      res.json(article);
+
+      const contentHtml = article.content
+        .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+        .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+        .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/^- (.+)$/gm, '<li>$1</li>')
+        .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br>');
+
+      const html = `
+        <!DOCTYPE html>
+        <html lang="ja">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>${article.title} | SIN JAPAN</title>
+          <meta name="description" content="${article.metaDescription || article.content.substring(0, 160)}">
+          <meta name="keywords" content="${article.keywords || ''}">
+          <link rel="canonical" href="https://${req.get('host')}/articles/${article.slug}">
+          <meta property="og:title" content="${article.title}">
+          <meta property="og:description" content="${article.metaDescription || article.content.substring(0, 160)}">
+          <meta property="og:type" content="article">
+          <meta property="og:url" content="https://${req.get('host')}/articles/${article.slug}">
+          <style>
+            * { box-sizing: border-box; }
+            body { 
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Hiragino Sans', sans-serif; 
+              max-width: 800px; 
+              margin: 0 auto; 
+              padding: 40px 20px; 
+              line-height: 1.8;
+              color: #1e293b;
+              background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 100%);
+              min-height: 100vh;
+            }
+            header { 
+              border-bottom: 1px solid #e2e8f0; 
+              padding-bottom: 20px; 
+              margin-bottom: 30px;
+            }
+            .logo { 
+              font-size: 1.5rem; 
+              font-weight: bold; 
+              background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+              -webkit-background-clip: text;
+              -webkit-text-fill-color: transparent;
+              text-decoration: none;
+            }
+            article { 
+              background: white; 
+              padding: 40px; 
+              border-radius: 16px; 
+              box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            }
+            h1 { font-size: 2rem; color: #0f172a; margin-bottom: 10px; }
+            h2 { font-size: 1.5rem; color: #1e293b; margin-top: 30px; border-bottom: 2px solid #3b82f6; padding-bottom: 8px; }
+            h3 { font-size: 1.25rem; color: #334155; margin-top: 24px; }
+            p { color: #475569; margin: 16px 0; }
+            ul { padding-left: 24px; }
+            li { margin: 8px 0; color: #475569; }
+            .meta { color: #94a3b8; font-size: 0.875rem; margin-bottom: 24px; }
+            footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center; color: #94a3b8; font-size: 0.875rem; }
+            a { color: #3b82f6; }
+          </style>
+        </head>
+        <body>
+          <header>
+            <a href="/" class="logo">SIN JAPAN</a>
+          </header>
+          <article>
+            <h1>${article.title}</h1>
+            <p class="meta">公開日: ${article.publishedAt ? new Date(article.publishedAt).toLocaleDateString('ja-JP') : new Date(article.createdAt).toLocaleDateString('ja-JP')}</p>
+            <div class="content">
+              <p>${contentHtml}</p>
+            </div>
+          </article>
+          <footer>
+            <p>&copy; ${new Date().getFullYear()} SIN JAPAN. All rights reserved.</p>
+          </footer>
+        </body>
+        </html>
+      `;
+      
+      res.set('Content-Type', 'text/html');
+      res.send(html);
     } catch (error) {
       console.error('Get public article error:', error);
       res.status(500).send('エラーが発生しました');
