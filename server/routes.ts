@@ -1357,7 +1357,7 @@ ${articleList}`
 
   app.post('/api/seo-articles', requireAuth, async (req: Request, res: Response) => {
     try {
-      const { title, slug, content, metaTitle, metaDescription, keywords, ctaUrl, ctaText, domain, categoryId } = req.body;
+      const { title, slug, content, metaTitle, metaDescription, keywords, ctaUrl, ctaText, domain, siteName, categoryId } = req.body;
       const article = await storage.createSeoArticle({
         title,
         slug,
@@ -1368,6 +1368,7 @@ ${articleList}`
         ctaUrl,
         ctaText,
         domain,
+        siteName,
         categoryId,
         userId: req.session.userId,
       });
@@ -1383,7 +1384,7 @@ ${articleList}`
 
   app.put('/api/seo-articles/:id', requireAuth, async (req: Request, res: Response) => {
     try {
-      const { title, slug, content, metaTitle, metaDescription, keywords, isPublished, ctaUrl, ctaText, domain, categoryId } = req.body;
+      const { title, slug, content, metaTitle, metaDescription, keywords, isPublished, ctaUrl, ctaText, domain, siteName, categoryId } = req.body;
       const article = await storage.updateSeoArticle(req.params.id, {
         title,
         slug,
@@ -1395,6 +1396,7 @@ ${articleList}`
         ctaUrl,
         ctaText,
         domain,
+        siteName,
         categoryId,
       });
       res.json(article);
