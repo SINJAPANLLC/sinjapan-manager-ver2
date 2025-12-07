@@ -1288,6 +1288,101 @@ ${articleList}`
     }
   });
 
+  // Lead Management API
+  app.get('/api/leads', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { status, source, search } = req.query;
+      const leads = await storage.getLeads({
+        status: status as string,
+        source: source as string,
+        search: search as string,
+      });
+      res.json(leads);
+    } catch (error) {
+      console.error('Get leads error:', error);
+      res.status(500).json([]);
+    }
+  });
+
+  app.get('/api/leads/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const lead = await storage.getLead(req.params.id);
+      if (!lead) {
+        return res.status(404).json({ error: 'リードが見つかりません' });
+      }
+      res.json(lead);
+    } catch (error) {
+      console.error('Get lead error:', error);
+      res.status(500).json({ error: 'リードの取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/leads', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const lead = await storage.createLead(req.body);
+      res.json(lead);
+    } catch (error) {
+      console.error('Create lead error:', error);
+      res.status(500).json({ error: 'リードの作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/leads/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const lead = await storage.updateLead(req.params.id, req.body);
+      res.json(lead);
+    } catch (error) {
+      console.error('Update lead error:', error);
+      res.status(500).json({ error: 'リードの更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/leads/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteLead(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete lead error:', error);
+      res.status(500).json({ error: 'リードの削除に失敗しました' });
+    }
+  });
+
+  app.post('/api/leads/bulk', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { leads: leadsData } = req.body;
+      const leads = await storage.bulkCreateLeads(leadsData);
+      res.json({ success: true, count: leads.length });
+    } catch (error) {
+      console.error('Bulk create leads error:', error);
+      res.status(500).json({ error: 'リードの一括登録に失敗しました' });
+    }
+  });
+
+  app.get('/api/leads/:id/activities', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const activities = await storage.getLeadActivities(req.params.id);
+      res.json(activities);
+    } catch (error) {
+      console.error('Get lead activities error:', error);
+      res.status(500).json([]);
+    }
+  });
+
+  app.post('/api/leads/:id/activities', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const activity = await storage.createLeadActivity({
+        leadId: req.params.id,
+        type: req.body.type,
+        description: req.body.description,
+        userId: req.session.userId,
+      });
+      res.json(activity);
+    } catch (error) {
+      console.error('Create lead activity error:', error);
+      res.status(500).json({ error: 'アクティビティの登録に失敗しました' });
+    }
+  });
+
   // SEO Categories API
   app.get('/api/seo-categories', requireAuth, async (req: Request, res: Response) => {
     try {

@@ -1,8 +1,8 @@
 import { db } from './db';
-import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, seoArticles, seoCategories, systemSettings } from '../shared/schema';
-import { eq, and, or, desc, sql, isNull, gte, lte } from 'drizzle-orm';
+import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, seoArticles, seoCategories, systemSettings, leads, leadActivities } from '../shared/schema';
+import { eq, and, or, desc, sql, isNull, gte, lte, like, ilike } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, SystemSetting } from '../shared/schema';
+import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, SystemSetting, Lead, InsertLead, LeadActivity, InsertLeadActivity } from '../shared/schema';
 
 export const storage = {
   async getUser(id: number): Promise<User | undefined> {
@@ -428,5 +428,69 @@ export const storage = {
 
   async getAllSettings(): Promise<SystemSetting[]> {
     return db.select().from(systemSettings);
+  },
+
+  // Lead management
+  async getLeads(filters?: { status?: string; source?: string; search?: string }): Promise<Lead[]> {
+    let query = db.select().from(leads);
+    if (filters?.status) {
+      query = query.where(eq(leads.status, filters.status)) as any;
+    }
+    if (filters?.source) {
+      query = query.where(eq(leads.source, filters.source)) as any;
+    }
+    if (filters?.search) {
+      query = query.where(
+        or(
+          ilike(leads.name, `%${filters.search}%`),
+          ilike(leads.company, `%${filters.search}%`),
+          ilike(leads.email, `%${filters.search}%`),
+          ilike(leads.phone, `%${filters.search}%`)
+        )
+      ) as any;
+    }
+    return query.orderBy(desc(leads.createdAt));
+  },
+
+  async getLead(id: string): Promise<Lead | undefined> {
+    const [lead] = await db.select().from(leads).where(eq(leads.id, id));
+    return lead;
+  },
+
+  async createLead(data: InsertLead): Promise<Lead> {
+    const id = `lead_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const [lead] = await db.insert(leads).values({ ...data, id }).returning();
+    return lead;
+  },
+
+  async updateLead(id: string, data: Partial<InsertLead>): Promise<Lead | undefined> {
+    const [lead] = await db.update(leads).set({ ...data, updatedAt: new Date() }).where(eq(leads.id, id)).returning();
+    return lead;
+  },
+
+  async deleteLead(id: string): Promise<boolean> {
+    await db.delete(leadActivities).where(eq(leadActivities.leadId, id));
+    await db.delete(leads).where(eq(leads.id, id));
+    return true;
+  },
+
+  async createLeadActivity(data: InsertLeadActivity): Promise<LeadActivity> {
+    const [activity] = await db.insert(leadActivities).values(data).returning();
+    // Update last contacted timestamp
+    await db.update(leads).set({ lastContactedAt: new Date(), updatedAt: new Date() }).where(eq(leads.id, data.leadId));
+    return activity;
+  },
+
+  async getLeadActivities(leadId: string): Promise<LeadActivity[]> {
+    return db.select().from(leadActivities).where(eq(leadActivities.leadId, leadId)).orderBy(desc(leadActivities.createdAt));
+  },
+
+  async bulkCreateLeads(dataList: InsertLead[]): Promise<Lead[]> {
+    const leadsToInsert = dataList.map(data => ({
+      ...data,
+      id: `lead_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    }));
+    const result = await db.insert(leads).values(leadsToInsert).returning();
+    return result;
   },
 };
