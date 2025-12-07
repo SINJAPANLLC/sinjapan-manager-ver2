@@ -53,7 +53,7 @@ export const businesses = pgTable("businesses", {
 
 export const businessSales = pgTable("business_sales", {
   id: serial("id").primaryKey(),
-  businessId: varchar("business_id").references(() => businesses.id, { onDelete: "cascade" }).notNull(),
+  businessId: text("business_id").notNull(),
   type: text("type").notNull().default("revenue"),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
   description: text("description"),

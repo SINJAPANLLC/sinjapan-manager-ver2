@@ -5,10 +5,13 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { google } from 'googleapis';
-import { SquareClient } from 'square';
+import { SquareClient, SquareEnvironment } from 'square';
 
 const squareClient = new SquareClient({
   token: process.env.SQUARE_ACCESS_TOKEN,
+  environment: process.env.SQUARE_ENVIRONMENT === 'sandbox' 
+    ? SquareEnvironment.Sandbox 
+    : SquareEnvironment.Production,
 });
 
 const uploadDir = path.join(process.cwd(), 'uploads');
