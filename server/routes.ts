@@ -319,8 +319,10 @@ export function registerRoutes(app: Express) {
     res.json(sales);
   });
 
-  app.post('/api/agency/sales', requireRole('agency'), async (req: Request, res: Response) => {
-    const sale = await storage.createAgencySale({ ...req.body, agencyId: req.session.userId });
+  app.post('/api/agency/sales', requireRole('admin', 'ceo', 'manager', 'agency'), async (req: Request, res: Response) => {
+    const user = (req as any).currentUser;
+    const agencyId = user.role === 'agency' ? req.session.userId : req.body.agencyId;
+    const sale = await storage.createAgencySale({ ...req.body, agencyId });
     res.json(sale);
   });
 

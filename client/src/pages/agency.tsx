@@ -139,7 +139,7 @@ export function AgencyPage() {
       return;
     }
 
-    const res = await fetch('/api/agency-sales', {
+    const res = await fetch('/api/agency/sales', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
