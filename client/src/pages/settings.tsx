@@ -310,8 +310,12 @@ function PaymentTab() {
 }
 
 interface Company {
-  id: number;
+  id: string;
   name: string;
+  slug?: string;
+  logoUrl?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
   address?: string;
   phone?: string;
   fax?: string;
@@ -326,7 +330,6 @@ interface Company {
   bankAccountType?: string;
   bankAccountNumber?: string;
   bankAccountHolder?: string;
-  logoUrl?: string;
 }
 
 interface UserItem {
@@ -365,6 +368,10 @@ export function SettingsPage() {
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [companyFormData, setCompanyFormData] = useState<Partial<Company>>({
     name: '',
+    slug: '',
+    logoUrl: '',
+    primaryColor: '#3B82F6',
+    secondaryColor: '#1E40AF',
     address: '',
     phone: '',
     fax: '',
@@ -507,7 +514,7 @@ export function SettingsPage() {
     }
   };
 
-  const handleDeleteCompany = async (id: number) => {
+  const handleDeleteCompany = async (id: string) => {
     if (!confirm('この会社を削除しますか？')) return;
 
     try {
@@ -525,6 +532,10 @@ export function SettingsPage() {
     setEditingCompany(company);
     setCompanyFormData({
       name: company.name,
+      slug: company.slug || '',
+      logoUrl: company.logoUrl || '',
+      primaryColor: company.primaryColor || '#3B82F6',
+      secondaryColor: company.secondaryColor || '#1E40AF',
       address: company.address || '',
       phone: company.phone || '',
       fax: company.fax || '',
@@ -546,6 +557,10 @@ export function SettingsPage() {
   const resetCompanyForm = () => {
     setCompanyFormData({
       name: '',
+      slug: '',
+      logoUrl: '',
+      primaryColor: '#3B82F6',
+      secondaryColor: '#1E40AF',
       address: '',
       phone: '',
       fax: '',
@@ -871,7 +886,17 @@ export function SettingsPage() {
                 <div key={company.id} className="card p-6">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
-                      <h3 className="text-lg font-bold text-slate-800">{company.name}</h3>
+                      <div className="flex items-center gap-3">
+                        {company.logoUrl && (
+                          <img src={company.logoUrl} alt={company.name} className="w-10 h-10 rounded-lg object-contain" />
+                        )}
+                        <div>
+                          <h3 className="text-lg font-bold text-slate-800">{company.name}</h3>
+                          {company.slug && (
+                            <p className="text-sm text-blue-600">{company.slug}.sinjapan-manager.com</p>
+                          )}
+                        </div>
+                      </div>
                       <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                         {company.address && (
                           <div className="flex items-center gap-2 text-slate-600">
@@ -1096,6 +1121,74 @@ export function SettingsPage() {
                   className="input-field"
                   required
                 />
+              </div>
+
+              <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
+                <h4 className="font-medium text-blue-800 mb-3 flex items-center gap-2">
+                  <Globe size={16} />
+                  テナント設定（OEM）
+                </h4>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      サブドメイン（slug）
+                      <span className="text-slate-400 font-normal ml-2">例: companya → companya.sinjapan-manager.com</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={companyFormData.slug || ''}
+                      onChange={(e) => setCompanyFormData({ ...companyFormData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
+                      className="input-field"
+                      placeholder="companya"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">ロゴURL</label>
+                    <input
+                      type="url"
+                      value={companyFormData.logoUrl || ''}
+                      onChange={(e) => setCompanyFormData({ ...companyFormData, logoUrl: e.target.value })}
+                      className="input-field"
+                      placeholder="https://example.com/logo.png"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">メインカラー</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="color"
+                          value={companyFormData.primaryColor || '#3B82F6'}
+                          onChange={(e) => setCompanyFormData({ ...companyFormData, primaryColor: e.target.value })}
+                          className="w-12 h-10 rounded-lg border border-slate-200 cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={companyFormData.primaryColor || '#3B82F6'}
+                          onChange={(e) => setCompanyFormData({ ...companyFormData, primaryColor: e.target.value })}
+                          className="input-field flex-1"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">サブカラー</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="color"
+                          value={companyFormData.secondaryColor || '#1E40AF'}
+                          onChange={(e) => setCompanyFormData({ ...companyFormData, secondaryColor: e.target.value })}
+                          className="w-12 h-10 rounded-lg border border-slate-200 cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={companyFormData.secondaryColor || '#1E40AF'}
+                          onChange={(e) => setCompanyFormData({ ...companyFormData, secondaryColor: e.target.value })}
+                          className="input-field flex-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
