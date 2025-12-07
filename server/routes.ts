@@ -1148,6 +1148,65 @@ ${articleList}`
     }
   });
 
+  app.post('/api/ai/voice-chat', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { message, history = [], voice = 'alloy' } = req.body;
+      
+      const openaiChat = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      });
+
+      const messages: Array<{role: 'system' | 'user' | 'assistant'; content: string}> = [
+        {
+          role: 'system',
+          content: `あなたは親切で知識豊富なAIアシスタントです。ユーザーと自然な会話をしてください。
+回答は簡潔に、1〜3文程度で答えてください。音声で読み上げられることを想定して、自然な話し言葉で応答してください。`
+        },
+        ...history.map((h: any) => ({
+          role: h.role as 'user' | 'assistant',
+          content: h.content
+        })),
+        { role: 'user', content: message }
+      ];
+
+      const completion = await openaiChat.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages,
+        max_tokens: 200,
+      });
+
+      const response = completion.choices[0]?.message?.content || 'すみません、応答を生成できませんでした。';
+
+      const openaiTts = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+
+      const mp3 = await openaiTts.audio.speech.create({
+        model: 'tts-1',
+        voice: voice as 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer',
+        input: response,
+      });
+
+      const buffer = Buffer.from(await mp3.arrayBuffer());
+      const base64Audio = buffer.toString('base64');
+      const audioUrl = `data:audio/mpeg;base64,${base64Audio}`;
+
+      await storage.createAiLog({
+        type: 'voice_chat',
+        prompt: message,
+        result: response,
+        status: 'success',
+        userId: req.session.userId,
+      });
+
+      res.json({ response, audioUrl });
+    } catch (error) {
+      console.error('Voice chat error:', error);
+      res.status(500).json({ error: '音声会話エラーが発生しました' });
+    }
+  });
+
   app.post('/api/ai/list', requireAuth, async (req: Request, res: Response) => {
     try {
       const { topic, count, forLeads } = req.body;

@@ -129,6 +129,12 @@ export function AiPage() {
 
   const [voiceText, setVoiceText] = useState('');
   const [voiceUrl, setVoiceUrl] = useState('');
+  
+  const [isListening, setIsListening] = useState(false);
+  const [voiceChatInput, setVoiceChatInput] = useState('');
+  const [voiceChatMessages, setVoiceChatMessages] = useState<Array<{role: 'user' | 'assistant'; content: string}>>([]);
+  const [voiceChatAudioUrl, setVoiceChatAudioUrl] = useState('');
+  const [isProcessingVoice, setIsProcessingVoice] = useState(false);
   const [selectedVoice, setSelectedVoice] = useState('alloy');
   
   const voiceOptions = [
@@ -676,6 +682,87 @@ export function AiPage() {
       alert('書類生成に失敗しました');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const startListening = () => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      alert('お使いのブラウザは音声認識に対応していません。Chrome、Edge、Safariをお試しください。');
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'ja-JP';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setVoiceChatInput(transcript);
+      setIsListening(false);
+      handleVoiceChatSend(transcript);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error);
+      setIsListening(false);
+      if (event.error === 'not-allowed') {
+        alert('マイクへのアクセスを許可してください。');
+      }
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+  };
+
+  const handleVoiceChatSend = async (text?: string) => {
+    const input = text || voiceChatInput;
+    if (!input.trim() || isProcessingVoice) return;
+
+    setIsProcessingVoice(true);
+    setVoiceChatAudioUrl('');
+    
+    const newMessages = [...voiceChatMessages, { role: 'user' as const, content: input }];
+    setVoiceChatMessages(newMessages);
+    setVoiceChatInput('');
+
+    try {
+      const res = await fetch('/api/ai/voice-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          message: input, 
+          history: newMessages.slice(-10),
+          voice: selectedVoice 
+        }),
+      });
+      const data = await res.json();
+      
+      if (data.error) {
+        alert(data.error);
+        return;
+      }
+      
+      if (data.response) {
+        setVoiceChatMessages([...newMessages, { role: 'assistant', content: data.response }]);
+      }
+      if (data.audioUrl) {
+        setVoiceChatAudioUrl(data.audioUrl);
+        const audio = new Audio(data.audioUrl);
+        audio.play().catch(console.error);
+      }
+    } catch (err) {
+      alert('音声会話に失敗しました');
+    } finally {
+      setIsProcessingVoice(false);
     }
   };
 
@@ -1945,20 +2032,101 @@ export function AiPage() {
               <Phone className="text-primary-500" size={20} />
               AI音声会話
             </h2>
-            <div className="bg-slate-50 rounded-xl p-8 text-center">
-              <div className="w-24 h-24 mx-auto bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center mb-4">
-                <Phone size={40} className="text-white" />
-              </div>
-              <h3 className="text-lg font-semibold text-slate-800 mb-2">音声会話機能</h3>
-              <p className="text-slate-500 text-sm mb-4">
-                この機能は現在開発中です。<br />
-                音声でAIと会話できるようになる予定です。
-              </p>
-              <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-100 text-amber-700 text-sm rounded-full">
-                <Zap size={14} />
-                Coming Soon
-              </span>
+            <p className="text-sm text-slate-500">マイクボタンを押して話しかけると、AIが音声で応答します</p>
+            
+            <div className="flex items-center gap-4 mb-4">
+              <label className="text-sm font-medium text-slate-700">音声:</label>
+              <select
+                value={selectedVoice}
+                onChange={(e) => setSelectedVoice(e.target.value)}
+                className="input-field w-auto"
+              >
+                {voiceOptions.map((v) => (
+                  <option key={v.id} value={v.id}>{v.name} - {v.description}</option>
+                ))}
+              </select>
             </div>
+
+            <div className="bg-slate-50 rounded-xl p-4 min-h-[300px] max-h-[400px] overflow-y-auto">
+              {voiceChatMessages.length === 0 ? (
+                <div className="text-center py-12 text-slate-400">
+                  <Mic size={48} className="mx-auto mb-2 opacity-50" />
+                  <p>マイクボタンを押して会話を始めましょう</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {voiceChatMessages.map((msg, index) => (
+                    <div 
+                      key={index} 
+                      className={cn(
+                        "p-3 rounded-lg max-w-[80%]",
+                        msg.role === 'user' 
+                          ? "bg-primary-100 text-primary-800 ml-auto" 
+                          : "bg-white border text-slate-700"
+                      )}
+                    >
+                      <div className="text-xs text-slate-500 mb-1">
+                        {msg.role === 'user' ? 'あなた' : 'AI'}
+                      </div>
+                      <div className="text-sm">{msg.content}</div>
+                    </div>
+                  ))}
+                  {isProcessingVoice && (
+                    <div className="bg-white border p-3 rounded-lg max-w-[80%]">
+                      <div className="flex items-center gap-2 text-slate-500">
+                        <Loader2 className="animate-spin" size={16} />
+                        <span className="text-sm">応答を生成中...</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={startListening}
+                disabled={isListening || isProcessingVoice}
+                className={cn(
+                  "w-16 h-16 rounded-full flex items-center justify-center transition-all",
+                  isListening 
+                    ? "bg-red-500 text-white animate-pulse" 
+                    : "bg-gradient-to-br from-primary-500 to-primary-600 text-white hover:shadow-lg"
+                )}
+              >
+                <Mic size={28} />
+              </button>
+              <div className="flex-1">
+                <input
+                  type="text"
+                  value={voiceChatInput}
+                  onChange={(e) => setVoiceChatInput(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleVoiceChatSend()}
+                  placeholder={isListening ? "聞いています..." : "テキストで入力することもできます"}
+                  className="input-field"
+                  disabled={isListening || isProcessingVoice}
+                />
+              </div>
+              <button
+                onClick={() => handleVoiceChatSend()}
+                disabled={!voiceChatInput.trim() || isProcessingVoice}
+                className="btn-primary"
+              >
+                <Send size={18} />
+              </button>
+            </div>
+
+            {voiceChatMessages.length > 0 && (
+              <button
+                onClick={() => {
+                  setVoiceChatMessages([]);
+                  setVoiceChatAudioUrl('');
+                }}
+                className="btn-secondary text-sm"
+              >
+                会話をクリア
+              </button>
+            )}
           </div>
         )}
 
