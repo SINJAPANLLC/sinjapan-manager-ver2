@@ -76,7 +76,7 @@ export function StaffPage() {
     }
 
     const url = editingStaff ? `/api/users/${editingStaff.id}` : '/api/users';
-    const method = editingStaff ? 'PUT' : 'POST';
+    const method = editingStaff ? 'PATCH' : 'POST';
     const body = editingStaff 
       ? { ...form, password: form.password || undefined }
       : { ...form, role: 'staff' };

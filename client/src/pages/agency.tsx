@@ -110,7 +110,7 @@ export function AgencyPage() {
     }
 
     const url = editingAgency ? `/api/users/${editingAgency.id}` : '/api/users';
-    const method = editingAgency ? 'PUT' : 'POST';
+    const method = editingAgency ? 'PATCH' : 'POST';
     const body = editingAgency 
       ? { ...form, password: form.password || undefined }
       : { ...form, role: 'agency' };

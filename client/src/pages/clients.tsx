@@ -142,7 +142,7 @@ export function ClientsPage() {
     }
 
     const url = editingClient ? `/api/users/${editingClient.id}` : '/api/users';
-    const method = editingClient ? 'PUT' : 'POST';
+    const method = editingClient ? 'PATCH' : 'POST';
     const body = editingClient 
       ? { ...form, password: form.password || undefined }
       : { ...form, role: 'client' };
