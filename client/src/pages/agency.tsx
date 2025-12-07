@@ -35,6 +35,7 @@ interface Agency {
 interface AgencySale {
   id: number;
   agencyId: number;
+  businessId?: string;
   clientName: string;
   projectName?: string;
   amount: string;
@@ -44,9 +45,15 @@ interface AgencySale {
   createdAt: string;
 }
 
+interface Business {
+  id: string;
+  name: string;
+}
+
 export function AgencyPage() {
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [sales, setSales] = useState<AgencySale[]>([]);
+  const [businesses, setBusinesses] = useState<Business[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -69,6 +76,7 @@ export function AgencyPage() {
 
   const [saleForm, setSaleForm] = useState({
     agencyId: 0,
+    businessId: '',
     clientName: '',
     projectName: '',
     amount: '',
@@ -94,9 +102,17 @@ export function AgencyPage() {
     }
   };
 
+  const fetchBusinesses = async () => {
+    const res = await fetch('/api/businesses', { credentials: 'include' });
+    if (res.ok) {
+      setBusinesses(await res.json());
+    }
+  };
+
   useEffect(() => {
     fetchAgencies();
     fetchSales();
+    fetchBusinesses();
   }, []);
 
   const handleSubmit = async () => {
@@ -150,6 +166,7 @@ export function AgencyPage() {
       setShowSaleModal(false);
       setSaleForm({
         agencyId: 0,
+        businessId: '',
         clientName: '',
         projectName: '',
         amount: '',
@@ -505,6 +522,19 @@ export function AgencyPage() {
                   <option value={0}>選択してください</option>
                   {agencies.map(a => (
                     <option key={a.id} value={a.id}>{a.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">事業</label>
+                <select
+                  className="input-field"
+                  value={saleForm.businessId}
+                  onChange={(e) => setSaleForm({ ...saleForm, businessId: e.target.value })}
+                >
+                  <option value="">選択してください</option>
+                  {businesses.map(b => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
                   ))}
                 </select>
               </div>

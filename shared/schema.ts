@@ -131,7 +131,10 @@ export const employees = pgTable("employees", {
 export const agencySales = pgTable("agency_sales", {
   id: serial("id").primaryKey(),
   agencyId: integer("agency_id").references(() => users.id, { onDelete: "cascade" }),
+  businessId: text("business_id"),
   customerId: integer("customer_id").references(() => customers.id, { onDelete: "set null" }),
+  clientName: text("client_name"),
+  projectName: text("project_name"),
   amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
   commission: decimal("commission", { precision: 12, scale: 2 }),
   status: text("status").notNull().default("pending"),
