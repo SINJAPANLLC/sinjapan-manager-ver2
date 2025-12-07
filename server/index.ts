@@ -12,13 +12,16 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const MemoryStore = createMemoryStore(session);
 
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 const ROOT_DOMAIN = process.env.ROOT_DOMAIN || 'sinjapan-manager.com';
-const cookieDomain = process.env.NODE_ENV === 'production' ? `.${ROOT_DOMAIN}` : undefined;
 
 app.use(session({
   secret: process.env.SESSION_SECRET || 'sin-japan-manager-secret-key-2024',
@@ -31,7 +34,7 @@ app.use(session({
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000,
-    domain: cookieDomain,
+    sameSite: 'lax',
   }
 }));
 
