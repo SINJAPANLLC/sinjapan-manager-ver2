@@ -22,6 +22,11 @@ interface Staff {
   phone?: string;
   department?: string;
   position?: string;
+  bankName?: string;
+  bankBranch?: string;
+  bankAccountType?: string;
+  bankAccountNumber?: string;
+  bankAccountHolder?: string;
   isActive: boolean;
   createdAt: string;
 }
@@ -39,6 +44,11 @@ export function StaffPage() {
     phone: '',
     department: '',
     position: '',
+    bankName: '',
+    bankBranch: '',
+    bankAccountType: '普通',
+    bankAccountNumber: '',
+    bankAccountHolder: '',
   });
 
   const fetchStaff = async () => {
@@ -81,7 +91,7 @@ export function StaffPage() {
     if (res.ok) {
       setShowModal(false);
       setEditingStaff(null);
-      setForm({ email: '', name: '', password: '', phone: '', department: '', position: '' });
+      setForm({ email: '', name: '', password: '', phone: '', department: '', position: '', bankName: '', bankBranch: '', bankAccountType: '普通', bankAccountNumber: '', bankAccountHolder: '' });
       fetchStaff();
     } else {
       const data = await res.json();
@@ -106,6 +116,11 @@ export function StaffPage() {
       phone: s.phone || '',
       department: s.department || '',
       position: s.position || '',
+      bankName: s.bankName || '',
+      bankBranch: s.bankBranch || '',
+      bankAccountType: s.bankAccountType || '普通',
+      bankAccountNumber: s.bankAccountNumber || '',
+      bankAccountHolder: s.bankAccountHolder || '',
     });
     setShowModal(true);
   };
@@ -129,7 +144,7 @@ export function StaffPage() {
         <button
           onClick={() => {
             setEditingStaff(null);
-            setForm({ email: '', name: '', password: '', phone: '', department: '', position: '' });
+            setForm({ email: '', name: '', password: '', phone: '', department: '', position: '', bankName: '', bankBranch: '', bankAccountType: '普通', bankAccountNumber: '', bankAccountHolder: '' });
             setShowModal(true);
           }}
           className="btn-primary flex items-center gap-2"
@@ -292,6 +307,68 @@ export function StaffPage() {
                   value={form.position}
                   onChange={(e) => setForm({ ...form, position: e.target.value })}
                 />
+              </div>
+
+              <div className="border-t border-slate-200 pt-4 mt-4">
+                <h3 className="font-medium text-slate-700 mb-3">口座情報</h3>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm text-slate-600 mb-1">銀行名</label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        placeholder="例: みずほ銀行"
+                        value={form.bankName}
+                        onChange={(e) => setForm({ ...form, bankName: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-slate-600 mb-1">支店名</label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        placeholder="例: 渋谷支店"
+                        value={form.bankBranch}
+                        onChange={(e) => setForm({ ...form, bankBranch: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm text-slate-600 mb-1">口座種別</label>
+                      <select
+                        className="input-field"
+                        value={form.bankAccountType}
+                        onChange={(e) => setForm({ ...form, bankAccountType: e.target.value })}
+                      >
+                        <option value="普通">普通</option>
+                        <option value="当座">当座</option>
+                        <option value="貯蓄">貯蓄</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-slate-600 mb-1">口座番号</label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        placeholder="1234567"
+                        value={form.bankAccountNumber}
+                        onChange={(e) => setForm({ ...form, bankAccountNumber: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm text-slate-600 mb-1">口座名義</label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      placeholder="カタカナで入力"
+                      value={form.bankAccountHolder}
+                      onChange={(e) => setForm({ ...form, bankAccountHolder: e.target.value })}
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="flex gap-3 pt-4">

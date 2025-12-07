@@ -26,6 +26,11 @@ interface Client {
   name: string;
   role: string;
   phone?: string;
+  bankName?: string;
+  bankBranch?: string;
+  bankAccountType?: string;
+  bankAccountNumber?: string;
+  bankAccountHolder?: string;
   isActive: boolean;
   createdAt: string;
 }
@@ -71,6 +76,11 @@ export function ClientsPage() {
     name: '',
     password: '',
     phone: '',
+    bankName: '',
+    bankBranch: '',
+    bankAccountType: '普通',
+    bankAccountNumber: '',
+    bankAccountHolder: '',
   });
 
   const [projectForm, setProjectForm] = useState({
@@ -147,7 +157,7 @@ export function ClientsPage() {
     if (res.ok) {
       setShowModal(false);
       setEditingClient(null);
-      setForm({ email: '', name: '', password: '', phone: '' });
+      setForm({ email: '', name: '', password: '', phone: '', bankName: '', bankBranch: '', bankAccountType: '普通', bankAccountNumber: '', bankAccountHolder: '' });
       fetchClients();
     } else {
       const data = await res.json();
@@ -272,7 +282,7 @@ export function ClientsPage() {
           <button
             onClick={() => {
               setEditingClient(null);
-              setForm({ email: '', name: '', password: '', phone: '' });
+              setForm({ email: '', name: '', password: '', phone: '', bankName: '', bankBranch: '', bankAccountType: '普通', bankAccountNumber: '', bankAccountHolder: '' });
               setShowModal(true);
             }}
             className="btn-primary flex items-center gap-2"
@@ -517,7 +527,7 @@ export function ClientsPage() {
                   <button
                     onClick={() => {
                       setEditingClient(c);
-                      setForm({ email: c.email, name: c.name, password: '', phone: c.phone || '' });
+                      setForm({ email: c.email, name: c.name, password: '', phone: c.phone || '', bankName: c.bankName || '', bankBranch: c.bankBranch || '', bankAccountType: c.bankAccountType || '普通', bankAccountNumber: c.bankAccountNumber || '', bankAccountHolder: c.bankAccountHolder || '' });
                       setShowModal(true);
                     }}
                     className="btn-secondary text-sm py-1.5"
@@ -594,6 +604,39 @@ export function ClientsPage() {
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                 />
+              </div>
+
+              <div className="border-t border-slate-200 pt-4 mt-4">
+                <h3 className="font-medium text-slate-700 mb-3">口座情報（請求書支払先）</h3>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm text-slate-600 mb-1">銀行名</label>
+                      <input type="text" className="input-field" placeholder="例: みずほ銀行" value={form.bankName} onChange={(e) => setForm({ ...form, bankName: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-slate-600 mb-1">支店名</label>
+                      <input type="text" className="input-field" placeholder="例: 渋谷支店" value={form.bankBranch} onChange={(e) => setForm({ ...form, bankBranch: e.target.value })} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm text-slate-600 mb-1">口座種別</label>
+                      <select className="input-field" value={form.bankAccountType} onChange={(e) => setForm({ ...form, bankAccountType: e.target.value })}>
+                        <option value="普通">普通</option>
+                        <option value="当座">当座</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-slate-600 mb-1">口座番号</label>
+                      <input type="text" className="input-field" placeholder="1234567" value={form.bankAccountNumber} onChange={(e) => setForm({ ...form, bankAccountNumber: e.target.value })} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm text-slate-600 mb-1">口座名義</label>
+                    <input type="text" className="input-field" placeholder="カタカナで入力" value={form.bankAccountHolder} onChange={(e) => setForm({ ...form, bankAccountHolder: e.target.value })} />
+                  </div>
+                </div>
               </div>
 
               <div className="flex gap-3 pt-4">
