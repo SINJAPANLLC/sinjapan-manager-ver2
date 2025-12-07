@@ -342,6 +342,59 @@ export const storage = {
   },
 
   async deleteBusiness(id: string): Promise<boolean> {
+    // Delete related records first to avoid foreign key constraint violations
+    await db.execute(sql`DELETE FROM contracts WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM budgets WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM campaigns WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM business_sales WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM competitor_comparisons WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM deals WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM differentiation_factors WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM differentiation_initiatives WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM employee_profiles WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM expense_reports WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM investments WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM indicators WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM invoices WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM job_postings WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM journal_entries WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM kpis WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM meetings WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM payroll_business_allocations WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM payroll_runs WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM performance_snapshots WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM positioning_canvases WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM projects WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM quotes WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM shifts WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM social_posts WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM swot_profiles WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM transactions WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM workflow_executions WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM calendar_events WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM expenses WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM attendance_records WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM inventory_items WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM saved_reports WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM ai_proposals WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM backlink_prospects WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM content_briefs WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM daily_growth_actions WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM daily_sales_actions WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM dm_campaigns WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM growth_initiatives WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM intel_reports WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM local_profiles WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM sales_automation_campaigns WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM sales_forecasts WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM seo_keywords WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM social_accounts WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM seo_articles WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM publishing_targets WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM web_search_history WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM agencies WHERE business_id = ${id}`);
+    await db.execute(sql`DELETE FROM business_competitors WHERE business_id = ${id}`);
+    // Finally delete the business itself
     await db.delete(businesses).where(eq(businesses.id, id));
     return true;
   },
