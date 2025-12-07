@@ -364,7 +364,7 @@ export function registerRoutes(app: Express) {
   });
 
   app.patch('/api/businesses/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
-    const business = await storage.updateBusiness(parseInt(req.params.id), req.body);
+    const business = await storage.updateBusiness(req.params.id, req.body);
     if (!business) {
       return res.status(404).json({ message: '事業が見つかりません' });
     }
@@ -372,7 +372,7 @@ export function registerRoutes(app: Express) {
   });
 
   app.delete('/api/businesses/:id', requireRole('admin', 'ceo'), async (req: Request, res: Response) => {
-    await storage.deleteBusiness(parseInt(req.params.id));
+    await storage.deleteBusiness(req.params.id);
     res.json({ message: '削除しました' });
   });
 

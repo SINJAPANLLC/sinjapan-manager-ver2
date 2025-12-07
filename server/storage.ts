@@ -336,13 +336,12 @@ export const storage = {
     return business;
   },
 
-  async updateBusiness(id: number, data: Partial<InsertBusiness>): Promise<Business | undefined> {
+  async updateBusiness(id: string, data: Partial<InsertBusiness>): Promise<Business | undefined> {
     const [business] = await db.update(businesses).set({ ...data, updatedAt: new Date() }).where(eq(businesses.id, id)).returning();
     return business;
   },
 
-  async deleteBusiness(id: number): Promise<boolean> {
-    await db.update(tasks).set({ businessId: null }).where(eq(tasks.businessId, id));
+  async deleteBusiness(id: string): Promise<boolean> {
     await db.delete(businesses).where(eq(businesses.id, id));
     return true;
   },
