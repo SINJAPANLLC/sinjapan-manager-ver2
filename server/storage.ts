@@ -150,6 +150,10 @@ export const storage = {
     return Number(result[0]?.count || 0);
   },
 
+  async getSentNotifications(userId: number): Promise<Notification[]> {
+    return db.select().from(notifications).where(eq(notifications.createdBy, userId)).orderBy(desc(notifications.createdAt));
+  },
+
   async getChatMessages(userId: number, otherUserId: number): Promise<ChatMessage[]> {
     return db.select().from(chatMessages).where(
       or(

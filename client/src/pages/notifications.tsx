@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/use-auth';
-import { Bell, Check, CheckCheck, Send, X, Info, AlertCircle, CheckCircle } from 'lucide-react';
+import { Bell, Check, CheckCheck, Send, X, Info, AlertCircle, CheckCircle, History } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 
 interface Notification {
   id: number;
+  userId?: number;
   title: string;
   message: string;
   type: string;
@@ -23,9 +24,11 @@ interface User {
 export function NotificationsPage() {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [sentNotifications, setSentNotifications] = useState<Notification[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
+  const [viewMode, setViewMode] = useState<'received' | 'sent'>('received');
   const [formData, setFormData] = useState({
     title: '',
     message: '',
@@ -38,6 +41,7 @@ export function NotificationsPage() {
     fetchNotifications();
     if (canSendBulk) {
       fetchUsers();
+      fetchSentNotifications();
     }
   }, []);
 
@@ -48,11 +52,24 @@ export function NotificationsPage() {
     }
   };
 
+  const fetchSentNotifications = async () => {
+    const res = await fetch('/api/notifications/sent');
+    if (res.ok) {
+      setSentNotifications(await res.json());
+    }
+  };
+
   const fetchUsers = async () => {
     const res = await fetch('/api/users');
     if (res.ok) {
       setUsers(await res.json());
     }
+  };
+
+  const getUserName = (userId?: number) => {
+    if (!userId) return '不明';
+    const u = users.find(u => u.id === userId);
+    return u ? u.name : '不明';
   };
 
   const markAsRead = async (id: number) => {
@@ -84,6 +101,7 @@ export function NotificationsPage() {
     setIsModalOpen(false);
     setSelectedUsers([]);
     setFormData({ title: '', message: '', type: 'info' });
+    fetchSentNotifications();
   };
 
   const toggleUserSelection = (userId: number) => {
@@ -159,8 +177,34 @@ export function NotificationsPage() {
         </div>
       </div>
 
+      {canSendBulk && (
+        <div className="flex gap-2 bg-white rounded-xl p-1 border border-slate-200 w-fit">
+          <button
+            onClick={() => setViewMode('received')}
+            className={cn(
+              "px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2",
+              viewMode === 'received' ? "bg-primary-500 text-white" : "text-slate-600 hover:bg-slate-100"
+            )}
+          >
+            <Bell size={16} />
+            受信 ({notifications.length})
+          </button>
+          <button
+            onClick={() => setViewMode('sent')}
+            className={cn(
+              "px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2",
+              viewMode === 'sent' ? "bg-primary-500 text-white" : "text-slate-600 hover:bg-slate-100"
+            )}
+          >
+            <History size={16} />
+            送信履歴 ({sentNotifications.length})
+          </button>
+        </div>
+      )}
+
       <div className="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden">
-        {notifications.length > 0 ? (
+        {viewMode === 'received' ? (
+          notifications.length > 0 ? (
           <div className="divide-y divide-slate-50">
             {notifications.map((notification) => (
               <div
@@ -210,6 +254,48 @@ export function NotificationsPage() {
             </div>
             <p className="text-slate-500 font-medium">通知はありません</p>
           </div>
+        )
+        ) : (
+          sentNotifications.length > 0 ? (
+            <div className="divide-y divide-slate-50">
+              {sentNotifications.map((notification) => (
+                <div
+                  key={notification.id}
+                  className="p-5 transition-all duration-200 hover:bg-slate-50"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className={cn(
+                      "p-2.5 rounded-xl border",
+                      getTypeStyle(notification.type)
+                    )}>
+                      {getTypeIcon(notification.type)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start gap-4">
+                        <div>
+                          <h3 className="font-semibold text-slate-800">{notification.title}</h3>
+                          <p className="text-slate-600 mt-1 text-sm">{notification.message}</p>
+                          <span className="inline-block mt-2 text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">
+                            送信先: {getUserName(notification.userId)}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-2">
+                        {format(new Date(notification.createdAt), 'yyyy/MM/dd HH:mm')}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-16 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-slate-100 rounded-full flex items-center justify-center">
+                <History size={28} className="text-slate-400" />
+              </div>
+              <p className="text-slate-500 font-medium">送信履歴はありません</p>
+            </div>
+          )
         )}
       </div>
 

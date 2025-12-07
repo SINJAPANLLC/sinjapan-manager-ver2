@@ -244,6 +244,11 @@ export function registerRoutes(app: Express) {
     res.json({ message: '全て既読にしました' });
   });
 
+  app.get('/api/notifications/sent', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    const sentNotifications = await storage.getSentNotifications(req.session.userId!);
+    res.json(sentNotifications);
+  });
+
   app.get('/api/chat/partners', requireAuth, async (req: Request, res: Response) => {
     const partners = await storage.getChatPartners(req.session.userId!);
     res.json(partners.map(p => ({ ...p, password: undefined })));
