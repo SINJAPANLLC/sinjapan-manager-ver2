@@ -156,7 +156,9 @@ Optional (for AI features):
 - Square SDK（v40+）を使用してAPI連携
 - 設定ページの決済管理タブでSquare接続状態を表示
 - 店舗情報（ロケーション）の取得・表示
+- **決済リンク作成機能**: 商品名、金額、説明を入力してURLを生成
 - 顧客管理、決済履歴、請求書のAPIエンドポイント追加
+- 環境切り替え対応（SQUARE_ENVIRONMENT: sandbox/production）
 - 必要な環境変数: SQUARE_ACCESS_TOKEN, SQUARE_APPLICATION_ID
 
 ### 設定ページのユーザー管理機能
