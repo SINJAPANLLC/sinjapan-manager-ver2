@@ -194,6 +194,18 @@ export function AgencyPage() {
     }
   };
 
+  const handleStatusChange = async (id: number, status: string) => {
+    const res = await fetch(`/api/agency/sales/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ status }),
+    });
+    if (res.ok) {
+      fetchSales();
+    }
+  };
+
   const getAgencySales = (agencyId: number) => {
     return sales.filter(s => s.agencyId === agencyId);
   };
@@ -371,14 +383,20 @@ export function AgencyPage() {
                     <td className="p-4 text-sm text-right font-medium">¥{parseFloat(sale.amount).toLocaleString()}</td>
                     <td className="p-4 text-sm text-right text-green-600">¥{parseFloat(sale.commission || '0').toLocaleString()}</td>
                     <td className="p-4 text-center">
-                      <span className={cn(
-                        "px-2 py-1 text-xs rounded-full",
-                        sale.status === 'completed' ? "bg-green-100 text-green-700" :
-                        sale.status === 'pending' ? "bg-yellow-100 text-yellow-700" :
-                        "bg-red-100 text-red-700"
-                      )}>
-                        {sale.status === 'completed' ? '完了' : sale.status === 'pending' ? '保留' : 'キャンセル'}
-                      </span>
+                      <select
+                        className={cn(
+                          "px-2 py-1 text-xs rounded-full border-0 cursor-pointer",
+                          sale.status === 'completed' ? "bg-green-100 text-green-700" :
+                          sale.status === 'pending' ? "bg-yellow-100 text-yellow-700" :
+                          "bg-red-100 text-red-700"
+                        )}
+                        value={sale.status}
+                        onChange={(e) => handleStatusChange(sale.id, e.target.value)}
+                      >
+                        <option value="pending">保留</option>
+                        <option value="completed">完了</option>
+                        <option value="cancelled">キャンセル</option>
+                      </select>
                     </td>
                     <td className="p-4 text-center">
                       <button
