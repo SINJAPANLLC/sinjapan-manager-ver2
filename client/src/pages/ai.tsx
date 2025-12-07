@@ -145,7 +145,6 @@ export function AiPage() {
   const [generatedList, setGeneratedList] = useState('');
   const [generatedLeads, setGeneratedLeads] = useState<Array<{name: string; company?: string; phone?: string; email?: string; source: string; address?: string; website?: string}>>([]);
   const [isImportingLeads, setIsImportingLeads] = useState(false);
-  const [listSearchMode, setListSearchMode] = useState<'ai' | 'real'>('real');
   const [searchLocation, setSearchLocation] = useState('');
 
   const [docType, setDocType] = useState('contract');
@@ -600,50 +599,35 @@ export function AiPage() {
   };
 
   const handleListGenerate = async () => {
-    if (!listTopic.trim() || isLoading) return;
+    if (!listTopic.trim() || !searchLocation.trim() || isLoading) return;
     setIsLoading(true);
     setGeneratedList('');
     setGeneratedLeads([]);
 
     try {
-      if (listSearchMode === 'real') {
-        const res = await fetch('/api/places/search', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            query: listTopic, 
-            location: searchLocation || '東京',
-            maxResults: parseInt(listCount) 
-          }),
-        });
-        const data = await res.json();
-        if (data.error) {
-          alert(data.error);
-          return;
-        }
-        if (data.places && Array.isArray(data.places)) {
-          setGeneratedLeads(data.places);
-          const listText = data.places.map((p: any, i: number) => 
-            `${i + 1}. ${p.company}\n   住所: ${p.address || '不明'}\n   電話: ${p.phone || '不明'}`
-          ).join('\n\n');
-          setGeneratedList(listText);
-        }
-      } else {
-        const res = await fetch('/api/ai/list', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ topic: listTopic, count: parseInt(listCount), forLeads: true }),
-        });
-        const data = await res.json();
-        if (data.list) {
-          setGeneratedList(data.list);
-        }
-        if (data.leads && Array.isArray(data.leads)) {
-          setGeneratedLeads(data.leads);
-        }
+      const res = await fetch('/api/places/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          query: listTopic, 
+          location: searchLocation,
+          maxResults: parseInt(listCount) 
+        }),
+      });
+      const data = await res.json();
+      if (data.error) {
+        alert(data.error);
+        return;
+      }
+      if (data.places && Array.isArray(data.places)) {
+        setGeneratedLeads(data.places);
+        const listText = data.places.map((p: any, i: number) => 
+          `${i + 1}. ${p.company}\n   住所: ${p.address || '不明'}\n   電話: ${p.phone || '不明'}`
+        ).join('\n\n');
+        setGeneratedList(listText);
       }
     } catch (err) {
-      alert('リスト生成に失敗しました');
+      alert('ビジネス情報の取得に失敗しました');
     } finally {
       setIsLoading(false);
     }
@@ -1777,58 +1761,29 @@ export function AiPage() {
               <List className="text-primary-500" size={20} />
               リード取得
             </h2>
-            <p className="text-sm text-slate-500">Googleマップから実際のビジネス情報を取得、またはAIで架空データを生成します</p>
-            
-            <div className="flex gap-2 mb-4">
-              <button
-                onClick={() => setListSearchMode('real')}
-                className={cn(
-                  "px-4 py-2 rounded-lg text-sm font-medium transition-all",
-                  listSearchMode === 'real' 
-                    ? "bg-green-500 text-white" 
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                )}
-              >
-                🌐 実際のデータ（Googleマップ）
-              </button>
-              <button
-                onClick={() => setListSearchMode('ai')}
-                className={cn(
-                  "px-4 py-2 rounded-lg text-sm font-medium transition-all",
-                  listSearchMode === 'ai' 
-                    ? "bg-blue-500 text-white" 
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                )}
-              >
-                🤖 AI生成（架空データ）
-              </button>
-            </div>
+            <p className="text-sm text-slate-500">Googleマップから実際のビジネス情報（店舗名、住所、電話番号など）を取得します</p>
 
             <div className="grid md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  {listSearchMode === 'real' ? '業種・キーワード *' : 'トピック *'}
-                </label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">業種・キーワード *</label>
                 <input
                   type="text"
                   value={listTopic}
                   onChange={(e) => setListTopic(e.target.value)}
-                  placeholder={listSearchMode === 'real' ? "例: 軽貨物、美容院、飲食店" : "例: 東京の人気観光地"}
+                  placeholder="例: 軽貨物、美容院、飲食店"
                   className="input-field"
                 />
               </div>
-              {listSearchMode === 'real' && (
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">地域 *</label>
-                  <input
-                    type="text"
-                    value={searchLocation}
-                    onChange={(e) => setSearchLocation(e.target.value)}
-                    placeholder="例: 東京、大阪、名古屋"
-                    className="input-field"
-                  />
-                </div>
-              )}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">地域 *</label>
+                <input
+                  type="text"
+                  value={searchLocation}
+                  onChange={(e) => setSearchLocation(e.target.value)}
+                  placeholder="例: 東京、大阪、名古屋"
+                  className="input-field"
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">取得件数</label>
                 <input
@@ -1843,11 +1798,11 @@ export function AiPage() {
             </div>
             <button
               onClick={handleListGenerate}
-              disabled={isLoading || !listTopic.trim() || (listSearchMode === 'real' && !searchLocation.trim())}
+              disabled={isLoading || !listTopic.trim() || !searchLocation.trim()}
               className="btn-primary flex items-center gap-2"
             >
               {isLoading ? <Loader2 className="animate-spin" size={18} /> : <List size={18} />}
-              {listSearchMode === 'real' ? 'ビジネス情報を検索' : 'リストを生成'}
+              ビジネス情報を検索
             </button>
             {generatedList && (
               <div className="mt-4 bg-slate-50 rounded-xl p-4">
