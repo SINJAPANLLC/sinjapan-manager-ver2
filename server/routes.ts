@@ -103,7 +103,7 @@ export function registerRoutes(app: Express) {
       res.json(userWithoutPassword);
     } catch (error: any) {
       console.error('User creation error:', error);
-      if (error.message?.includes('unique')) {
+      if (error.message?.includes('unique') || error.cause?.constraint?.includes('email') || error.cause?.code === '23505') {
         return res.status(400).json({ message: 'このメールアドレスは既に使用されています' });
       }
       res.status(500).json({ message: 'ユーザーの作成に失敗しました' });
