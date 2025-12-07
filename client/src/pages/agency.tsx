@@ -88,7 +88,7 @@ export function AgencyPage() {
   };
 
   const fetchSales = async () => {
-    const res = await fetch('/api/agency-sales');
+    const res = await fetch('/api/agency/sales', { credentials: 'include' });
     if (res.ok) {
       setSales(await res.json());
     }
