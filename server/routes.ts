@@ -1792,7 +1792,7 @@ ${articleList}`
 
   app.get('/api/companies/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     try {
-      const company = await storage.getCompany(parseInt(req.params.id));
+      const company = await storage.getCompany(req.params.id);
       if (!company) {
         return res.status(404).json({ error: '会社が見つかりません' });
       }
@@ -1919,8 +1919,12 @@ ${articleList}`
 
   app.get('/api/square/customers', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     try {
-      const { customers } = await squareClient.customers.list();
-      res.json(customers || []);
+      const result = await squareClient.customers.list();
+      const customers: any[] = [];
+      for await (const customer of result) {
+        customers.push(customer);
+      }
+      res.json(customers);
     } catch (error: any) {
       console.error('Square customers error:', error);
       res.status(500).json({ error: error.message });
@@ -1929,8 +1933,12 @@ ${articleList}`
 
   app.get('/api/square/payments', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     try {
-      const { payments } = await squareClient.payments.list();
-      res.json(payments || []);
+      const result = await squareClient.payments.list();
+      const payments: any[] = [];
+      for await (const payment of result) {
+        payments.push(payment);
+      }
+      res.json(payments);
     } catch (error: any) {
       console.error('Square payments error:', error);
       res.status(500).json({ error: error.message });
@@ -1946,8 +1954,12 @@ ${articleList}`
         return res.json([]);
       }
       
-      const { invoices } = await squareClient.invoices.list({ locationId });
-      res.json(invoices || []);
+      const result = await squareClient.invoices.list({ locationId });
+      const invoices: any[] = [];
+      for await (const invoice of result) {
+        invoices.push(invoice);
+      }
+      res.json(invoices);
     } catch (error: any) {
       console.error('Square invoices error:', error);
       res.status(500).json({ error: error.message });
@@ -1996,8 +2008,12 @@ ${articleList}`
 
   app.get('/api/square/payment-links', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     try {
-      const { paymentLinks } = await squareClient.checkout.paymentLinks.list();
-      res.json(paymentLinks || []);
+      const result = await squareClient.checkout.paymentLinks.list();
+      const paymentLinks: any[] = [];
+      for await (const link of result) {
+        paymentLinks.push(link);
+      }
+      res.json(paymentLinks);
     } catch (error: any) {
       console.error('List payment links error:', error);
       res.status(500).json({ error: error.message });

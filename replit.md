@@ -4,9 +4,9 @@
 
 SIN JAPAN 業務管理システム - ロールベースアクセス制御を備えた包括的なビジネス管理アプリケーション
 
-## Current Status: Multi-tenant Architecture In Progress
+## Current Status: Multi-tenant Architecture Complete
 
-アプリケーションは完全に機能しており、マルチテナント対応を進行中：
+アプリケーションは完全に機能しており、マルチテナント対応が完了：
 - ロールベース認証（Admin, CEO, Manager, Staff, Agency, Client）
 - 顧客管理（CRM）with 銀行情報
 - チャット機能（ファイル添付対応）
@@ -18,10 +18,12 @@ SIN JAPAN 業務管理システム - ロールベースアクセス制御を備�
 - カレンダー（メモ機能）
 - AI機能ページ（画像/動画/SEO記事/音声/リスト/書類生成、AIチャット）
 
-### Multi-tenant Architecture (In Progress)
-- サブドメインベースのテナント分離（companyA.sinjapan-manager.com）
+### Multi-tenant Architecture (Complete)
+- サブドメインベースのテナント分離（lvr.sinjapan-manager.com等）
 - 各テナントのブランディング対応（ロゴ、名前、カラー）
 - テナントストレージラッパーによるデータ分離
+- ユーザー作成時のcompanyId自動設定
+- VPS + Nginx + ワイルドカードSSL証明書対応
 
 ## Architecture
 
