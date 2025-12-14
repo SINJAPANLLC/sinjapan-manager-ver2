@@ -59,6 +59,7 @@ export async function tenantMiddleware(req: Request, res: Response, next: NextFu
     const host = req.get('host') || '';
     const slug = extractSlugFromHost(host);
     
+    // Only set tenant from subdomain - main domain should see all data
     if (slug) {
       const company = await db.select().from(companies).where(eq(companies.slug, slug)).limit(1);
       
@@ -74,20 +75,9 @@ export async function tenantMiddleware(req: Request, res: Response, next: NextFu
       }
     }
     
-    if (!req.tenant && req.session?.companyId) {
-      const company = await db.select().from(companies).where(eq(companies.id, req.session.companyId)).limit(1);
-      
-      if (company.length > 0) {
-        req.tenant = {
-          id: company[0].id,
-          name: company[0].name,
-          slug: company[0].slug || '',
-          logoUrl: company[0].logoUrl,
-          primaryColor: company[0].primaryColor,
-          secondaryColor: company[0].secondaryColor,
-        };
-      }
-    }
+    // DO NOT set tenant from session for main domain
+    // Main domain (no subdomain) = super admin view that sees all data
+    // req.tenant stays undefined for main domain
     
     next();
   } catch (error) {
