@@ -92,7 +92,16 @@ export function registerRoutes(app: Express) {
   app.get('/api/tenant', async (req: Request, res: Response) => {
     try {
       const tenant = (req as any).tenant;
+      const defaultFeatures = ['ai', 'employees', 'agency', 'clients', 'financials', 'business', 'square'];
       if (tenant) {
+        let enabledFeatures = defaultFeatures;
+        try {
+          if (tenant.enabledFeatures) {
+            enabledFeatures = JSON.parse(tenant.enabledFeatures);
+          }
+        } catch (e) {
+          console.error('Failed to parse enabledFeatures:', e);
+        }
         res.json({
           id: tenant.id,
           name: tenant.name,
@@ -100,6 +109,7 @@ export function registerRoutes(app: Express) {
           logoUrl: tenant.logoUrl,
           primaryColor: tenant.primaryColor,
           secondaryColor: tenant.secondaryColor,
+          enabledFeatures,
         });
       } else {
         res.json({
@@ -109,6 +119,7 @@ export function registerRoutes(app: Express) {
           logoUrl: null,
           primaryColor: '#3B82F6',
           secondaryColor: '#1E40AF',
+          enabledFeatures: defaultFeatures,
         });
       }
     } catch (error) {
