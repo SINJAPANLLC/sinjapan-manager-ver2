@@ -298,6 +298,149 @@ export function createTenantStorage(companyId: string | null, options?: { allowG
       const [conversation] = await db.insert(aiConversations).values(conversationData).returning();
       return conversation;
     },
+
+    async getDashboardStats(userId: number, role: string) {
+      const companyFilter = companyId ? eq(customers.companyId, companyId) : undefined;
+      const taskCompanyFilter = companyId ? eq(tasks.companyId, companyId) : undefined;
+      const businessCompanyFilter = companyId ? eq(businesses.companyId, companyId) : undefined;
+      const seoCompanyFilter = companyId ? eq(seoArticles.companyId, companyId) : undefined;
+
+      // Customer count (tenant-scoped)
+      const customerCount = role === 'admin' || role === 'ceo' || role === 'manager'
+        ? companyFilter 
+          ? await db.select({ count: sql<number>`count(*)` }).from(customers).where(companyFilter)
+          : await db.select({ count: sql<number>`count(*)` }).from(customers)
+        : await db.select({ count: sql<number>`count(*)` }).from(customers).where(
+            companyFilter 
+              ? and(companyFilter, eq(customers.assignedTo, userId))
+              : eq(customers.assignedTo, userId)
+          );
+
+      // Task count (tenant-scoped)
+      const taskCount = role === 'admin' || role === 'ceo' || role === 'manager'
+        ? taskCompanyFilter
+          ? await db.select({ count: sql<number>`count(*)` }).from(tasks).where(taskCompanyFilter)
+          : await db.select({ count: sql<number>`count(*)` }).from(tasks)
+        : await db.select({ count: sql<number>`count(*)` }).from(tasks).where(
+            taskCompanyFilter
+              ? and(taskCompanyFilter, or(eq(tasks.assignedTo, userId), eq(tasks.createdBy, userId)))
+              : or(eq(tasks.assignedTo, userId), eq(tasks.createdBy, userId))
+          );
+
+      // Pending tasks (tenant-scoped)
+      const pendingTasks = role === 'admin' || role === 'ceo' || role === 'manager'
+        ? taskCompanyFilter
+          ? await db.select({ count: sql<number>`count(*)` }).from(tasks).where(and(taskCompanyFilter, eq(tasks.status, 'pending')))
+          : await db.select({ count: sql<number>`count(*)` }).from(tasks).where(eq(tasks.status, 'pending'))
+        : await db.select({ count: sql<number>`count(*)` }).from(tasks).where(
+            taskCompanyFilter
+              ? and(taskCompanyFilter, eq(tasks.status, 'pending'), or(eq(tasks.assignedTo, userId), eq(tasks.createdBy, userId)))
+              : and(eq(tasks.status, 'pending'), or(eq(tasks.assignedTo, userId), eq(tasks.createdBy, userId)))
+          );
+
+      // Unread notifications (user-specific, not tenant-scoped)
+      const unreadNotifications = await db.select({ count: sql<number>`count(*)` }).from(notifications)
+        .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
+
+      // Today's memos (user-specific)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const todayMemos = await db.select().from(memos)
+        .where(and(
+          eq(memos.userId, userId),
+          gte(memos.date, today),
+          lte(memos.date, tomorrow)
+        ));
+
+      // Recent tasks (tenant-scoped)
+      const recentTasks = role === 'admin' || role === 'ceo' || role === 'manager'
+        ? taskCompanyFilter
+          ? await db.select().from(tasks).where(taskCompanyFilter).orderBy(desc(tasks.createdAt)).limit(5)
+          : await db.select().from(tasks).orderBy(desc(tasks.createdAt)).limit(5)
+        : await db.select().from(tasks)
+            .where(
+              taskCompanyFilter
+                ? and(taskCompanyFilter, or(eq(tasks.assignedTo, userId), eq(tasks.createdBy, userId)))
+                : or(eq(tasks.assignedTo, userId), eq(tasks.createdBy, userId))
+            )
+            .orderBy(desc(tasks.createdAt)).limit(5);
+
+      // Recent notifications (user-specific)
+      const recentNotifications = await db.select().from(notifications)
+        .where(eq(notifications.userId, userId))
+        .orderBy(desc(notifications.createdAt)).limit(5);
+
+      // Revenue and expense (tenant-scoped via business)
+      let totalRevenue = '0';
+      let totalExpense = '0';
+      if (role === 'admin' || role === 'ceo' || role === 'manager') {
+        const firstDayOfMonth = new Date();
+        firstDayOfMonth.setDate(1);
+        firstDayOfMonth.setHours(0, 0, 0, 0);
+
+        if (businessCompanyFilter) {
+          // Get business IDs for this tenant first
+          const tenantBusinesses = await db.select({ id: businesses.id }).from(businesses).where(businessCompanyFilter);
+          const businessIds = tenantBusinesses.map(b => b.id);
+          
+          if (businessIds.length > 0) {
+            const revenueResult = await db.select({ total: sql<string>`COALESCE(SUM(amount), 0)` })
+              .from(businessSales)
+              .where(and(
+                eq(businessSales.type, 'revenue'),
+                gte(businessSales.saleDate, firstDayOfMonth),
+                sql`${businessSales.businessId} IN (${sql.join(businessIds.map(id => sql`${id}`), sql`, `)})`
+              ));
+            const expenseResult = await db.select({ total: sql<string>`COALESCE(SUM(amount), 0)` })
+              .from(businessSales)
+              .where(and(
+                eq(businessSales.type, 'expense'),
+                gte(businessSales.saleDate, firstDayOfMonth),
+                sql`${businessSales.businessId} IN (${sql.join(businessIds.map(id => sql`${id}`), sql`, `)})`
+              ));
+            totalRevenue = revenueResult[0]?.total || '0';
+            totalExpense = expenseResult[0]?.total || '0';
+          }
+        } else {
+          const revenueResult = await db.select({ total: sql<string>`COALESCE(SUM(amount), 0)` })
+            .from(businessSales).where(and(eq(businessSales.type, 'revenue'), gte(businessSales.saleDate, firstDayOfMonth)));
+          const expenseResult = await db.select({ total: sql<string>`COALESCE(SUM(amount), 0)` })
+            .from(businessSales).where(and(eq(businessSales.type, 'expense'), gte(businessSales.saleDate, firstDayOfMonth)));
+          totalRevenue = revenueResult[0]?.total || '0';
+          totalExpense = expenseResult[0]?.total || '0';
+        }
+      }
+
+      // AI log count (user-specific)
+      const aiLogCount = await db.select({ count: sql<number>`count(*)` }).from(aiLogs)
+        .where(eq(aiLogs.userId, userId));
+
+      // SEO article count (tenant-scoped)
+      const seoArticleCount = seoCompanyFilter
+        ? await db.select({ count: sql<number>`count(*)` }).from(seoArticles).where(seoCompanyFilter)
+        : await db.select({ count: sql<number>`count(*)` }).from(seoArticles);
+      const publishedArticleCount = seoCompanyFilter
+        ? await db.select({ count: sql<number>`count(*)` }).from(seoArticles).where(and(seoCompanyFilter, eq(seoArticles.status, 'published')))
+        : await db.select({ count: sql<number>`count(*)` }).from(seoArticles).where(eq(seoArticles.status, 'published'));
+
+      return {
+        customers: Number(customerCount[0]?.count || 0),
+        tasks: Number(taskCount[0]?.count || 0),
+        pendingTasks: Number(pendingTasks[0]?.count || 0),
+        unreadNotifications: Number(unreadNotifications[0]?.count || 0),
+        todayMemos,
+        recentTasks,
+        recentNotifications,
+        totalRevenue,
+        totalExpense,
+        aiLogCount: Number(aiLogCount[0]?.count || 0),
+        seoArticleCount: Number(seoArticleCount[0]?.count || 0),
+        publishedArticleCount: Number(publishedArticleCount[0]?.count || 0),
+      };
+    },
   };
 }
 

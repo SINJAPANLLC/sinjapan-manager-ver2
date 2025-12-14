@@ -320,7 +320,8 @@ export function registerRoutes(app: Express) {
 
   app.get('/api/chat/users', requireAuth, async (req: Request, res: Response) => {
     const user = await storage.getUser(req.session.userId!);
-    let users = await storage.getAllUsers();
+    const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+    let users = await tenantStorage.getAllUsers();
     users = users.filter(u => u.id !== req.session.userId);
     if (user?.role === 'client') {
       users = users.filter(u => ['admin', 'ceo', 'manager', 'staff'].includes(u.role));
@@ -415,7 +416,8 @@ export function registerRoutes(app: Express) {
     if (!user) {
       return res.status(401).json({ message: 'ユーザーが見つかりません' });
     }
-    const stats = await storage.getDashboardStats(req.session.userId!, user.role);
+    const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+    const stats = await tenantStorage.getDashboardStats(req.session.userId!, user.role);
     res.json(stats);
   });
 
