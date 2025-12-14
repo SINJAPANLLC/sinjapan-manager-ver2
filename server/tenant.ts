@@ -104,5 +104,20 @@ export function requireTenant(req: Request, res: Response, next: NextFunction) {
 }
 
 export function getCompanyId(req: Request): string | null {
-  return req.tenant?.id || req.session?.companyId || null;
+  // If there's a tenant from subdomain, use that
+  if (req.tenant?.id) {
+    return req.tenant.id;
+  }
+  
+  // Check if we're on the main domain (no subdomain)
+  const host = req.get('host') || '';
+  const slug = extractSlugFromHost(host);
+  
+  // Main domain (no subdomain) = super admin view, return null to see all data
+  if (!slug) {
+    return null;
+  }
+  
+  // Only use session companyId for subdomain access
+  return req.session?.companyId || null;
 }
