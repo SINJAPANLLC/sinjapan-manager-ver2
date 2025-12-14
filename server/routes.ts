@@ -2321,7 +2321,8 @@ ${articleList}`
   // SEO Categories API
   app.get('/api/seo-categories', requireAuth, async (req: Request, res: Response) => {
     try {
-      const categories = await storage.getSeoCategories();
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const categories = await tenantStorage.getSeoCategories();
       res.json(categories);
     } catch (error) {
       console.error('Get SEO categories error:', error);
@@ -2331,8 +2332,9 @@ ${articleList}`
 
   app.post('/api/seo-categories', requireAuth, async (req: Request, res: Response) => {
     try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
       const { name, slug, description } = req.body;
-      const category = await storage.createSeoCategory({ name, slug, description });
+      const category = await tenantStorage.createSeoCategory({ name, slug, description });
       res.json(category);
     } catch (error: any) {
       console.error('Create SEO category error:', error);
@@ -2356,7 +2358,8 @@ ${articleList}`
   // SEO Articles API
   app.get('/api/seo-articles', requireAuth, async (req: Request, res: Response) => {
     try {
-      const articles = await storage.getSeoArticles();
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const articles = await tenantStorage.getSeoArticles();
       res.json(articles);
     } catch (error) {
       console.error('Get SEO articles error:', error);
@@ -2379,8 +2382,9 @@ ${articleList}`
 
   app.post('/api/seo-articles', requireAuth, async (req: Request, res: Response) => {
     try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
       const { title, slug, content, metaTitle, metaDescription, keywords, ctaUrl, ctaText, domain, siteName, categoryId } = req.body;
-      const article = await storage.createSeoArticle({
+      const article = await tenantStorage.createSeoArticle({
         title,
         slug,
         content,

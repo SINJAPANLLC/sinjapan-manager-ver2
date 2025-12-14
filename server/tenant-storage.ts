@@ -161,9 +161,11 @@ export function createTenantStorage(companyId: string | null, options?: { allowG
       return db.select().from(seoArticles).orderBy(desc(seoArticles.createdAt));
     },
 
-    async createSeoArticle(data: InsertSeoArticle): Promise<SeoArticle> {
-      const articleData = companyId ? { ...data, companyId } : data;
-      const [article] = await db.insert(seoArticles).values(articleData).returning();
+    async createSeoArticle(data: Omit<InsertSeoArticle, 'id' | 'slug'> & { slug?: string }): Promise<SeoArticle> {
+      const id = `seo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const slug = data.slug || `article-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+      const articleData = companyId ? { ...data, id, slug, companyId } : { ...data, id, slug };
+      const [article] = await db.insert(seoArticles).values(articleData as InsertSeoArticle).returning();
       return article;
     },
 
