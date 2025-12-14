@@ -1,7 +1,7 @@
-import { ReactNode, useMemo } from 'react';
+import { ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useAuth } from '../hooks/use-auth';
-import { useTenant, FeatureId } from '../hooks/use-tenant';
+import { useTenant } from '../hooks/use-tenant';
 import {
   Home,
   Users,
@@ -29,28 +29,20 @@ export function Layout({ children }: LayoutProps) {
   const { tenant } = useTenant();
   const [location] = useLocation();
 
-  const allMenuItems = [
-    { href: '/', label: 'ホーム', icon: Home, feature: null },
-    { href: '/tasks', label: 'タスク', icon: ClipboardList, feature: null },
-    { href: '/calendar', label: 'カレンダー', icon: Calendar, feature: null },
-    { href: '/communication', label: 'コミュニケーション', icon: MessageSquare, feature: null },
-    { href: '/business', label: '事業', icon: Briefcase, feature: 'business' as FeatureId },
-    { href: '/financials', label: 'PL BS CF', icon: FileSpreadsheet, feature: 'financials' as FeatureId },
-    { href: '/ai', label: 'AI', icon: Bot, feature: 'ai' as FeatureId },
-    { href: '/staff', label: 'スタッフ', icon: UserCheck, feature: 'employees' as FeatureId },
-    { href: '/agency', label: '代理店', icon: Building2, feature: 'agency' as FeatureId },
-    { href: '/clients', label: 'クライアント', icon: Users, feature: 'clients' as FeatureId },
-    { href: '/notifications', label: '通知', icon: Bell, feature: null },
-    { href: '/settings', label: '設定', icon: Settings, feature: null },
+  const menuItems = [
+    { href: '/', label: 'ホーム', icon: Home },
+    { href: '/tasks', label: 'タスク', icon: ClipboardList },
+    { href: '/calendar', label: 'カレンダー', icon: Calendar },
+    { href: '/communication', label: 'コミュニケーション', icon: MessageSquare },
+    { href: '/business', label: '事業', icon: Briefcase },
+    { href: '/financials', label: 'PL BS CF', icon: FileSpreadsheet },
+    { href: '/ai', label: 'AI', icon: Bot },
+    { href: '/staff', label: 'スタッフ', icon: UserCheck },
+    { href: '/agency', label: '代理店', icon: Building2 },
+    { href: '/clients', label: 'クライアント', icon: Users },
+    { href: '/notifications', label: '通知', icon: Bell },
+    { href: '/settings', label: '設定', icon: Settings },
   ];
-
-  const menuItems = useMemo(() => {
-    const enabledFeatures = tenant?.enabledFeatures || [];
-    return allMenuItems.filter(item => {
-      if (item.feature === null) return true;
-      return enabledFeatures.includes(item.feature);
-    });
-  }, [tenant?.enabledFeatures]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-primary-50/30">

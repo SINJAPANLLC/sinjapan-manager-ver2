@@ -92,16 +92,7 @@ export function registerRoutes(app: Express) {
   app.get('/api/tenant', async (req: Request, res: Response) => {
     try {
       const tenant = (req as any).tenant;
-      const defaultFeatures = ['ai', 'employees', 'agency', 'clients', 'financials', 'business', 'square'];
       if (tenant) {
-        let enabledFeatures = defaultFeatures;
-        try {
-          if (tenant.enabledFeatures) {
-            enabledFeatures = JSON.parse(tenant.enabledFeatures);
-          }
-        } catch (e) {
-          console.error('Failed to parse enabledFeatures:', e);
-        }
         res.json({
           id: tenant.id,
           name: tenant.name,
@@ -109,7 +100,6 @@ export function registerRoutes(app: Express) {
           logoUrl: tenant.logoUrl,
           primaryColor: tenant.primaryColor,
           secondaryColor: tenant.secondaryColor,
-          enabledFeatures,
         });
       } else {
         res.json({
@@ -119,7 +109,6 @@ export function registerRoutes(app: Express) {
           logoUrl: null,
           primaryColor: '#3B82F6',
           secondaryColor: '#1E40AF',
-          enabledFeatures: defaultFeatures,
         });
       }
     } catch (error) {
@@ -2051,30 +2040,6 @@ ${articleList}`
     } catch (error: any) {
       console.error('Get Square settings error:', error);
       res.status(500).json({ error: '設定の取得に失敗しました' });
-    }
-  });
-
-  // テナント機能フラグ設定
-  app.put('/api/company/features', requireRole('admin', 'ceo'), async (req: Request, res: Response) => {
-    try {
-      const companyId = getCompanyId(req);
-      if (!companyId) {
-        return res.status(400).json({ message: 'テナントが特定できません' });
-      }
-      
-      const { enabledFeatures } = req.body;
-      if (!Array.isArray(enabledFeatures)) {
-        return res.status(400).json({ message: '無効なデータ形式です' });
-      }
-      
-      await storage.updateCompany(companyId, {
-        enabledFeatures: JSON.stringify(enabledFeatures),
-      });
-      
-      res.json({ success: true, message: '機能設定を保存しました' });
-    } catch (error: any) {
-      console.error('Save features error:', error);
-      res.status(500).json({ message: '設定の保存に失敗しました' });
     }
   });
 

@@ -386,8 +386,6 @@ export const companies = pgTable("companies", {
   squareApplicationId: text("square_application_id"),
   squareEnvironment: varchar("square_environment", { length: 20 }).default("sandbox"),
   squareLocationId: text("square_location_id"),
-  // 機能フラグ（テナント別で有効な機能を制御）
-  enabledFeatures: text("enabled_features"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
