@@ -387,6 +387,11 @@ export function SettingsPage() {
     bankAccountNumber: '',
     bankAccountHolder: '',
   });
+  const [adminFormData, setAdminFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+  });
 
   const [users, setUsers] = useState<UserItem[]>([]);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -492,10 +497,14 @@ export function SettingsPage() {
       const url = editingCompany ? `/api/companies/${editingCompany.id}` : '/api/companies';
       const method = editingCompany ? 'PUT' : 'POST';
       
+      const requestData = editingCompany 
+        ? companyFormData 
+        : { ...companyFormData, admin: adminFormData };
+      
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(companyFormData),
+        body: JSON.stringify(requestData),
       });
 
       if (res.ok) {
@@ -503,9 +512,10 @@ export function SettingsPage() {
         setIsCompanyModalOpen(false);
         setEditingCompany(null);
         resetCompanyForm();
-        setMessage({ type: 'success', text: editingCompany ? '会社情報を更新しました' : '会社を追加しました' });
+        setMessage({ type: 'success', text: editingCompany ? '会社情報を更新しました' : '会社と管理者アカウントを作成しました' });
       } else {
-        setMessage({ type: 'error', text: '保存に失敗しました' });
+        const error = await res.json();
+        setMessage({ type: 'error', text: error.message || '保存に失敗しました' });
       }
     } catch {
       setMessage({ type: 'error', text: 'エラーが発生しました' });
@@ -575,6 +585,11 @@ export function SettingsPage() {
       bankAccountType: '普通',
       bankAccountNumber: '',
       bankAccountHolder: '',
+    });
+    setAdminFormData({
+      name: '',
+      email: '',
+      password: '',
     });
   };
 
@@ -1345,6 +1360,50 @@ export function SettingsPage() {
                 </div>
               </div>
 
+              {!editingCompany && (
+                <div className="p-4 bg-green-50 rounded-xl border border-green-100">
+                  <h4 className="font-medium text-green-800 mb-3 flex items-center gap-2">
+                    <User size={16} />
+                    初期管理者アカウント *
+                  </h4>
+                  <p className="text-sm text-green-600 mb-4">この会社の管理者としてログインできるアカウントを作成します</p>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">管理者名 *</label>
+                      <input
+                        type="text"
+                        value={adminFormData.name}
+                        onChange={(e) => setAdminFormData({ ...adminFormData, name: e.target.value })}
+                        className="input-field"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">メールアドレス *</label>
+                      <input
+                        type="email"
+                        value={adminFormData.email}
+                        onChange={(e) => setAdminFormData({ ...adminFormData, email: e.target.value })}
+                        className="input-field"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">パスワード *</label>
+                      <input
+                        type="password"
+                        value={adminFormData.password}
+                        onChange={(e) => setAdminFormData({ ...adminFormData, password: e.target.value })}
+                        className="input-field"
+                        required
+                        minLength={6}
+                      />
+                      <p className="text-xs text-slate-400 mt-1">6文字以上</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
                 <button
                   type="button"
@@ -1362,7 +1421,7 @@ export function SettingsPage() {
                   className="btn-primary flex items-center gap-2"
                 >
                   {isLoading ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
-                  保存
+                  {editingCompany ? '保存' : '会社と管理者を作成'}
                 </button>
               </div>
             </form>

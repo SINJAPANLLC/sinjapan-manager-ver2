@@ -1805,14 +1805,41 @@ ${articleList}`
 
   app.post('/api/companies', requireRole('admin', 'ceo'), async (req: Request, res: Response) => {
     try {
-      const data = { ...req.body };
-      if (data.capital === '' || data.capital === undefined) data.capital = null;
-      if (data.establishedDate === '') data.establishedDate = null;
-      const company = await storage.createCompany(data);
+      const { admin, ...companyData } = req.body;
+      
+      if (admin && (!admin.name || !admin.email || !admin.password)) {
+        return res.status(400).json({ message: '管理者の名前、メールアドレス、パスワードは必須です' });
+      }
+      
+      if (admin && admin.password.length < 6) {
+        return res.status(400).json({ message: 'パスワードは6文字以上必要です' });
+      }
+      
+      const existingUser = admin ? await storage.getUserByEmail(admin.email) : null;
+      if (existingUser) {
+        return res.status(400).json({ message: 'このメールアドレスは既に使用されています' });
+      }
+      
+      if (companyData.capital === '' || companyData.capital === undefined) companyData.capital = null;
+      if (companyData.establishedDate === '') companyData.establishedDate = null;
+      
+      const company = await storage.createCompany(companyData);
+      
+      if (admin) {
+        await storage.createUser({
+          name: admin.name,
+          email: admin.email,
+          password: admin.password,
+          role: 'admin',
+          companyId: company.id,
+          isActive: true,
+        });
+      }
+      
       res.json(company);
     } catch (error) {
       console.error('Create company error:', error);
-      res.status(500).json({ error: '会社の作成に失敗しました' });
+      res.status(500).json({ message: '会社の作成に失敗しました' });
     }
   });
 
