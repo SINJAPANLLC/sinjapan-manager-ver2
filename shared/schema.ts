@@ -381,6 +381,11 @@ export const companies = pgTable("companies", {
   logoUrl: text("logo_url"),
   primaryColor: varchar("primary_color", { length: 20 }).default("#3B82F6"),
   secondaryColor: varchar("secondary_color", { length: 20 }).default("#1E40AF"),
+  // Square決済設定（テナント別）
+  squareAccessToken: text("square_access_token"),
+  squareApplicationId: text("square_application_id"),
+  squareEnvironment: varchar("square_environment", { length: 20 }).default("sandbox"),
+  squareLocationId: text("square_location_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

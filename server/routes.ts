@@ -9,12 +9,39 @@ import fs from 'fs';
 import { google } from 'googleapis';
 import { SquareClient, SquareEnvironment } from 'square';
 
-const squareClient = new SquareClient({
+// Global Square client (fallback)
+const globalSquareClient = new SquareClient({
   token: process.env.SQUARE_ACCESS_TOKEN,
   environment: process.env.SQUARE_ENVIRONMENT === 'sandbox' 
     ? SquareEnvironment.Sandbox 
     : SquareEnvironment.Production,
 });
+
+// Get tenant-specific Square client
+async function getTenantSquareClient(req: Request): Promise<{ client: SquareClient | null; company: any }> {
+  const companyId = getCompanyId(req);
+  
+  if (companyId) {
+    const company = await storage.getCompany(companyId);
+    if (company?.squareAccessToken && company?.squareApplicationId) {
+      const client = new SquareClient({
+        token: company.squareAccessToken,
+        environment: company.squareEnvironment === 'production' 
+          ? SquareEnvironment.Production 
+          : SquareEnvironment.Sandbox,
+      });
+      return { client, company };
+    }
+    return { client: null, company };
+  }
+  
+  // Fallback to global Square client for main domain
+  if (process.env.SQUARE_ACCESS_TOKEN) {
+    return { client: globalSquareClient, company: null };
+  }
+  
+  return { client: null, company: null };
+}
 
 const uploadDir = path.join(process.cwd(), 'uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -1925,17 +1952,20 @@ ${articleList}`
     }
   });
 
-  // Square API
+  // Square API (テナント別対応)
   app.get('/api/square/status', requireRole('admin', 'ceo'), async (req: Request, res: Response) => {
     try {
-      const hasToken = !!process.env.SQUARE_ACCESS_TOKEN;
-      const hasAppId = !!process.env.SQUARE_APPLICATION_ID;
+      const { client, company } = await getTenantSquareClient(req);
       
-      if (!hasToken || !hasAppId) {
-        return res.json({ connected: false, message: 'Square APIキーが設定されていません' });
+      if (!client) {
+        return res.json({ 
+          connected: false, 
+          message: 'Square APIキーが設定されていません',
+          hasSettings: !!company?.squareAccessToken
+        });
       }
       
-      const { locations } = await squareClient.locations.list();
+      const { locations } = await client.locations.list();
       
       res.json({
         connected: true,
@@ -1945,6 +1975,7 @@ ${articleList}`
           address: loc.address,
           status: loc.status,
         })),
+        environment: company?.squareEnvironment || process.env.SQUARE_ENVIRONMENT || 'sandbox',
       });
     } catch (error: any) {
       console.error('Square status error:', error);
@@ -1952,9 +1983,67 @@ ${articleList}`
     }
   });
 
+  // Square設定を保存
+  app.put('/api/square/settings', requireRole('admin', 'ceo'), async (req: Request, res: Response) => {
+    try {
+      const companyId = getCompanyId(req);
+      if (!companyId) {
+        return res.status(400).json({ error: 'テナントが特定できません' });
+      }
+      
+      const { accessToken, applicationId, environment, locationId } = req.body;
+      
+      await storage.updateCompany(companyId, {
+        squareAccessToken: accessToken || null,
+        squareApplicationId: applicationId || null,
+        squareEnvironment: environment || 'sandbox',
+        squareLocationId: locationId || null,
+      });
+      
+      res.json({ success: true, message: 'Square設定を保存しました' });
+    } catch (error: any) {
+      console.error('Save Square settings error:', error);
+      res.status(500).json({ error: '設定の保存に失敗しました' });
+    }
+  });
+
+  // Square設定を取得（トークンはマスク）
+  app.get('/api/square/settings', requireRole('admin', 'ceo'), async (req: Request, res: Response) => {
+    try {
+      const companyId = getCompanyId(req);
+      if (!companyId) {
+        return res.json({ hasSettings: false });
+      }
+      
+      const company = await storage.getCompany(companyId);
+      if (!company) {
+        return res.json({ hasSettings: false });
+      }
+      
+      res.json({
+        hasSettings: !!company.squareAccessToken,
+        applicationId: company.squareApplicationId || '',
+        environment: company.squareEnvironment || 'sandbox',
+        locationId: company.squareLocationId || '',
+        // トークンはマスク表示（セキュリティ）
+        accessTokenMasked: company.squareAccessToken 
+          ? '****' + company.squareAccessToken.slice(-4)
+          : '',
+      });
+    } catch (error: any) {
+      console.error('Get Square settings error:', error);
+      res.status(500).json({ error: '設定の取得に失敗しました' });
+    }
+  });
+
   app.get('/api/square/customers', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     try {
-      const result = await squareClient.customers.list();
+      const { client } = await getTenantSquareClient(req);
+      if (!client) {
+        return res.status(400).json({ error: 'Square APIが設定されていません' });
+      }
+      
+      const result = await client.customers.list();
       const customers: any[] = [];
       for await (const customer of result) {
         customers.push(customer);
@@ -1968,7 +2057,12 @@ ${articleList}`
 
   app.get('/api/square/payments', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     try {
-      const result = await squareClient.payments.list();
+      const { client } = await getTenantSquareClient(req);
+      if (!client) {
+        return res.status(400).json({ error: 'Square APIが設定されていません' });
+      }
+      
+      const result = await client.payments.list();
       const payments: any[] = [];
       for await (const payment of result) {
         payments.push(payment);
@@ -1982,14 +2076,23 @@ ${articleList}`
 
   app.get('/api/square/invoices', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     try {
-      const { locations } = await squareClient.locations.list();
-      const locationId = locations?.[0]?.id;
+      const { client, company } = await getTenantSquareClient(req);
+      if (!client) {
+        return res.status(400).json({ error: 'Square APIが設定されていません' });
+      }
+      
+      // Use saved locationId or get from API
+      let locationId = company?.squareLocationId;
+      if (!locationId) {
+        const { locations } = await client.locations.list();
+        locationId = locations?.[0]?.id;
+      }
       
       if (!locationId) {
         return res.json([]);
       }
       
-      const result = await squareClient.invoices.list({ locationId });
+      const result = await client.invoices.list({ locationId });
       const invoices: any[] = [];
       for await (const invoice of result) {
         invoices.push(invoice);
@@ -2003,20 +2106,29 @@ ${articleList}`
 
   app.post('/api/square/payment-links', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     try {
+      const { client, company } = await getTenantSquareClient(req);
+      if (!client) {
+        return res.status(400).json({ error: 'Square APIが設定されていません' });
+      }
+      
       const { name, amount, description, currency = 'JPY' } = req.body;
       
       if (!name || !amount) {
         return res.status(400).json({ error: '商品名と金額は必須です' });
       }
 
-      const { locations } = await squareClient.locations.list();
-      const locationId = locations?.[0]?.id;
+      // Use saved locationId or get from API
+      let locationId = company?.squareLocationId;
+      if (!locationId) {
+        const { locations } = await client.locations.list();
+        locationId = locations?.[0]?.id;
+      }
       
       if (!locationId) {
         return res.status(400).json({ error: '店舗が登録されていません' });
       }
 
-      const { paymentLink } = await squareClient.checkout.paymentLinks.create({
+      const { paymentLink } = await client.checkout.paymentLinks.create({
         idempotencyKey: crypto.randomUUID(),
         quickPay: {
           name,
@@ -2043,7 +2155,12 @@ ${articleList}`
 
   app.get('/api/square/payment-links', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     try {
-      const result = await squareClient.checkout.paymentLinks.list();
+      const { client } = await getTenantSquareClient(req);
+      if (!client) {
+        return res.status(400).json({ error: 'Square APIが設定されていません' });
+      }
+      
+      const result = await client.checkout.paymentLinks.list();
       const paymentLinks: any[] = [];
       for await (const link of result) {
         paymentLinks.push(link);
