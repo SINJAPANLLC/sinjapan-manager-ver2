@@ -28,17 +28,54 @@ interface PaymentLink {
   createdAt: string;
 }
 
+interface SquareSettings {
+  hasSettings: boolean;
+  applicationId: string;
+  environment: string;
+  locationId: string;
+  accessTokenMasked: string;
+}
+
 function PaymentTab() {
   const [status, setStatus] = useState<SquareStatus | null>(null);
+  const [settings, setSettings] = useState<SquareSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [showLinkForm, setShowLinkForm] = useState(false);
+  const [showSettingsForm, setShowSettingsForm] = useState(false);
   const [createdLink, setCreatedLink] = useState<PaymentLink | null>(null);
   const [linkForm, setLinkForm] = useState({
     name: '',
     amount: '',
     description: '',
   });
+  const [settingsForm, setSettingsForm] = useState({
+    accessToken: '',
+    applicationId: '',
+    environment: 'sandbox',
+    locationId: '',
+  });
+
+  const fetchSettings = async () => {
+    try {
+      const res = await fetch('/api/square/settings');
+      if (res.ok) {
+        const data = await res.json();
+        setSettings(data);
+        if (data.hasSettings) {
+          setSettingsForm({
+            accessToken: '',
+            applicationId: data.applicationId || '',
+            environment: data.environment || 'sandbox',
+            locationId: data.locationId || '',
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Fetch Square settings error:', error);
+    }
+  };
 
   const fetchStatus = async () => {
     setIsLoading(true);
@@ -54,7 +91,29 @@ function PaymentTab() {
     }
   };
 
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingSettings(true);
+    try {
+      const res = await fetch('/api/square/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settingsForm),
+      });
+      if (res.ok) {
+        await fetchSettings();
+        await fetchStatus();
+        setShowSettingsForm(false);
+      }
+    } catch (error) {
+      console.error('Save Square settings error:', error);
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
+
   useEffect(() => {
+    fetchSettings();
     fetchStatus();
   }, []);
 
@@ -101,6 +160,88 @@ function PaymentTab() {
 
   return (
     <div className="space-y-6">
+      {/* Square API設定 */}
+      <div className="card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="font-bold text-slate-800">Square API設定</h3>
+            <p className="text-sm text-slate-500">
+              {settings?.hasSettings 
+                ? `設定済み (トークン: ${settings.accessTokenMasked})`
+                : '未設定 - APIキーを入力してください'}
+            </p>
+          </div>
+          <button
+            onClick={() => setShowSettingsForm(!showSettingsForm)}
+            className="btn-secondary flex items-center gap-2"
+          >
+            <Pencil size={16} />
+            {settings?.hasSettings ? '設定を変更' : '設定する'}
+          </button>
+        </div>
+
+        {showSettingsForm && (
+          <form onSubmit={handleSaveSettings} className="space-y-4 p-4 bg-slate-50 rounded-xl">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                アクセストークン {settings?.hasSettings && <span className="text-slate-400">(変更する場合のみ入力)</span>}
+              </label>
+              <input
+                type="password"
+                value={settingsForm.accessToken}
+                onChange={(e) => setSettingsForm({ ...settingsForm, accessToken: e.target.value })}
+                className="input-field"
+                placeholder={settings?.hasSettings ? '変更しない場合は空白のまま' : 'EAAAAAAxxxxxxxx...'}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">アプリケーションID *</label>
+              <input
+                type="text"
+                value={settingsForm.applicationId}
+                onChange={(e) => setSettingsForm({ ...settingsForm, applicationId: e.target.value })}
+                className="input-field"
+                placeholder="sq0idp-xxxxxxxxxxxxxxxx"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">環境</label>
+                <select
+                  value={settingsForm.environment}
+                  onChange={(e) => setSettingsForm({ ...settingsForm, environment: e.target.value })}
+                  className="input-field"
+                >
+                  <option value="sandbox">サンドボックス（テスト）</option>
+                  <option value="production">本番環境</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">ロケーションID（任意）</label>
+                <input
+                  type="text"
+                  value={settingsForm.locationId}
+                  onChange={(e) => setSettingsForm({ ...settingsForm, locationId: e.target.value })}
+                  className="input-field"
+                  placeholder="自動取得する場合は空白"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3">
+              <button type="button" onClick={() => setShowSettingsForm(false)} className="btn-secondary">
+                キャンセル
+              </button>
+              <button type="submit" disabled={isSavingSettings} className="btn-primary flex items-center gap-2">
+                {isSavingSettings ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+                設定を保存
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+
+      {/* Square接続状態 */}
       <div className="card p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
