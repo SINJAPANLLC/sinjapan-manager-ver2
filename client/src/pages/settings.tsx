@@ -396,36 +396,6 @@ function PaymentTab() {
               </div>
             )}
           </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div className="card p-5">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Users size={18} className="text-blue-600" />
-                </div>
-                <span className="text-sm text-slate-500">顧客管理</span>
-              </div>
-              <p className="text-sm text-slate-600">Squareの顧客データと連携</p>
-            </div>
-            <div className="card p-5">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <CreditCard size={18} className="text-green-600" />
-                </div>
-                <span className="text-sm text-slate-500">決済履歴</span>
-              </div>
-              <p className="text-sm text-slate-600">過去の決済を確認</p>
-            </div>
-            <div className="card p-5">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <Mail size={18} className="text-purple-600" />
-                </div>
-                <span className="text-sm text-slate-500">請求書</span>
-              </div>
-              <p className="text-sm text-slate-600">請求書の作成・送信</p>
-            </div>
-          </div>
         </>
       )}
 
