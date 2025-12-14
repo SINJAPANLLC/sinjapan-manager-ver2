@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/use-auth';
-import { User, Lock, Save, Loader2, CheckCircle, Building2, CreditCard, Plus, Pencil, Trash2, X, Phone, Mail, Globe, Landmark, Calendar, Users, Shield, CheckCircle2, XCircle, MapPin, RefreshCw } from 'lucide-react';
+import { useTenant, ALL_FEATURES, FeatureId } from '../hooks/use-tenant';
+import { User, Lock, Save, Loader2, CheckCircle, Building2, CreditCard, Plus, Pencil, Trash2, X, Phone, Mail, Globe, Landmark, Calendar, Users, Shield, CheckCircle2, XCircle, MapPin, RefreshCw, ToggleLeft, ToggleRight } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 
@@ -420,6 +421,117 @@ function PaymentTab() {
   );
 }
 
+function FeaturesTab() {
+  const { tenant, refreshTenant } = useTenant();
+  const [enabledFeatures, setEnabledFeatures] = useState<FeatureId[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  useEffect(() => {
+    if (tenant?.enabledFeatures) {
+      setEnabledFeatures(tenant.enabledFeatures);
+    }
+  }, [tenant?.enabledFeatures]);
+
+  const toggleFeature = (featureId: FeatureId) => {
+    setEnabledFeatures(prev => {
+      if (prev.includes(featureId)) {
+        return prev.filter(f => f !== featureId);
+      } else {
+        return [...prev, featureId];
+      }
+    });
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    setMessage(null);
+    try {
+      const res = await fetch('/api/company/features', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabledFeatures }),
+      });
+      if (res.ok) {
+        setMessage({ type: 'success', text: '機能設定を保存しました' });
+        await refreshTenant();
+      } else {
+        const data = await res.json();
+        setMessage({ type: 'error', text: data.message || '保存に失敗しました' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: '保存に失敗しました' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="card p-6">
+        <h3 className="font-bold text-slate-800 mb-4">機能設定</h3>
+        <p className="text-sm text-slate-500 mb-6">
+          このテナントで有効にする機能を選択してください。無効にした機能はサイドバーから非表示になります。
+        </p>
+
+        {message && (
+          <div className={cn(
+            'p-4 rounded-xl mb-4 flex items-center gap-3',
+            message.type === 'success' 
+              ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' 
+              : 'bg-red-50 text-red-700 border border-red-100'
+          )}>
+            {message.type === 'success' ? <CheckCircle2 size={20} /> : <XCircle size={20} />}
+            <span>{message.text}</span>
+          </div>
+        )}
+
+        <div className="space-y-3">
+          {ALL_FEATURES.map(feature => {
+            const isEnabled = enabledFeatures.includes(feature.id);
+            return (
+              <div
+                key={feature.id}
+                className={cn(
+                  "flex items-center justify-between p-4 rounded-xl border transition-all",
+                  isEnabled 
+                    ? "border-primary-200 bg-primary-50/50" 
+                    : "border-slate-200 bg-white hover:border-slate-300"
+                )}
+              >
+                <div>
+                  <h4 className="font-medium text-slate-800">{feature.label}</h4>
+                  <p className="text-sm text-slate-500">{feature.description}</p>
+                </div>
+                <button
+                  onClick={() => toggleFeature(feature.id)}
+                  className={cn(
+                    "transition-colors",
+                    isEnabled ? "text-primary-600" : "text-slate-400"
+                  )}
+                >
+                  {isEnabled ? <ToggleRight size={32} /> : <ToggleLeft size={32} />}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-6 flex justify-end">
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="btn-primary flex items-center gap-2"
+          >
+            {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+            保存
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface Company {
   id: string;
   name: string;
@@ -454,7 +566,7 @@ interface UserItem {
   createdAt: string;
 }
 
-type TabType = 'profile' | 'companies' | 'payment' | 'users';
+type TabType = 'profile' | 'companies' | 'payment' | 'users' | 'features';
 
 export function SettingsPage() {
   const { user, refetch } = useAuth();
@@ -832,6 +944,7 @@ export function SettingsPage() {
     ...(canManageUsers ? [{ id: 'users' as TabType, label: 'ユーザー管理', icon: Users }] : []),
     ...(canViewCompanies ? [{ id: 'companies' as TabType, label: '会社情報', icon: Building2 }] : []),
     { id: 'payment' as TabType, label: '決済管理', icon: CreditCard },
+    ...(canManageCompanies ? [{ id: 'features' as TabType, label: '機能管理', icon: ToggleRight }] : []),
   ];
 
   return (
@@ -1218,6 +1331,10 @@ export function SettingsPage() {
 
       {activeTab === 'payment' && (
         <PaymentTab />
+      )}
+
+      {activeTab === 'features' && (
+        <FeaturesTab />
       )}
 
       {isCompanyModalOpen && (

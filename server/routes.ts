@@ -2054,6 +2054,30 @@ ${articleList}`
     }
   });
 
+  // テナント機能フラグ設定
+  app.put('/api/company/features', requireRole('admin', 'ceo'), async (req: Request, res: Response) => {
+    try {
+      const companyId = getCompanyId(req);
+      if (!companyId) {
+        return res.status(400).json({ message: 'テナントが特定できません' });
+      }
+      
+      const { enabledFeatures } = req.body;
+      if (!Array.isArray(enabledFeatures)) {
+        return res.status(400).json({ message: '無効なデータ形式です' });
+      }
+      
+      await storage.updateCompany(companyId, {
+        enabledFeatures: JSON.stringify(enabledFeatures),
+      });
+      
+      res.json({ success: true, message: '機能設定を保存しました' });
+    } catch (error: any) {
+      console.error('Save features error:', error);
+      res.status(500).json({ message: '設定の保存に失敗しました' });
+    }
+  });
+
   app.get('/api/square/customers', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     try {
       const { client } = await getTenantSquareClient(req);
