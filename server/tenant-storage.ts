@@ -1,8 +1,8 @@
 import { db } from './db';
-import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, aiConversations, seoArticles, seoCategories, leads, leadActivities, clientProjects, clientInvoices, investments, quickNotes } from '../shared/schema';
+import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, leads, leadActivities, clientProjects, clientInvoices, investments, quickNotes } from '../shared/schema';
 import { eq, and, or, desc, sql, isNull, gte, lte, like, ilike } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Investment, InsertInvestment, QuickNote, InsertQuickNote } from '../shared/schema';
+import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Investment, InsertInvestment, QuickNote, InsertQuickNote } from '../shared/schema';
 
 export function createTenantStorage(companyId: string | null, options?: { allowGlobal?: boolean }) {
   const requiresTenantScope = !options?.allowGlobal;
@@ -297,6 +297,54 @@ export function createTenantStorage(companyId: string | null, options?: { allowG
       const conversationData = companyId ? { ...data, companyId } : data;
       const [conversation] = await db.insert(aiConversations).values(conversationData).returning();
       return conversation;
+    },
+
+    async addAiConversation(data: InsertAiConversation): Promise<AiConversation> {
+      const conversationData = companyId ? { ...data, companyId } : data;
+      const [conversation] = await db.insert(aiConversations).values(conversationData).returning();
+      return conversation;
+    },
+
+    async clearAiConversations(userId: number): Promise<boolean> {
+      if (companyId) {
+        await db.delete(aiConversations).where(and(eq(aiConversations.userId, userId), eq(aiConversations.companyId, companyId)));
+      } else {
+        await db.delete(aiConversations).where(eq(aiConversations.userId, userId));
+      }
+      return true;
+    },
+
+    async getAiKnowledge(activeOnly: boolean = true): Promise<AiKnowledge[]> {
+      const companyFilter = companyId ? eq(aiKnowledge.companyId, companyId) : undefined;
+      if (activeOnly) {
+        if (companyFilter) {
+          return db.select().from(aiKnowledge).where(and(companyFilter, eq(aiKnowledge.isActive, true))).orderBy(aiKnowledge.category, aiKnowledge.title);
+        }
+        return db.select().from(aiKnowledge).where(eq(aiKnowledge.isActive, true)).orderBy(aiKnowledge.category, aiKnowledge.title);
+      }
+      if (companyFilter) {
+        return db.select().from(aiKnowledge).where(companyFilter).orderBy(aiKnowledge.category, aiKnowledge.title);
+      }
+      return db.select().from(aiKnowledge).orderBy(aiKnowledge.category, aiKnowledge.title);
+    },
+
+    async addAiKnowledge(data: InsertAiKnowledge): Promise<AiKnowledge> {
+      const knowledgeData = companyId ? { ...data, companyId } : data;
+      const [knowledge] = await db.insert(aiKnowledge).values(knowledgeData).returning();
+      return knowledge;
+    },
+
+    async updateAiKnowledge(id: number, data: Partial<InsertAiKnowledge>): Promise<AiKnowledge | undefined> {
+      const [knowledge] = await db.update(aiKnowledge)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(aiKnowledge.id, id))
+        .returning();
+      return knowledge;
+    },
+
+    async deleteAiKnowledge(id: number): Promise<boolean> {
+      await db.delete(aiKnowledge).where(eq(aiKnowledge.id, id));
+      return true;
     },
 
     async getDashboardStats(userId: number, role: string) {

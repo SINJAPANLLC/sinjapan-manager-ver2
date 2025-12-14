@@ -653,7 +653,7 @@ JSON形式で出力してください:
         });
       }
 
-      await storage.createAiLog({
+      await createTenantStorage(getCompanyId(req), { allowGlobal: true }).createAiLog({
         type: 'chat',
         prompt: message,
         result: reply,
@@ -732,7 +732,7 @@ JSON形式で出力してください:
 
         const imageUrl = response.data[0]?.url || response.data[0]?.b64_json;
         if (imageUrl) {
-          await storage.createAiLog({
+          await createTenantStorage(getCompanyId(req), { allowGlobal: true }).createAiLog({
             type: 'image',
             prompt: prompt,
             result: imageUrl,
@@ -781,7 +781,7 @@ JSON形式で出力してください:
         console.log('MODELSLAB Image response:', JSON.stringify(data, null, 2));
 
         if (data.status === 'success' && data.output && data.output.length > 0) {
-          await storage.createAiLog({
+          await createTenantStorage(getCompanyId(req), { allowGlobal: true }).createAiLog({
             type: 'image',
             prompt: prompt,
             result: data.output[0],
@@ -792,7 +792,7 @@ JSON形式で出力してください:
         } else if (data.status === 'processing' && data.fetch_result) {
           res.json({ processing: true, fetchUrl: data.fetch_result, translatedPrompt: translatedPrompt !== prompt ? translatedPrompt : undefined });
         } else {
-          await storage.createAiLog({
+          await createTenantStorage(getCompanyId(req), { allowGlobal: true }).createAiLog({
             type: 'image',
             prompt: prompt,
             status: 'error',
@@ -834,7 +834,7 @@ JSON形式で出力してください:
             1026: 'センシティブなコンテンツが検出されました。別のプロンプトをお試しください。',
           };
           const errorMsg = errorMessages[data.base_resp?.status_code] || data.base_resp?.status_msg || '画像生成に失敗しました';
-          await storage.createAiLog({
+          await createTenantStorage(getCompanyId(req), { allowGlobal: true }).createAiLog({
             type: 'image',
             prompt: prompt,
             status: 'error',
@@ -845,7 +845,7 @@ JSON形式で出力してください:
         
         // Check for failed generation (metadata.failed_count)
         if (data.metadata?.failed_count && parseInt(data.metadata.failed_count) > 0) {
-          await storage.createAiLog({
+          await createTenantStorage(getCompanyId(req), { allowGlobal: true }).createAiLog({
             type: 'image',
             prompt: prompt,
             status: 'error',
@@ -855,7 +855,7 @@ JSON形式で出力してください:
         }
         
         if (data.data?.image_urls && data.data.image_urls.length > 0) {
-          await storage.createAiLog({
+          await createTenantStorage(getCompanyId(req), { allowGlobal: true }).createAiLog({
             type: 'image',
             prompt: prompt,
             result: data.data.image_urls[0],
@@ -864,7 +864,7 @@ JSON形式で出力してください:
           });
           res.json({ imageUrl: data.data.image_urls[0], translatedPrompt: translatedPrompt !== prompt ? translatedPrompt : undefined });
         } else {
-          await storage.createAiLog({
+          await createTenantStorage(getCompanyId(req), { allowGlobal: true }).createAiLog({
             type: 'image',
             prompt: prompt,
             status: 'error',
@@ -910,7 +910,7 @@ JSON形式で出力してください:
 
         const videoUrl = response.data?.[0]?.url;
         if (videoUrl) {
-          await storage.createAiLog({
+          await createTenantStorage(getCompanyId(req), { allowGlobal: true }).createAiLog({
             type: 'video',
             prompt: prompt,
             result: videoUrl,
@@ -959,7 +959,7 @@ JSON形式で出力してください:
         console.log('MODELSLAB Video response:', JSON.stringify(data, null, 2));
 
         if (data.status === 'success' && data.output && data.output.length > 0) {
-          await storage.createAiLog({
+          await createTenantStorage(getCompanyId(req), { allowGlobal: true }).createAiLog({
             type: 'video',
             prompt: prompt,
             result: data.output[0],
@@ -978,7 +978,7 @@ JSON形式で出力してください:
             translatedPrompt: translatedPrompt !== prompt ? translatedPrompt : undefined 
           });
         } else {
-          await storage.createAiLog({
+          await createTenantStorage(getCompanyId(req), { allowGlobal: true }).createAiLog({
             type: 'video',
             prompt: prompt,
             status: 'error',
@@ -1019,7 +1019,7 @@ JSON形式で出力してください:
             translatedPrompt: translatedPrompt !== prompt ? translatedPrompt : undefined 
           });
         } else if (data.data?.video_url) {
-          await storage.createAiLog({
+          await createTenantStorage(getCompanyId(req), { allowGlobal: true }).createAiLog({
             type: 'video',
             prompt: prompt,
             result: data.data.video_url,
@@ -1028,7 +1028,7 @@ JSON形式で出力してください:
           });
           res.json({ videoUrl: data.data.video_url, translatedPrompt: translatedPrompt !== prompt ? translatedPrompt : undefined });
         } else {
-          await storage.createAiLog({
+          await createTenantStorage(getCompanyId(req), { allowGlobal: true }).createAiLog({
             type: 'video',
             prompt: prompt,
             status: 'error',
@@ -1082,7 +1082,7 @@ JSON形式で出力してください:
           const fileData = await fileResponse.json();
           
           if (fileData.file?.download_url) {
-            await storage.createAiLog({
+            await createTenantStorage(getCompanyId(req), { allowGlobal: true }).createAiLog({
               type: 'video',
               prompt: prompt,
               result: fileData.file.download_url,
@@ -1122,7 +1122,7 @@ JSON形式で出力してください:
         console.log('MODELSLAB Poll response:', JSON.stringify(data, null, 2));
         
         if (data.status === 'success' && data.output && data.output.length > 0) {
-          await storage.createAiLog({
+          await createTenantStorage(getCompanyId(req), { allowGlobal: true }).createAiLog({
             type: 'video',
             prompt: prompt,
             result: data.output[0],
@@ -1197,7 +1197,7 @@ Markdown形式で出力。見出しはH2(##)、H3(###)を使用。`
 
       const article = completion.choices[0]?.message?.content || '';
 
-      await storage.createAiLog({
+      await createTenantStorage(getCompanyId(req), { allowGlobal: true }).createAiLog({
         type: 'seo',
         prompt: `${topic} | ${keywords}`,
         result: article.substring(0, 500),
@@ -1282,7 +1282,7 @@ ${articleList}`
       const base64Audio = buffer.toString('base64');
       const audioUrl = `data:audio/mpeg;base64,${base64Audio}`;
 
-      await storage.createAiLog({
+      await createTenantStorage(getCompanyId(req), { allowGlobal: true }).createAiLog({
         type: 'voice',
         prompt: `[${voice}] ${text}`,
         result: 'audio generated',
@@ -1341,7 +1341,7 @@ ${articleList}`
       const base64Audio = buffer.toString('base64');
       const audioUrl = `data:audio/mpeg;base64,${base64Audio}`;
 
-      await storage.createAiLog({
+      await createTenantStorage(getCompanyId(req), { allowGlobal: true }).createAiLog({
         type: 'voice_chat',
         prompt: message,
         result: response,
@@ -1418,7 +1418,7 @@ ${articleList}`
         list = fullResponse.replace(/```json[\s\S]*?```/g, '').trim();
       }
 
-      await storage.createAiLog({
+      await createTenantStorage(getCompanyId(req), { allowGlobal: true }).createAiLog({
         type: 'list',
         prompt: topic,
         result: list.substring(0, 500),
@@ -1496,7 +1496,7 @@ ${articleList}`
 
       const document = completion.choices[0]?.message?.content || '';
 
-      await storage.createAiLog({
+      await createTenantStorage(getCompanyId(req), { allowGlobal: true }).createAiLog({
         type: 'document',
         prompt: `${type}: ${details.substring(0, 100)}`,
         result: document.substring(0, 500),
@@ -1513,7 +1513,8 @@ ${articleList}`
 
   app.get('/api/ai/logs', requireAuth, async (req: Request, res: Response) => {
     try {
-      const logs = await storage.getAiLogs(req.session.userId!);
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const logs = await tenantStorage.getAiLogs(req.session.userId!);
       res.json(logs);
     } catch (error) {
       console.error('Get AI logs error:', error);
@@ -1524,8 +1525,8 @@ ${articleList}`
   // AI Conversations (Memory)
   app.get('/api/ai/conversations', requireAuth, async (req: Request, res: Response) => {
     try {
-      const limit = parseInt(req.query.limit as string) || 50;
-      const conversations = await storage.getAiConversations(req.session.userId!, limit);
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const conversations = await tenantStorage.getAiConversations(req.session.userId!);
       res.json(conversations.reverse());
     } catch (error) {
       console.error('Get AI conversations error:', error);
@@ -1535,8 +1536,9 @@ ${articleList}`
 
   app.post('/api/ai/conversations', requireAuth, async (req: Request, res: Response) => {
     try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
       const { role, content } = req.body;
-      const conversation = await storage.addAiConversation({
+      const conversation = await tenantStorage.addAiConversation({
         userId: req.session.userId!,
         role,
         content,
@@ -1550,7 +1552,8 @@ ${articleList}`
 
   app.delete('/api/ai/conversations', requireAuth, async (req: Request, res: Response) => {
     try {
-      await storage.clearAiConversations(req.session.userId!);
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      await tenantStorage.clearAiConversations(req.session.userId!);
       res.json({ success: true });
     } catch (error) {
       console.error('Clear AI conversations error:', error);
@@ -1561,8 +1564,9 @@ ${articleList}`
   // AI Knowledge Base
   app.get('/api/ai/knowledge', requireAuth, async (req: Request, res: Response) => {
     try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
       const activeOnly = req.query.activeOnly !== 'false';
-      const knowledge = await storage.getAiKnowledge(activeOnly);
+      const knowledge = await tenantStorage.getAiKnowledge(activeOnly);
       res.json(knowledge);
     } catch (error) {
       console.error('Get AI knowledge error:', error);
@@ -1572,8 +1576,9 @@ ${articleList}`
 
   app.post('/api/ai/knowledge', requireAuth, async (req: Request, res: Response) => {
     try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
       const { category, title, content } = req.body;
-      const knowledge = await storage.addAiKnowledge({
+      const knowledge = await tenantStorage.addAiKnowledge({
         category,
         title,
         content,
@@ -1588,9 +1593,10 @@ ${articleList}`
 
   app.put('/api/ai/knowledge/:id', requireAuth, async (req: Request, res: Response) => {
     try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
       const id = parseInt(req.params.id);
       const { category, title, content, isActive } = req.body;
-      const knowledge = await storage.updateAiKnowledge(id, { category, title, content, isActive });
+      const knowledge = await tenantStorage.updateAiKnowledge(id, { category, title, content, isActive });
       res.json(knowledge);
     } catch (error) {
       console.error('Update AI knowledge error:', error);
@@ -1600,8 +1606,9 @@ ${articleList}`
 
   app.delete('/api/ai/knowledge/:id', requireAuth, async (req: Request, res: Response) => {
     try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
       const id = parseInt(req.params.id);
-      await storage.deleteAiKnowledge(id);
+      await tenantStorage.deleteAiKnowledge(id);
       res.json({ success: true });
     } catch (error) {
       console.error('Delete AI knowledge error:', error);
@@ -1707,7 +1714,7 @@ ${articleList}`
         }
       }
 
-      await storage.createAiLog({
+      await createTenantStorage(getCompanyId(req), { allowGlobal: true }).createAiLog({
         type: 'places_search',
         prompt: `${query} in ${location}`,
         result: `Found ${places.length} places`,
