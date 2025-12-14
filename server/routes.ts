@@ -1782,8 +1782,14 @@ ${articleList}`
   // Companies API
   app.get('/api/companies', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     try {
-      const companies = await storage.getCompanies();
-      res.json(companies);
+      const companyId = getCompanyId(req);
+      if (companyId) {
+        const company = await storage.getCompany(companyId);
+        res.json(company ? [company] : []);
+      } else {
+        const companies = await storage.getCompanies();
+        res.json(companies);
+      }
     } catch (error) {
       console.error('Get companies error:', error);
       res.status(500).json([]);
