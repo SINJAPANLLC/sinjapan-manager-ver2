@@ -1,9 +1,7 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   TrendingUp, 
   Search, 
-  Globe, 
   MapPin, 
   Monitor, 
   Share2, 
@@ -11,9 +9,6 @@ import {
   ExternalLink, 
   Users, 
   Briefcase,
-  Plus,
-  Trash2,
-  Edit,
   BarChart3
 } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -32,7 +27,6 @@ const categories = [
 
 export function MarketingPage() {
   const [activeCategory, setActiveCategory] = useState('aio');
-  const queryClient = useQueryClient();
 
   const activeItem = categories.find(c => c.id === activeCategory);
 
