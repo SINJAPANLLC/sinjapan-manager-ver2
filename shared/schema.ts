@@ -423,3 +423,29 @@ export const investments = pgTable("investments", {
 
 export type Investment = typeof investments.$inferSelect;
 export type InsertInvestment = typeof investments.$inferInsert;
+
+export const marketingCampaigns = pgTable("marketing_campaigns", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  category: varchar("category", { length: 50 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  status: varchar("status", { length: 50 }).default("active"),
+  budget: decimal("budget", { precision: 15, scale: 2 }),
+  spent: decimal("spent", { precision: 15, scale: 2 }).default("0"),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  targetUrl: text("target_url"),
+  platform: varchar("platform", { length: 100 }),
+  impressions: integer("impressions").default(0),
+  clicks: integer("clicks").default(0),
+  conversions: integer("conversions").default(0),
+  revenue: decimal("revenue", { precision: 15, scale: 2 }).default("0"),
+  notes: text("notes"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type MarketingCampaign = typeof marketingCampaigns.$inferSelect;
+export type InsertMarketingCampaign = typeof marketingCampaigns.$inferInsert;
