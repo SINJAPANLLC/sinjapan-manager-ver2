@@ -3196,6 +3196,7 @@ ${articlesContext}
   // Marketing Campaigns API
   app.get('/api/marketing/campaigns', requireAuth, async (req: Request, res: Response) => {
     try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
       const { category } = req.query;
       const campaigns = await tenantStorage.getMarketingCampaigns(category as string | undefined);
       res.json(campaigns);
@@ -3207,6 +3208,7 @@ ${articlesContext}
 
   app.get('/api/marketing/campaigns/:id', requireAuth, async (req: Request, res: Response) => {
     try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
       const campaign = await tenantStorage.getMarketingCampaign(parseInt(req.params.id));
       if (!campaign) {
         return res.status(404).json({ error: 'キャンペーンが見つかりません' });
@@ -3220,10 +3222,10 @@ ${articlesContext}
 
   app.post('/api/marketing/campaigns', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     try {
-      const user = req.user as any;
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
       const campaignData = {
         ...req.body,
-        createdBy: user.id,
+        createdBy: req.session.userId,
       };
       const campaign = await tenantStorage.createMarketingCampaign(campaignData);
       res.json(campaign);
@@ -3235,6 +3237,7 @@ ${articlesContext}
 
   app.put('/api/marketing/campaigns/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
       const campaign = await tenantStorage.updateMarketingCampaign(parseInt(req.params.id), req.body);
       if (!campaign) {
         return res.status(404).json({ error: 'キャンペーンが見つかりません' });
@@ -3248,6 +3251,7 @@ ${articlesContext}
 
   app.delete('/api/marketing/campaigns/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
       const success = await tenantStorage.deleteMarketingCampaign(parseInt(req.params.id));
       if (!success) {
         return res.status(404).json({ error: 'キャンペーンが見つかりません' });
@@ -3261,6 +3265,7 @@ ${articlesContext}
 
   app.get('/api/marketing/stats', requireAuth, async (req: Request, res: Response) => {
     try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
       const { category } = req.query;
       const stats = await tenantStorage.getMarketingStats(category as string | undefined);
       res.json(stats);
