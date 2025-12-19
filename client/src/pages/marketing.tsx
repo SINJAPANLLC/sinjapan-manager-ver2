@@ -83,16 +83,18 @@ interface DiagnosticResult {
 }
 
 const categories = [
-  { id: 'aio', label: 'AIO', icon: TrendingUp, description: 'AI検索最適化', color: 'from-purple-500 to-indigo-600' },
-  { id: 'seo', label: 'SEO', icon: Search, description: 'Google検索最適化', color: 'from-green-500 to-emerald-600' },
-  { id: 'meo', label: 'MEO', icon: MapPin, description: 'Googleマップ最適化', color: 'from-red-500 to-rose-600' },
-  { id: 'hp', label: 'HP', icon: Monitor, description: 'LP自動生成', color: 'from-blue-500 to-cyan-600' },
-  { id: 'sns', label: 'SNS', icon: Share2, description: 'SNS運用管理', color: 'from-pink-500 to-rose-600' },
-  { id: 'ads', label: '広告', icon: Megaphone, description: '広告キャンペーン', color: 'from-orange-500 to-amber-600' },
-  { id: 'external', label: '外部', icon: ExternalLink, description: 'PR・インフルエンサー', color: 'from-teal-500 to-cyan-600' },
-  { id: 'offline', label: 'オフライン', icon: Users, description: '印刷物・看板', color: 'from-gray-500 to-slate-600' },
-  { id: 'sales', label: '営業', icon: Briefcase, description: '営業・代理店・アフィリ', color: 'from-yellow-500 to-orange-600' },
+  { id: 'aio', label: 'AIO', icon: TrendingUp, description: 'AI検索最適化' },
+  { id: 'seo', label: 'SEO', icon: Search, description: 'Google検索最適化' },
+  { id: 'meo', label: 'MEO', icon: MapPin, description: 'Googleマップ最適化' },
+  { id: 'hp', label: 'HP', icon: Monitor, description: 'LP自動生成' },
+  { id: 'sns', label: 'SNS', icon: Share2, description: 'SNS運用管理' },
+  { id: 'ads', label: '広告', icon: Megaphone, description: '広告キャンペーン' },
+  { id: 'external', label: '外部', icon: ExternalLink, description: 'PR・インフルエンサー' },
+  { id: 'offline', label: 'オフライン', icon: Users, description: '印刷物・看板' },
+  { id: 'sales', label: '営業', icon: Briefcase, description: '営業・代理店・アフィリ' },
 ];
+
+const BLUE_GRADIENT = 'from-blue-500 to-indigo-600';
 
 const platformOptions: Record<string, string[]> = {
   aio: ['ChatGPT', 'Perplexity', 'Claude', 'Gemini', 'Copilot', 'その他'],
@@ -216,7 +218,7 @@ export function MarketingPage() {
               className={cn(
                 "flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-200",
                 isActive
-                  ? `bg-gradient-to-r ${category.color} text-white shadow-button`
+                  ? `bg-gradient-to-r ${BLUE_GRADIENT} text-white shadow-button`
                   : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
               )}
             >
@@ -228,7 +230,7 @@ export function MarketingPage() {
       </div>
 
       <div className="card overflow-hidden">
-        <div className={cn("p-6 bg-gradient-to-r text-white", activeItem?.color || 'from-primary-500 to-primary-600')}>
+        <div className={cn("p-6 bg-gradient-to-r text-white", BLUE_GRADIENT)}>
           <div className="flex items-center gap-4">
             {activeItem && (
               <>
@@ -258,7 +260,7 @@ export function MarketingPage() {
                 className={cn(
                   "flex items-center gap-2 px-6 py-4 font-medium transition-colors border-b-2",
                   activeTab === tab.id
-                    ? "text-primary-600 border-primary-600 bg-primary-50"
+                    ? "text-blue-600 border-blue-600 bg-blue-50"
                     : "text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50"
                 )}
               >
@@ -323,36 +325,29 @@ export function MarketingPage() {
 function DiagnosisPanel({ category }: { category: string }) {
   const [isRunning, setIsRunning] = useState(false);
   const [result, setResult] = useState<DiagnosticResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [inputUrl, setInputUrl] = useState('');
   const [inputKeywords, setInputKeywords] = useState('');
 
   const runDiagnosis = async () => {
     setIsRunning(true);
+    setError(null);
     try {
       const res = await fetch('/api/marketing/diagnose', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ category, url: inputUrl, keywords: inputKeywords }),
       });
-      if (!res.ok) throw new Error('診断に失敗しました');
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: '診断に失敗しました' }));
+        throw new Error(err.error || '診断に失敗しました');
+      }
       const data = await res.json();
       setResult(data);
-    } catch (error) {
-      console.error(error);
-      setResult({
-        score: 65,
-        items: [
-          { label: 'コンテンツ品質', status: 'good', message: '高品質なコンテンツが確認されました' },
-          { label: 'キーワード最適化', status: 'warning', message: 'ターゲットキーワードの使用が不十分です' },
-          { label: '構造化データ', status: 'error', message: '構造化データが設定されていません' },
-          { label: 'モバイル対応', status: 'good', message: 'モバイルフレンドリーです' },
-        ],
-        recommendations: [
-          'ターゲットキーワードを見出しに含めてください',
-          '構造化データ（Schema.org）を追加してください',
-          'メタディスクリプションを改善してください',
-        ],
-      });
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || '診断に失敗しました。しばらくしてから再度お試しください。');
+      setResult(null);
     } finally {
       setIsRunning(false);
     }
@@ -420,6 +415,18 @@ function DiagnosisPanel({ category }: { category: string }) {
           </button>
         </div>
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="text-red-500" size={20} />
+            <div>
+              <p className="font-medium text-red-700">エラーが発生しました</p>
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {result && (
         <div className="space-y-6">
@@ -495,6 +502,7 @@ function DiagnosisPanel({ category }: { category: string }) {
 function ImprovementPanel({ category }: { category: string }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [inputTopic, setInputTopic] = useState('');
 
   const improvements: Record<string, { title: string; actions: { icon: any; label: string; description: string }[] }> = {
@@ -576,17 +584,23 @@ function ImprovementPanel({ category }: { category: string }) {
 
   const generateContent = async (actionLabel: string) => {
     setIsGenerating(true);
+    setError(null);
     try {
       const res = await fetch('/api/marketing/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ category, action: actionLabel, topic: inputTopic }),
       });
-      if (!res.ok) throw new Error('生成に失敗しました');
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: '生成に失敗しました' }));
+        throw new Error(err.error || '生成に失敗しました');
+      }
       const data = await res.json();
       setGeneratedContent(data.content);
-    } catch (error) {
-      setGeneratedContent(`【${actionLabel}】\n\n${inputTopic || 'サンプルコンテンツ'}に関する最適化されたコンテンツがここに表示されます。\n\nAIによる分析と提案:\n• ターゲットオーディエンスに合わせた表現\n• キーワードの自然な配置\n• コンバージョン最適化された構成`);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || '生成に失敗しました。しばらくしてから再度お試しください。');
+      setGeneratedContent(null);
     } finally {
       setIsGenerating(false);
     }
@@ -614,9 +628,9 @@ function ImprovementPanel({ category }: { category: string }) {
               key={i}
               onClick={() => generateContent(action.label)}
               disabled={isGenerating}
-              className="flex items-center gap-4 p-4 bg-white rounded-xl border border-slate-200 hover:border-primary-300 hover:bg-primary-50 transition-all text-left"
+              className="flex items-center gap-4 p-4 bg-white rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-all text-left"
             >
-              <div className="p-3 rounded-lg bg-primary-100 text-primary-600">
+              <div className="p-3 rounded-lg bg-blue-100 text-blue-600">
                 <action.icon size={20} />
               </div>
               <div className="flex-1">
@@ -624,14 +638,26 @@ function ImprovementPanel({ category }: { category: string }) {
                 <p className="text-sm text-slate-500">{action.description}</p>
               </div>
               {isGenerating ? (
-                <Loader2 size={20} className="animate-spin text-primary-600" />
+                <Loader2 size={20} className="animate-spin text-blue-600" />
               ) : (
-                <Sparkles size={20} className="text-primary-600" />
+                <Sparkles size={20} className="text-blue-600" />
               )}
             </button>
           ))}
         </div>
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="text-red-500" size={20} />
+            <div>
+              <p className="font-medium text-red-700">エラーが発生しました</p>
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {generatedContent && (
         <div className="bg-white rounded-xl border border-slate-200 p-6">
@@ -639,7 +665,7 @@ function ImprovementPanel({ category }: { category: string }) {
             <h4 className="font-semibold text-slate-800">生成結果</h4>
             <button
               onClick={() => navigator.clipboard.writeText(generatedContent)}
-              className="text-sm text-primary-600 hover:text-primary-700"
+              className="text-sm text-blue-600 hover:text-blue-700"
             >
               コピー
             </button>
@@ -746,9 +772,9 @@ function AutomationPanel({ category }: { category: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-6">
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6">
         <div className="flex items-center gap-3 mb-4">
-          <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 text-white">
+          <div className={`p-3 rounded-xl bg-gradient-to-br ${BLUE_GRADIENT} text-white`}>
             <Zap size={24} />
           </div>
           <div>
@@ -793,7 +819,7 @@ function AutomationPanel({ category }: { category: string }) {
                     "px-4 py-2 rounded-lg font-medium text-sm transition-colors",
                     isActive
                       ? "bg-green-600 text-white hover:bg-green-700"
-                      : "bg-primary-600 text-white hover:bg-primary-700"
+                      : "bg-blue-600 text-white hover:bg-blue-700"
                   )}
                 >
                   {isActive ? '停止' : '開始'}
@@ -867,7 +893,7 @@ function CampaignsPanel({
         <div className="text-center py-12">
           <BarChart3 size={48} className="mx-auto text-slate-300 mb-3" />
           <p className="text-slate-500">キャンペーンがありません</p>
-          <button onClick={onAddCampaign} className="mt-4 text-primary-600 hover:text-primary-700">
+          <button onClick={onAddCampaign} className="mt-4 text-blue-600 hover:text-blue-700">
             最初のキャンペーンを作成 →
           </button>
         </div>
@@ -909,7 +935,7 @@ function CampaignCard({ campaign, onEdit, onDelete }: { campaign: MarketingCampa
           {campaign.platform && <p className="text-xs text-slate-400 mt-1">プラットフォーム: {campaign.platform}</p>}
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={onEdit} className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
+          <button onClick={onEdit} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
             <Edit size={16} />
           </button>
           <button onClick={onDelete} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
@@ -1067,7 +1093,7 @@ function StatCard({ title, value, suffix, icon }: { title: string; value: string
     <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-soft">
       <div className="flex items-center justify-between mb-2">
         <p className="text-sm text-slate-500">{title}</p>
-        <div className="text-primary-500">{icon}</div>
+        <div className="text-blue-500">{icon}</div>
       </div>
       <div className="flex items-baseline gap-1">
         <span className="text-2xl font-bold text-slate-800">{value}</span>
