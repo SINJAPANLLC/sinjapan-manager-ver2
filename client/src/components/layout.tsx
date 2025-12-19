@@ -16,7 +16,8 @@ import {
   Bot,
   UserCheck,
   Target,
-  FileSpreadsheet
+  FileSpreadsheet,
+  TrendingUp
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -35,6 +36,7 @@ export function Layout({ children }: LayoutProps) {
     { href: '/calendar', label: 'カレンダー', icon: Calendar },
     { href: '/communication', label: 'コミュニケーション', icon: MessageSquare },
     { href: '/business', label: '事業', icon: Briefcase },
+    { href: '/marketing', label: 'マーケティング', icon: TrendingUp },
     { href: '/financials', label: 'PL BS CF', icon: FileSpreadsheet },
     { href: '/ai', label: 'AI', icon: Bot },
     { href: '/staff', label: 'スタッフ', icon: UserCheck },

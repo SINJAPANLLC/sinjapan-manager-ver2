@@ -20,6 +20,7 @@ import LeadsPage from './pages/leads';
 import { StaffPage } from './pages/staff';
 import { AgencyPage } from './pages/agency';
 import { ClientsPage } from './pages/clients';
+import { MarketingPage } from './pages/marketing';
 import { Loader2 } from 'lucide-react';
 
 function AppRoutes() {
@@ -50,6 +51,7 @@ function AppRoutes() {
         <Route path="/chat" component={ChatPage} />
         <Route path="/communication" component={ChatPage} />
         <Route path="/business" component={BusinessPage} />
+        <Route path="/marketing" component={MarketingPage} />
         <Route path="/financials" component={FinancialsPage} />
         <Route path="/ai" component={AiPage} />
         <Route path="/notifications" component={NotificationsPage} />
