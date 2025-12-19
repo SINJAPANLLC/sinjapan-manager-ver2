@@ -1,8 +1,8 @@
 import { db } from './db';
-import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, leads, leadActivities, clientProjects, clientInvoices, investments, quickNotes } from '../shared/schema';
+import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, leads, leadActivities, clientProjects, clientInvoices, investments, quickNotes, marketingCampaigns } from '../shared/schema';
 import { eq, and, or, desc, sql, isNull, gte, lte, like, ilike } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Investment, InsertInvestment, QuickNote, InsertQuickNote } from '../shared/schema';
+import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Investment, InsertInvestment, QuickNote, InsertQuickNote, MarketingCampaign, InsertMarketingCampaign } from '../shared/schema';
 
 export function createTenantStorage(companyId: string | null, options?: { allowGlobal?: boolean }) {
   const requiresTenantScope = !options?.allowGlobal;
@@ -489,6 +489,114 @@ export function createTenantStorage(companyId: string | null, options?: { allowG
         aiLogCount: Number(aiLogCount[0]?.count || 0),
         seoArticleCount: Number(seoArticleCount[0]?.count || 0),
         publishedArticleCount: Number(publishedArticleCount[0]?.count || 0),
+      };
+    },
+
+    async getMarketingCampaigns(category?: string): Promise<MarketingCampaign[]> {
+      const conditions = [];
+      if (companyId) {
+        conditions.push(eq(marketingCampaigns.companyId, companyId));
+      }
+      if (category) {
+        conditions.push(eq(marketingCampaigns.category, category));
+      }
+      if (conditions.length > 0) {
+        return db.select().from(marketingCampaigns).where(and(...conditions)).orderBy(desc(marketingCampaigns.createdAt));
+      }
+      return db.select().from(marketingCampaigns).orderBy(desc(marketingCampaigns.createdAt));
+    },
+
+    async getMarketingCampaign(id: number): Promise<MarketingCampaign | undefined> {
+      const conditions = [eq(marketingCampaigns.id, id)];
+      if (companyId) {
+        conditions.push(eq(marketingCampaigns.companyId, companyId));
+      }
+      const [campaign] = await db.select().from(marketingCampaigns).where(and(...conditions));
+      return campaign;
+    },
+
+    async createMarketingCampaign(data: InsertMarketingCampaign): Promise<MarketingCampaign> {
+      const campaignData = companyId ? { ...data, companyId } : data;
+      const [campaign] = await db.insert(marketingCampaigns).values(campaignData).returning();
+      return campaign;
+    },
+
+    async updateMarketingCampaign(id: number, data: Partial<InsertMarketingCampaign>): Promise<MarketingCampaign | undefined> {
+      const conditions = [eq(marketingCampaigns.id, id)];
+      if (companyId) {
+        conditions.push(eq(marketingCampaigns.companyId, companyId));
+      }
+      const [campaign] = await db.update(marketingCampaigns)
+        .set({ ...data, updatedAt: new Date() })
+        .where(and(...conditions))
+        .returning();
+      return campaign;
+    },
+
+    async deleteMarketingCampaign(id: number): Promise<boolean> {
+      const conditions = [eq(marketingCampaigns.id, id)];
+      if (companyId) {
+        conditions.push(eq(marketingCampaigns.companyId, companyId));
+      }
+      const result = await db.delete(marketingCampaigns).where(and(...conditions)).returning();
+      return result.length > 0;
+    },
+
+    async getMarketingStats(category?: string): Promise<{
+      totalCampaigns: number;
+      activeCampaigns: number;
+      totalBudget: string;
+      totalSpent: string;
+      totalRevenue: string;
+      totalImpressions: number;
+      totalClicks: number;
+      totalConversions: number;
+    }> {
+      const conditions = [];
+      if (companyId) {
+        conditions.push(eq(marketingCampaigns.companyId, companyId));
+      }
+      if (category) {
+        conditions.push(eq(marketingCampaigns.category, category));
+      }
+      
+      const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+      const activeConditions = [...conditions, eq(marketingCampaigns.status, 'active')];
+      const activeWhereClause = and(...activeConditions);
+      
+      const totalResult = whereClause 
+        ? await db.select({ count: sql<number>`count(*)` }).from(marketingCampaigns).where(whereClause)
+        : await db.select({ count: sql<number>`count(*)` }).from(marketingCampaigns);
+      
+      const activeResult = await db.select({ count: sql<number>`count(*)` }).from(marketingCampaigns).where(activeWhereClause);
+      
+      const statsResult = whereClause
+        ? await db.select({
+            totalBudget: sql<string>`COALESCE(SUM(budget), 0)`,
+            totalSpent: sql<string>`COALESCE(SUM(spent), 0)`,
+            totalRevenue: sql<string>`COALESCE(SUM(revenue), 0)`,
+            totalImpressions: sql<number>`COALESCE(SUM(impressions), 0)`,
+            totalClicks: sql<number>`COALESCE(SUM(clicks), 0)`,
+            totalConversions: sql<number>`COALESCE(SUM(conversions), 0)`,
+          }).from(marketingCampaigns).where(whereClause)
+        : await db.select({
+            totalBudget: sql<string>`COALESCE(SUM(budget), 0)`,
+            totalSpent: sql<string>`COALESCE(SUM(spent), 0)`,
+            totalRevenue: sql<string>`COALESCE(SUM(revenue), 0)`,
+            totalImpressions: sql<number>`COALESCE(SUM(impressions), 0)`,
+            totalClicks: sql<number>`COALESCE(SUM(clicks), 0)`,
+            totalConversions: sql<number>`COALESCE(SUM(conversions), 0)`,
+          }).from(marketingCampaigns);
+      
+      return {
+        totalCampaigns: Number(totalResult[0]?.count || 0),
+        activeCampaigns: Number(activeResult[0]?.count || 0),
+        totalBudget: statsResult[0]?.totalBudget || '0',
+        totalSpent: statsResult[0]?.totalSpent || '0',
+        totalRevenue: statsResult[0]?.totalRevenue || '0',
+        totalImpressions: Number(statsResult[0]?.totalImpressions || 0),
+        totalClicks: Number(statsResult[0]?.totalClicks || 0),
+        totalConversions: Number(statsResult[0]?.totalConversions || 0),
       };
     },
   };

@@ -3192,4 +3192,90 @@ ${articlesContext}
       res.status(500).json({ error: 'インデックス送信に失敗しました' });
     }
   });
+
+  // Marketing Campaigns API
+  app.get('/api/marketing/campaigns', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { category } = req.query;
+      const campaigns = await tenantStorage.getMarketingCampaigns(category as string | undefined);
+      res.json(campaigns);
+    } catch (error) {
+      console.error('Get marketing campaigns error:', error);
+      res.status(500).json([]);
+    }
+  });
+
+  app.get('/api/marketing/campaigns/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const campaign = await tenantStorage.getMarketingCampaign(parseInt(req.params.id));
+      if (!campaign) {
+        return res.status(404).json({ error: 'キャンペーンが見つかりません' });
+      }
+      res.json(campaign);
+    } catch (error) {
+      console.error('Get marketing campaign error:', error);
+      res.status(500).json({ error: 'キャンペーンの取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/marketing/campaigns', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const user = req.user as any;
+      const campaignData = {
+        ...req.body,
+        createdBy: user.id,
+      };
+      const campaign = await tenantStorage.createMarketingCampaign(campaignData);
+      res.json(campaign);
+    } catch (error) {
+      console.error('Create marketing campaign error:', error);
+      res.status(500).json({ error: 'キャンペーンの作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/marketing/campaigns/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const campaign = await tenantStorage.updateMarketingCampaign(parseInt(req.params.id), req.body);
+      if (!campaign) {
+        return res.status(404).json({ error: 'キャンペーンが見つかりません' });
+      }
+      res.json(campaign);
+    } catch (error) {
+      console.error('Update marketing campaign error:', error);
+      res.status(500).json({ error: 'キャンペーンの更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/marketing/campaigns/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const success = await tenantStorage.deleteMarketingCampaign(parseInt(req.params.id));
+      if (!success) {
+        return res.status(404).json({ error: 'キャンペーンが見つかりません' });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete marketing campaign error:', error);
+      res.status(500).json({ error: 'キャンペーンの削除に失敗しました' });
+    }
+  });
+
+  app.get('/api/marketing/stats', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { category } = req.query;
+      const stats = await tenantStorage.getMarketingStats(category as string | undefined);
+      res.json(stats);
+    } catch (error) {
+      console.error('Get marketing stats error:', error);
+      res.status(500).json({
+        totalCampaigns: 0,
+        activeCampaigns: 0,
+        totalBudget: '0',
+        totalSpent: '0',
+        totalRevenue: '0',
+        totalImpressions: 0,
+        totalClicks: 0,
+        totalConversions: 0,
+      });
+    }
+  });
 }
