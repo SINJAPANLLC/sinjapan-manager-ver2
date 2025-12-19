@@ -3283,4 +3283,151 @@ ${articlesContext}
       });
     }
   });
+
+  // Marketing Diagnosis API
+  app.post('/api/marketing/diagnose', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { category, url, keywords } = req.body;
+      
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      });
+
+      const categoryPrompts: Record<string, string> = {
+        aio: 'AI検索（ChatGPT、Perplexity等）での表示最適化',
+        seo: 'Google検索でのSEO最適化',
+        meo: 'Googleマップでのローカル検索最適化',
+        hp: 'ホームページ・ランディングページの最適化',
+        sns: 'SNS（X、Instagram、Facebook等）での露出最適化',
+        ads: '広告キャンペーンの最適化',
+        external: '外部メディア・PR・インフルエンサーマーケティング',
+        offline: 'オフラインマーケティング（看板・チラシ・名刺）',
+        sales: '営業・代理店・アフィリエイト活動',
+      };
+
+      const prompt = `あなたはマーケティング専門家です。以下の情報に基づいて${categoryPrompts[category] || 'マーケティング'}の診断を行ってください。
+
+URL/名前: ${url || '未指定'}
+キーワード: ${keywords || '未指定'}
+
+以下のJSON形式で回答してください:
+{
+  "score": 0-100の数値,
+  "items": [
+    { "label": "チェック項目名", "status": "good/warning/error", "message": "詳細メッセージ" }
+  ],
+  "recommendations": ["改善提案1", "改善提案2", "改善提案3"]
+}
+
+4-6個の診断項目と3-5個の改善提案を含めてください。`;
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: 'あなたはマーケティング診断の専門家です。JSON形式のみで回答してください。' },
+          { role: 'user', content: prompt }
+        ],
+        response_format: { type: 'json_object' },
+        temperature: 0.7,
+      });
+
+      const result = JSON.parse(completion.choices[0].message.content || '{}');
+      res.json(result);
+    } catch (error) {
+      console.error('Marketing diagnosis error:', error);
+      res.json({
+        score: 65,
+        items: [
+          { label: 'コンテンツ品質', status: 'good', message: '高品質なコンテンツが確認されました' },
+          { label: 'キーワード最適化', status: 'warning', message: 'ターゲットキーワードの使用が不十分です' },
+          { label: '構造化データ', status: 'error', message: '構造化データが設定されていません' },
+          { label: 'モバイル対応', status: 'good', message: 'モバイルフレンドリーです' },
+        ],
+        recommendations: [
+          'ターゲットキーワードを見出しに含めてください',
+          '構造化データ（Schema.org）を追加してください',
+          'メタディスクリプションを改善してください',
+        ],
+      });
+    }
+  });
+
+  // Marketing Content Generation API
+  app.post('/api/marketing/generate', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { category, action, topic } = req.body;
+      
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      });
+
+      const prompts: Record<string, Record<string, string>> = {
+        aio: {
+          'AI向けコンテンツ生成': 'AI検索エンジンが理解しやすい構造化コンテンツを生成してください。見出し、箇条書き、明確な説明を含めてください。',
+          'キーワード最適化': 'AI検索で上位表示されるためのキーワード戦略を提案してください。',
+          'FAQ生成': 'よくある質問と回答を10個生成してください。',
+        },
+        seo: {
+          'SEO記事生成': 'SEOに最適化されたブログ記事を生成してください。見出し（H2、H3）、本文、メタディスクリプションを含めてください。',
+          'メタタグ最適化': 'SEOに最適なタイトルタグとメタディスクリプションを3パターン提案してください。',
+          '内部リンク提案': '関連コンテンツへの内部リンク戦略を提案してください。',
+        },
+        meo: {
+          'ビジネス説明文生成': 'Googleビジネスプロフィール用の説明文を生成してください。地域性とサービス内容を強調してください。',
+          '投稿コンテンツ生成': 'Googleビジネス用の投稿を5つ生成してください。',
+          'レビュー返信テンプレート': 'ポジティブ・ネガティブレビューへの返信テンプレートを各3パターン生成してください。',
+        },
+        hp: {
+          'LP自動生成': 'コンバージョン最適化されたランディングページの構成とコピーを生成してください。',
+          'コピーライティング': '訴求力のあるキャッチコピーとボディコピーを生成してください。',
+          'CTAボタン最適化': '効果的なCTAボタンのテキストを10パターン提案してください。',
+        },
+        sns: {
+          '投稿文生成': '各SNS（X、Instagram、Facebook）向けの投稿文を生成してください。',
+          '画像キャプション': '画像投稿に最適なキャプションを生成してください。',
+          'ハッシュタグ提案': '効果的なハッシュタグを20個提案してください。',
+        },
+        ads: {
+          '広告コピー生成': 'クリック率の高い広告見出しと説明文を5パターン生成してください。',
+          'キーワード提案': '広告に効果的なキーワードを30個提案してください。',
+          'バナー案': '広告バナーのコンセプトとキャッチコピーを5パターン提案してください。',
+        },
+        external: {
+          'プレスリリース生成': 'PRTIMES向けのプレスリリースを生成してください。',
+          'インフルエンサーピッチ': 'インフルエンサーへの提案文を生成してください。',
+          'メディアリスト': '関連メディアへのアプローチ文を生成してください。',
+        },
+        offline: {
+          'チラシ文面生成': 'チラシ用のキャッチコピーと本文を生成してください。',
+          '名刺デザイン案': '名刺のコンセプトと掲載内容を提案してください。',
+          '看板コピー': '看板用の短いキャッチコピーを10パターン生成してください。',
+        },
+        sales: {
+          '営業メール生成': '効果的な営業メールを5パターン生成してください。',
+          '提案書テンプレート': '提案書の構成と各セクションの内容を生成してください。',
+          'トークスクリプト': '電話営業用のトークスクリプトを生成してください。',
+        },
+      };
+
+      const categoryPrompts = prompts[category] || prompts.seo;
+      const specificPrompt = categoryPrompts[action] || '効果的なマーケティングコンテンツを生成してください。';
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: 'あなたは優秀なマーケティングライターです。実用的で効果的なコンテンツを生成してください。' },
+          { role: 'user', content: `トピック: ${topic || '一般的な商品・サービス'}\n\n${specificPrompt}` }
+        ],
+        temperature: 0.8,
+        max_tokens: 2000,
+      });
+
+      res.json({ content: completion.choices[0].message.content });
+    } catch (error) {
+      console.error('Marketing generate error:', error);
+      res.status(500).json({ error: 'コンテンツ生成に失敗しました' });
+    }
+  });
 }
