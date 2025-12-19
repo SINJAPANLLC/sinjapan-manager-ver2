@@ -1,8 +1,8 @@
 import { db } from './db';
-import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, leads, leadActivities, clientProjects, clientInvoices, investments, quickNotes, marketingCampaigns } from '../shared/schema';
+import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, leads, leadActivities, clientProjects, clientInvoices, investments, quickNotes, marketingCampaigns, siteCredentials } from '../shared/schema';
 import { eq, and, or, desc, sql, isNull, gte, lte, like, ilike } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Investment, InsertInvestment, QuickNote, InsertQuickNote, MarketingCampaign, InsertMarketingCampaign } from '../shared/schema';
+import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Investment, InsertInvestment, QuickNote, InsertQuickNote, MarketingCampaign, InsertMarketingCampaign, SiteCredential, InsertSiteCredential } from '../shared/schema';
 
 export function createTenantStorage(companyId: string | null, options?: { allowGlobal?: boolean }) {
   const requiresTenantScope = !options?.allowGlobal;
@@ -598,6 +598,50 @@ export function createTenantStorage(companyId: string | null, options?: { allowG
         totalClicks: Number(statsResult[0]?.totalClicks || 0),
         totalConversions: Number(statsResult[0]?.totalConversions || 0),
       };
+    },
+
+    // Site Credentials (サイト情報)
+    async getSiteCredentials(): Promise<SiteCredential[]> {
+      if (companyId) {
+        return db.select().from(siteCredentials).where(eq(siteCredentials.companyId, companyId)).orderBy(desc(siteCredentials.createdAt));
+      }
+      return db.select().from(siteCredentials).orderBy(desc(siteCredentials.createdAt));
+    },
+
+    async getSiteCredential(id: number): Promise<SiteCredential | undefined> {
+      const conditions = [eq(siteCredentials.id, id)];
+      if (companyId) {
+        conditions.push(eq(siteCredentials.companyId, companyId));
+      }
+      const [credential] = await db.select().from(siteCredentials).where(and(...conditions));
+      return credential;
+    },
+
+    async createSiteCredential(data: InsertSiteCredential): Promise<SiteCredential> {
+      const credentialData = companyId ? { ...data, companyId } : data;
+      const [credential] = await db.insert(siteCredentials).values(credentialData).returning();
+      return credential;
+    },
+
+    async updateSiteCredential(id: number, data: Partial<InsertSiteCredential>): Promise<SiteCredential | undefined> {
+      const conditions = [eq(siteCredentials.id, id)];
+      if (companyId) {
+        conditions.push(eq(siteCredentials.companyId, companyId));
+      }
+      const [credential] = await db.update(siteCredentials)
+        .set({ ...data, updatedAt: new Date() })
+        .where(and(...conditions))
+        .returning();
+      return credential;
+    },
+
+    async deleteSiteCredential(id: number): Promise<boolean> {
+      const conditions = [eq(siteCredentials.id, id)];
+      if (companyId) {
+        conditions.push(eq(siteCredentials.companyId, companyId));
+      }
+      const result = await db.delete(siteCredentials).where(and(...conditions)).returning();
+      return result.length > 0;
     },
   };
 }

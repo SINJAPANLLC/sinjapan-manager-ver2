@@ -3430,4 +3430,73 @@ URL/名前: ${url || '未指定'}
       res.status(500).json({ error: 'コンテンツ生成に失敗しました' });
     }
   });
+
+  // Site Credentials (サイト情報) API
+  app.get('/api/site-credentials', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const credentials = await tenantStorage.getSiteCredentials();
+      res.json(credentials);
+    } catch (error) {
+      console.error('Get site credentials error:', error);
+      res.status(500).json({ error: 'サイト情報の取得に失敗しました' });
+    }
+  });
+
+  app.get('/api/site-credentials/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const credential = await tenantStorage.getSiteCredential(parseInt(req.params.id));
+      if (!credential) {
+        return res.status(404).json({ error: 'サイト情報が見つかりません' });
+      }
+      res.json(credential);
+    } catch (error) {
+      console.error('Get site credential error:', error);
+      res.status(500).json({ error: 'サイト情報の取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/site-credentials', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const userId = (req.session as any).user?.id;
+      const credential = await tenantStorage.createSiteCredential({
+        ...req.body,
+        createdBy: userId,
+      });
+      res.json(credential);
+    } catch (error) {
+      console.error('Create site credential error:', error);
+      res.status(500).json({ error: 'サイト情報の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/site-credentials/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const credential = await tenantStorage.updateSiteCredential(parseInt(req.params.id), req.body);
+      if (!credential) {
+        return res.status(404).json({ error: 'サイト情報が見つかりません' });
+      }
+      res.json(credential);
+    } catch (error) {
+      console.error('Update site credential error:', error);
+      res.status(500).json({ error: 'サイト情報の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/site-credentials/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const success = await tenantStorage.deleteSiteCredential(parseInt(req.params.id));
+      if (!success) {
+        return res.status(404).json({ error: 'サイト情報が見つかりません' });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete site credential error:', error);
+      res.status(500).json({ error: 'サイト情報の削除に失敗しました' });
+    }
+  });
 }

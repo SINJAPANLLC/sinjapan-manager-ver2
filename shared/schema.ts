@@ -449,3 +449,21 @@ export const marketingCampaigns = pgTable("marketing_campaigns", {
 
 export type MarketingCampaign = typeof marketingCampaigns.$inferSelect;
 export type InsertMarketingCampaign = typeof marketingCampaigns.$inferInsert;
+
+export const siteCredentials = pgTable("site_credentials", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  siteName: varchar("site_name", { length: 255 }).notNull(),
+  siteUrl: text("site_url"),
+  loginId: text("login_id"),
+  password: text("password"),
+  apiKey: text("api_key"),
+  notes: text("notes"),
+  category: varchar("category", { length: 100 }),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type SiteCredential = typeof siteCredentials.$inferSelect;
+export type InsertSiteCredential = typeof siteCredentials.$inferInsert;

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/use-auth';
-import { User, Lock, Save, Loader2, CheckCircle, Building2, CreditCard, Plus, Pencil, Trash2, X, Phone, Mail, Globe, Landmark, Calendar, Users, Shield, CheckCircle2, XCircle, MapPin, RefreshCw } from 'lucide-react';
+import { User, Lock, Save, Loader2, CheckCircle, Building2, CreditCard, Plus, Pencil, Trash2, X, Phone, Mail, Globe, Landmark, Calendar, Users, Shield, CheckCircle2, XCircle, MapPin, RefreshCw, Link2, Key, Eye, EyeOff, Copy } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 
@@ -420,6 +420,423 @@ function PaymentTab() {
   );
 }
 
+interface SiteCredential {
+  id: number;
+  siteName: string;
+  siteUrl?: string;
+  loginUrl?: string;
+  username?: string;
+  password?: string;
+  apiKey?: string;
+  notes?: string;
+  category?: string;
+  createdAt: string;
+}
+
+function SiteCredentialsTab() {
+  const { user } = useAuth();
+  const [credentials, setCredentials] = useState<SiteCredential[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingCredential, setEditingCredential] = useState<SiteCredential | null>(null);
+  const [showPassword, setShowPassword] = useState<{ [key: number]: boolean }>({});
+  const [showApiKey, setShowApiKey] = useState<{ [key: number]: boolean }>({});
+  const [formData, setFormData] = useState({
+    siteName: '',
+    siteUrl: '',
+    loginUrl: '',
+    username: '',
+    password: '',
+    apiKey: '',
+    notes: '',
+    category: 'general',
+  });
+
+  const canEdit = user?.role === 'admin' || user?.role === 'ceo' || user?.role === 'manager';
+
+  const categories = [
+    { value: 'general', label: '一般' },
+    { value: 'hosting', label: 'ホスティング' },
+    { value: 'analytics', label: 'アナリティクス' },
+    { value: 'social', label: 'SNS' },
+    { value: 'advertising', label: '広告' },
+    { value: 'payment', label: '決済' },
+    { value: 'email', label: 'メール' },
+    { value: 'api', label: 'API' },
+    { value: 'other', label: 'その他' },
+  ];
+
+  useEffect(() => {
+    fetchCredentials();
+  }, []);
+
+  const fetchCredentials = async () => {
+    try {
+      const res = await fetch('/api/site-credentials');
+      if (res.ok) {
+        const data = await res.json();
+        setCredentials(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch credentials:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const url = editingCredential
+        ? `/api/site-credentials/${editingCredential.id}`
+        : '/api/site-credentials';
+      const method = editingCredential ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (res.ok) {
+        fetchCredentials();
+        closeModal();
+      }
+    } catch (error) {
+      console.error('Failed to save credential:', error);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('このサイト情報を削除してもよろしいですか？')) return;
+    try {
+      const res = await fetch(`/api/site-credentials/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        fetchCredentials();
+      }
+    } catch (error) {
+      console.error('Failed to delete credential:', error);
+    }
+  };
+
+  const openModal = (credential?: SiteCredential) => {
+    if (credential) {
+      setEditingCredential(credential);
+      setFormData({
+        siteName: credential.siteName,
+        siteUrl: credential.siteUrl || '',
+        loginUrl: credential.loginUrl || '',
+        username: credential.username || '',
+        password: credential.password || '',
+        apiKey: credential.apiKey || '',
+        notes: credential.notes || '',
+        category: credential.category || 'general',
+      });
+    } else {
+      setEditingCredential(null);
+      setFormData({
+        siteName: '',
+        siteUrl: '',
+        loginUrl: '',
+        username: '',
+        password: '',
+        apiKey: '',
+        notes: '',
+        category: 'general',
+      });
+    }
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setEditingCredential(null);
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
+
+  const getCategoryLabel = (value: string) => {
+    return categories.find(c => c.value === value)?.label || value;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="animate-spin text-primary-500" size={32} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="card overflow-hidden">
+        <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-primary-50 to-white flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl shadow-button">
+              <Key size={20} className="text-white" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-slate-800">サイト情報</h2>
+              <p className="text-sm text-slate-500">各種サイトのURL、ログイン情報、APIキーを管理</p>
+            </div>
+          </div>
+          {canEdit && (
+            <button onClick={() => openModal()} className="btn-primary flex items-center gap-2">
+              <Plus size={16} />
+              追加
+            </button>
+          )}
+        </div>
+
+        <div className="p-6">
+          {credentials.length === 0 ? (
+            <div className="text-center py-12 text-slate-500">
+              <Key size={48} className="mx-auto mb-4 text-slate-300" />
+              <p>サイト情報がありません</p>
+              {canEdit && (
+                <button onClick={() => openModal()} className="mt-4 text-primary-600 hover:underline">
+                  最初のサイト情報を追加する
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {credentials.map((cred) => (
+                <div key={cred.id} className="border border-slate-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="font-bold text-slate-800">{cred.siteName}</h3>
+                        <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded-full">
+                          {getCategoryLabel(cred.category || 'general')}
+                        </span>
+                      </div>
+                      
+                      <div className="grid md:grid-cols-2 gap-3 text-sm">
+                        {cred.siteUrl && (
+                          <div className="flex items-center gap-2">
+                            <Link2 size={14} className="text-slate-400" />
+                            <span className="text-slate-600">サイトURL:</span>
+                            <a href={cred.siteUrl} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline truncate max-w-[200px]">
+                              {cred.siteUrl}
+                            </a>
+                            <button onClick={() => copyToClipboard(cred.siteUrl!)} className="p-1 hover:bg-slate-100 rounded">
+                              <Copy size={12} className="text-slate-400" />
+                            </button>
+                          </div>
+                        )}
+                        
+                        {cred.loginUrl && (
+                          <div className="flex items-center gap-2">
+                            <Globe size={14} className="text-slate-400" />
+                            <span className="text-slate-600">ログインURL:</span>
+                            <a href={cred.loginUrl} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline truncate max-w-[200px]">
+                              {cred.loginUrl}
+                            </a>
+                            <button onClick={() => copyToClipboard(cred.loginUrl!)} className="p-1 hover:bg-slate-100 rounded">
+                              <Copy size={12} className="text-slate-400" />
+                            </button>
+                          </div>
+                        )}
+                        
+                        {cred.username && (
+                          <div className="flex items-center gap-2">
+                            <User size={14} className="text-slate-400" />
+                            <span className="text-slate-600">ユーザー名:</span>
+                            <span className="text-slate-800">{cred.username}</span>
+                            <button onClick={() => copyToClipboard(cred.username!)} className="p-1 hover:bg-slate-100 rounded">
+                              <Copy size={12} className="text-slate-400" />
+                            </button>
+                          </div>
+                        )}
+                        
+                        {cred.password && (
+                          <div className="flex items-center gap-2">
+                            <Lock size={14} className="text-slate-400" />
+                            <span className="text-slate-600">パスワード:</span>
+                            <span className="text-slate-800 font-mono">
+                              {showPassword[cred.id] ? cred.password : '••••••••'}
+                            </span>
+                            <button 
+                              onClick={() => setShowPassword(prev => ({ ...prev, [cred.id]: !prev[cred.id] }))}
+                              className="p-1 hover:bg-slate-100 rounded"
+                            >
+                              {showPassword[cred.id] ? <EyeOff size={12} className="text-slate-400" /> : <Eye size={12} className="text-slate-400" />}
+                            </button>
+                            <button onClick={() => copyToClipboard(cred.password!)} className="p-1 hover:bg-slate-100 rounded">
+                              <Copy size={12} className="text-slate-400" />
+                            </button>
+                          </div>
+                        )}
+                        
+                        {cred.apiKey && (
+                          <div className="flex items-center gap-2 md:col-span-2">
+                            <Key size={14} className="text-slate-400" />
+                            <span className="text-slate-600">APIキー:</span>
+                            <span className="text-slate-800 font-mono truncate max-w-[300px]">
+                              {showApiKey[cred.id] ? cred.apiKey : '••••••••••••••••'}
+                            </span>
+                            <button 
+                              onClick={() => setShowApiKey(prev => ({ ...prev, [cred.id]: !prev[cred.id] }))}
+                              className="p-1 hover:bg-slate-100 rounded"
+                            >
+                              {showApiKey[cred.id] ? <EyeOff size={12} className="text-slate-400" /> : <Eye size={12} className="text-slate-400" />}
+                            </button>
+                            <button onClick={() => copyToClipboard(cred.apiKey!)} className="p-1 hover:bg-slate-100 rounded">
+                              <Copy size={12} className="text-slate-400" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {cred.notes && (
+                        <p className="mt-3 text-sm text-slate-500 bg-slate-50 p-2 rounded-lg">{cred.notes}</p>
+                      )}
+                    </div>
+                    
+                    {canEdit && (
+                      <div className="flex items-center gap-1 ml-4">
+                        <button
+                          onClick={() => openModal(cred)}
+                          className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                        >
+                          <Pencil size={16} className="text-slate-500" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(cred.id)}
+                          className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <Trash2 size={16} className="text-red-500" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl animate-slide-up">
+            <div className="flex justify-between items-center p-6 border-b border-slate-100">
+              <h2 className="text-xl font-bold text-slate-800">
+                {editingCredential ? 'サイト情報を編集' : 'サイト情報を追加'}
+              </h2>
+              <button onClick={closeModal} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
+                <X size={20} className="text-slate-500" />
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">サイト名 *</label>
+                <input
+                  type="text"
+                  value={formData.siteName}
+                  onChange={(e) => setFormData({ ...formData, siteName: e.target.value })}
+                  className="input-field"
+                  required
+                  placeholder="例: Google Analytics"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">カテゴリ</label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  className="input-field"
+                >
+                  {categories.map(cat => (
+                    <option key={cat.value} value={cat.value}>{cat.label}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">サイトURL</label>
+                <input
+                  type="url"
+                  value={formData.siteUrl}
+                  onChange={(e) => setFormData({ ...formData, siteUrl: e.target.value })}
+                  className="input-field"
+                  placeholder="https://example.com"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">ログインURL</label>
+                <input
+                  type="url"
+                  value={formData.loginUrl}
+                  onChange={(e) => setFormData({ ...formData, loginUrl: e.target.value })}
+                  className="input-field"
+                  placeholder="https://example.com/login"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">ユーザー名/ID</label>
+                  <input
+                    type="text"
+                    value={formData.username}
+                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                    className="input-field"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">パスワード</label>
+                  <input
+                    type="text"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    className="input-field"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">APIキー</label>
+                <input
+                  type="text"
+                  value={formData.apiKey}
+                  onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
+                  className="input-field"
+                  placeholder="API key or secret"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">メモ</label>
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  className="input-field min-h-[80px]"
+                  placeholder="追加情報やメモを入力"
+                />
+              </div>
+              
+              <div className="flex gap-3 pt-4">
+                <button type="button" onClick={closeModal} className="btn-secondary flex-1">
+                  キャンセル
+                </button>
+                <button type="submit" className="btn-primary flex-1">
+                  {editingCredential ? '更新' : '追加'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface Company {
   id: string;
   name: string;
@@ -454,7 +871,7 @@ interface UserItem {
   createdAt: string;
 }
 
-type TabType = 'profile' | 'companies' | 'payment' | 'users';
+type TabType = 'profile' | 'companies' | 'payment' | 'users' | 'credentials';
 
 export function SettingsPage() {
   const { user, refetch } = useAuth();
@@ -832,6 +1249,7 @@ export function SettingsPage() {
     ...(canManageUsers ? [{ id: 'users' as TabType, label: 'ユーザー管理', icon: Users }] : []),
     ...(canViewCompanies ? [{ id: 'companies' as TabType, label: '会社情報', icon: Building2 }] : []),
     { id: 'payment' as TabType, label: '決済管理', icon: CreditCard },
+    { id: 'credentials' as TabType, label: 'サイト情報', icon: Key },
   ];
 
   return (
@@ -1218,6 +1636,10 @@ export function SettingsPage() {
 
       {activeTab === 'payment' && (
         <PaymentTab />
+      )}
+
+      {activeTab === 'credentials' && (
+        <SiteCredentialsTab />
       )}
 
       {isCompanyModalOpen && (
