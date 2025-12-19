@@ -467,3 +467,62 @@ export const siteCredentials = pgTable("site_credentials", {
 
 export type SiteCredential = typeof siteCredentials.$inferSelect;
 export type InsertSiteCredential = typeof siteCredentials.$inferInsert;
+
+export const staffSalaries = pgTable("staff_salaries", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  employeeId: integer("employee_id").references(() => employees.id, { onDelete: "cascade" }).notNull(),
+  month: varchar("month", { length: 7 }).notNull(),
+  baseSalary: decimal("base_salary", { precision: 12, scale: 2 }).default("0"),
+  overtime: decimal("overtime", { precision: 12, scale: 2 }).default("0"),
+  bonus: decimal("bonus", { precision: 12, scale: 2 }).default("0"),
+  deductions: decimal("deductions", { precision: 12, scale: 2 }).default("0"),
+  netSalary: decimal("net_salary", { precision: 12, scale: 2 }).default("0"),
+  paidAt: timestamp("paid_at"),
+  status: varchar("status", { length: 50 }).default("pending"),
+  notes: text("notes"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type StaffSalary = typeof staffSalaries.$inferSelect;
+export type InsertStaffSalary = typeof staffSalaries.$inferInsert;
+
+export const staffShifts = pgTable("staff_shifts", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  employeeId: integer("employee_id").references(() => employees.id, { onDelete: "cascade" }).notNull(),
+  date: timestamp("date").notNull(),
+  startTime: varchar("start_time", { length: 10 }),
+  endTime: varchar("end_time", { length: 10 }),
+  breakMinutes: integer("break_minutes").default(0),
+  workHours: decimal("work_hours", { precision: 5, scale: 2 }).default("0"),
+  status: varchar("status", { length: 50 }).default("scheduled"),
+  notes: text("notes"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type StaffShift = typeof staffShifts.$inferSelect;
+export type InsertStaffShift = typeof staffShifts.$inferInsert;
+
+export const advancePayments = pgTable("advance_payments", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  employeeId: integer("employee_id").references(() => employees.id, { onDelete: "cascade" }).notNull(),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  requestedAt: timestamp("requested_at").defaultNow().notNull(),
+  reason: text("reason"),
+  status: varchar("status", { length: 50 }).default("pending"),
+  approvedBy: integer("approved_by").references(() => users.id, { onDelete: "set null" }),
+  approvedAt: timestamp("approved_at"),
+  paidAt: timestamp("paid_at"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type AdvancePayment = typeof advancePayments.$inferSelect;
+export type InsertAdvancePayment = typeof advancePayments.$inferInsert;

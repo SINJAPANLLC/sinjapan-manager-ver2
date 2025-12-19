@@ -1,8 +1,8 @@
 import { db } from './db';
-import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, leads, leadActivities, clientProjects, clientInvoices, investments, quickNotes, marketingCampaigns, siteCredentials } from '../shared/schema';
+import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, leads, leadActivities, clientProjects, clientInvoices, investments, quickNotes, marketingCampaigns, siteCredentials, staffSalaries, staffShifts, advancePayments } from '../shared/schema';
 import { eq, and, or, desc, sql, isNull, gte, lte, like, ilike } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Investment, InsertInvestment, QuickNote, InsertQuickNote, MarketingCampaign, InsertMarketingCampaign, SiteCredential, InsertSiteCredential } from '../shared/schema';
+import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Investment, InsertInvestment, QuickNote, InsertQuickNote, MarketingCampaign, InsertMarketingCampaign, SiteCredential, InsertSiteCredential, StaffSalary, InsertStaffSalary, StaffShift, InsertStaffShift, AdvancePayment, InsertAdvancePayment } from '../shared/schema';
 
 export function createTenantStorage(companyId: string | null, options?: { allowGlobal?: boolean }) {
   const requiresTenantScope = !options?.allowGlobal;
@@ -641,6 +641,123 @@ export function createTenantStorage(companyId: string | null, options?: { allowG
         conditions.push(eq(siteCredentials.companyId, companyId));
       }
       const result = await db.delete(siteCredentials).where(and(...conditions)).returning();
+      return result.length > 0;
+    },
+
+    async getStaffSalaries(employeeId: number): Promise<StaffSalary[]> {
+      const conditions = [eq(staffSalaries.employeeId, employeeId)];
+      if (companyId) {
+        conditions.push(eq(staffSalaries.companyId, companyId));
+      }
+      return db.select().from(staffSalaries).where(and(...conditions)).orderBy(desc(staffSalaries.month));
+    },
+
+    async createStaffSalary(data: InsertStaffSalary): Promise<StaffSalary> {
+      const salaryData = companyId ? { ...data, companyId } : data;
+      const [salary] = await db.insert(staffSalaries).values(salaryData).returning();
+      return salary;
+    },
+
+    async updateStaffSalary(id: number, data: Partial<InsertStaffSalary>): Promise<StaffSalary | undefined> {
+      const conditions = [eq(staffSalaries.id, id)];
+      if (companyId) {
+        conditions.push(eq(staffSalaries.companyId, companyId));
+      }
+      const [salary] = await db.update(staffSalaries)
+        .set({ ...data, updatedAt: new Date() })
+        .where(and(...conditions))
+        .returning();
+      return salary;
+    },
+
+    async deleteStaffSalary(id: number): Promise<boolean> {
+      const conditions = [eq(staffSalaries.id, id)];
+      if (companyId) {
+        conditions.push(eq(staffSalaries.companyId, companyId));
+      }
+      const result = await db.delete(staffSalaries).where(and(...conditions)).returning();
+      return result.length > 0;
+    },
+
+    async getStaffShifts(employeeId: number, startDate?: Date, endDate?: Date): Promise<StaffShift[]> {
+      const conditions = [eq(staffShifts.employeeId, employeeId)];
+      if (companyId) {
+        conditions.push(eq(staffShifts.companyId, companyId));
+      }
+      if (startDate) {
+        conditions.push(gte(staffShifts.date, startDate));
+      }
+      if (endDate) {
+        conditions.push(lte(staffShifts.date, endDate));
+      }
+      return db.select().from(staffShifts).where(and(...conditions)).orderBy(desc(staffShifts.date));
+    },
+
+    async createStaffShift(data: InsertStaffShift): Promise<StaffShift> {
+      const shiftData = companyId ? { ...data, companyId } : data;
+      const [shift] = await db.insert(staffShifts).values(shiftData).returning();
+      return shift;
+    },
+
+    async updateStaffShift(id: number, data: Partial<InsertStaffShift>): Promise<StaffShift | undefined> {
+      const conditions = [eq(staffShifts.id, id)];
+      if (companyId) {
+        conditions.push(eq(staffShifts.companyId, companyId));
+      }
+      const [shift] = await db.update(staffShifts)
+        .set({ ...data, updatedAt: new Date() })
+        .where(and(...conditions))
+        .returning();
+      return shift;
+    },
+
+    async deleteStaffShift(id: number): Promise<boolean> {
+      const conditions = [eq(staffShifts.id, id)];
+      if (companyId) {
+        conditions.push(eq(staffShifts.companyId, companyId));
+      }
+      const result = await db.delete(staffShifts).where(and(...conditions)).returning();
+      return result.length > 0;
+    },
+
+    async getAdvancePayments(employeeId?: number): Promise<AdvancePayment[]> {
+      const conditions: any[] = [];
+      if (employeeId) {
+        conditions.push(eq(advancePayments.employeeId, employeeId));
+      }
+      if (companyId) {
+        conditions.push(eq(advancePayments.companyId, companyId));
+      }
+      if (conditions.length === 0) {
+        return db.select().from(advancePayments).orderBy(desc(advancePayments.requestedAt));
+      }
+      return db.select().from(advancePayments).where(and(...conditions)).orderBy(desc(advancePayments.requestedAt));
+    },
+
+    async createAdvancePayment(data: InsertAdvancePayment): Promise<AdvancePayment> {
+      const paymentData = companyId ? { ...data, companyId } : data;
+      const [payment] = await db.insert(advancePayments).values(paymentData).returning();
+      return payment;
+    },
+
+    async updateAdvancePayment(id: number, data: Partial<InsertAdvancePayment>): Promise<AdvancePayment | undefined> {
+      const conditions = [eq(advancePayments.id, id)];
+      if (companyId) {
+        conditions.push(eq(advancePayments.companyId, companyId));
+      }
+      const [payment] = await db.update(advancePayments)
+        .set({ ...data, updatedAt: new Date() })
+        .where(and(...conditions))
+        .returning();
+      return payment;
+    },
+
+    async deleteAdvancePayment(id: number): Promise<boolean> {
+      const conditions = [eq(advancePayments.id, id)];
+      if (companyId) {
+        conditions.push(eq(advancePayments.companyId, companyId));
+      }
+      const result = await db.delete(advancePayments).where(and(...conditions)).returning();
       return result.length > 0;
     },
   };

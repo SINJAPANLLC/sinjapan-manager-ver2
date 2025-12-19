@@ -3499,4 +3499,197 @@ URL/名前: ${url || '未指定'}
       res.status(500).json({ error: 'サイト情報の削除に失敗しました' });
     }
   });
+
+  // Staff Salaries API
+  app.get('/api/employees/:employeeId/salaries', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const salaries = await tenantStorage.getStaffSalaries(parseInt(req.params.employeeId));
+      res.json(salaries);
+    } catch (error) {
+      console.error('Get salaries error:', error);
+      res.status(500).json({ error: '給料情報の取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/employees/:employeeId/salaries', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const userId = (req.session as any).user?.id;
+      const salary = await tenantStorage.createStaffSalary({
+        ...req.body,
+        employeeId: parseInt(req.params.employeeId),
+        createdBy: userId,
+      });
+      res.json(salary);
+    } catch (error) {
+      console.error('Create salary error:', error);
+      res.status(500).json({ error: '給料情報の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/salaries/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const salary = await tenantStorage.updateStaffSalary(parseInt(req.params.id), req.body);
+      if (!salary) {
+        return res.status(404).json({ error: '給料情報が見つかりません' });
+      }
+      res.json(salary);
+    } catch (error) {
+      console.error('Update salary error:', error);
+      res.status(500).json({ error: '給料情報の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/salaries/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const success = await tenantStorage.deleteStaffSalary(parseInt(req.params.id));
+      if (!success) {
+        return res.status(404).json({ error: '給料情報が見つかりません' });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete salary error:', error);
+      res.status(500).json({ error: '給料情報の削除に失敗しました' });
+    }
+  });
+
+  // Staff Shifts API
+  app.get('/api/employees/:employeeId/shifts', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+      const shifts = await tenantStorage.getStaffShifts(parseInt(req.params.employeeId), startDate, endDate);
+      res.json(shifts);
+    } catch (error) {
+      console.error('Get shifts error:', error);
+      res.status(500).json({ error: 'シフト情報の取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/employees/:employeeId/shifts', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const userId = (req.session as any).user?.id;
+      const shift = await tenantStorage.createStaffShift({
+        ...req.body,
+        employeeId: parseInt(req.params.employeeId),
+        date: new Date(req.body.date),
+        createdBy: userId,
+      });
+      res.json(shift);
+    } catch (error) {
+      console.error('Create shift error:', error);
+      res.status(500).json({ error: 'シフトの作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/shifts/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const updateData = { ...req.body };
+      if (updateData.date) {
+        updateData.date = new Date(updateData.date);
+      }
+      const shift = await tenantStorage.updateStaffShift(parseInt(req.params.id), updateData);
+      if (!shift) {
+        return res.status(404).json({ error: 'シフトが見つかりません' });
+      }
+      res.json(shift);
+    } catch (error) {
+      console.error('Update shift error:', error);
+      res.status(500).json({ error: 'シフトの更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/shifts/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const success = await tenantStorage.deleteStaffShift(parseInt(req.params.id));
+      if (!success) {
+        return res.status(404).json({ error: 'シフトが見つかりません' });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete shift error:', error);
+      res.status(500).json({ error: 'シフトの削除に失敗しました' });
+    }
+  });
+
+  // Advance Payments API
+  app.get('/api/employees/:employeeId/advance-payments', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const payments = await tenantStorage.getAdvancePayments(parseInt(req.params.employeeId));
+      res.json(payments);
+    } catch (error) {
+      console.error('Get advance payments error:', error);
+      res.status(500).json({ error: '前払い申請の取得に失敗しました' });
+    }
+  });
+
+  app.get('/api/advance-payments', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const payments = await tenantStorage.getAdvancePayments();
+      res.json(payments);
+    } catch (error) {
+      console.error('Get all advance payments error:', error);
+      res.status(500).json({ error: '前払い申請の取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/employees/:employeeId/advance-payments', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const payment = await tenantStorage.createAdvancePayment({
+        ...req.body,
+        employeeId: parseInt(req.params.employeeId),
+      });
+      res.json(payment);
+    } catch (error) {
+      console.error('Create advance payment error:', error);
+      res.status(500).json({ error: '前払い申請の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/advance-payments/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const userId = (req.session as any).user?.id;
+      const updateData = { ...req.body };
+      if (updateData.status === 'approved') {
+        updateData.approvedBy = userId;
+        updateData.approvedAt = new Date();
+      }
+      if (updateData.status === 'paid') {
+        updateData.paidAt = new Date();
+      }
+      const payment = await tenantStorage.updateAdvancePayment(parseInt(req.params.id), updateData);
+      if (!payment) {
+        return res.status(404).json({ error: '前払い申請が見つかりません' });
+      }
+      res.json(payment);
+    } catch (error) {
+      console.error('Update advance payment error:', error);
+      res.status(500).json({ error: '前払い申請の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/advance-payments/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const success = await tenantStorage.deleteAdvancePayment(parseInt(req.params.id));
+      if (!success) {
+        return res.status(404).json({ error: '前払い申請が見つかりません' });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete advance payment error:', error);
+      res.status(500).json({ error: '前払い申請の削除に失敗しました' });
+    }
+  });
 }
