@@ -818,6 +818,10 @@ export function StaffPage() {
                     <label className="text-xs text-slate-500">控除</label>
                     <input type="number" className="input-field text-sm" value={salaryForm.deductions} onChange={(e) => setSalaryForm({ ...salaryForm, deductions: e.target.value })} />
                   </div>
+                  <div className="col-span-2">
+                    <label className="text-xs text-slate-500">備考</label>
+                    <input type="text" className="input-field text-sm" placeholder="メモ" value={salaryForm.notes} onChange={(e) => setSalaryForm({ ...salaryForm, notes: e.target.value })} />
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <button onClick={handleAddSalary} className="btn-primary text-sm">保存</button>
@@ -964,6 +968,16 @@ export function StaffPage() {
                           onChange={(e) => setSalaryForm({ ...salaryForm, deductions: e.target.value })}
                         />
                       </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-500">備考</label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        placeholder="メモ"
+                        value={salaryForm.notes}
+                        onChange={(e) => setSalaryForm({ ...salaryForm, notes: e.target.value })}
+                      />
                     </div>
                     <div className="flex gap-2 pt-4">
                       <button onClick={handleUpdateSalary} className="btn-primary flex items-center gap-2">
