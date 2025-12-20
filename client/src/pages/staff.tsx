@@ -392,9 +392,20 @@ export function StaffPage() {
     });
 
     if (userRes.ok) {
-      const updatedUser = await userRes.json();
-      setSelectedStaff({ ...selectedStaff, ...updatedUser });
-      setStaff((prev) => prev.map((s) => (s.id === updatedUser.id ? { ...s, ...updatedUser } : s)));
+      // Directly update local state with form values
+      const updatedStaff = {
+        ...selectedStaff,
+        phone: basicInfoForm.phone,
+        department: basicInfoForm.department,
+        position: basicInfoForm.position,
+        bankName: basicInfoForm.bankName,
+        bankBranch: basicInfoForm.bankBranch,
+        bankAccountType: basicInfoForm.bankAccountType,
+        bankAccountNumber: basicInfoForm.bankAccountNumber,
+        bankAccountHolder: basicInfoForm.bankAccountHolder,
+      };
+      setSelectedStaff(updatedStaff);
+      setStaff((prev) => prev.map((s) => (s.id === selectedStaff.id ? updatedStaff : s)));
     }
 
     // Update employee info if exists
@@ -415,8 +426,18 @@ export function StaffPage() {
         }),
       });
       if (empRes.ok) {
-        const updatedEmp = await empRes.json();
-        setEmployeeData(updatedEmp);
+        // Directly update local state with form values
+        setEmployeeData({
+          ...employeeData,
+          employeeNumber: basicInfoForm.employeeNumber,
+          hireDate: basicInfoForm.hireDate || undefined,
+          salary: basicInfoForm.salary || '0',
+          bankName: basicInfoForm.bankName,
+          bankBranch: basicInfoForm.bankBranch,
+          bankAccountType: basicInfoForm.bankAccountType,
+          bankAccountNumber: basicInfoForm.bankAccountNumber,
+          bankAccountHolder: basicInfoForm.bankAccountHolder,
+        });
       }
     }
 
