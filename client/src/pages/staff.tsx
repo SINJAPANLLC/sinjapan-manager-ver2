@@ -208,12 +208,36 @@ export function StaffPage() {
     setAdvancePayments([]);
     setEmployeeData(null);
 
-    // Fetch employee record for this user
+    // Fetch or auto-create employee record for this user
     try {
       const empRes = await fetch('/api/employees', { credentials: 'include' });
       if (empRes.ok) {
         const employees = await empRes.json();
-        const emp = employees.find((e: Employee) => e.userId === s.id);
+        let emp = employees.find((e: Employee) => e.userId === s.id);
+        
+        // Auto-create employee record if not exists
+        if (!emp) {
+          const createRes = await fetch('/api/employees', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              userId: s.id,
+              employeeNumber: '',
+              hireDate: new Date().toISOString().split('T')[0],
+              salary: '0',
+              bankName: s.bankName || '',
+              bankBranch: s.bankBranch || '',
+              bankAccountType: s.bankAccountType || '普通',
+              bankAccountNumber: s.bankAccountNumber || '',
+              bankAccountHolder: s.bankAccountHolder || '',
+            }),
+          });
+          if (createRes.ok) {
+            emp = await createRes.json();
+          }
+        }
+        
         if (emp) {
           setEmployeeData(emp);
           // Fetch salaries, shifts, advance payments

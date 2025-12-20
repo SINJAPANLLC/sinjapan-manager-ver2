@@ -186,6 +186,27 @@ export function registerRoutes(app: Express) {
       const userData = companyId ? { ...req.body, companyId } : req.body;
       console.log('Creating user with data:', JSON.stringify(userData, null, 2));
       const user = await storage.createUser(userData);
+      
+      // Auto-create employee record for staff users
+      if (user.role === 'staff') {
+        try {
+          await storage.createEmployee({
+            userId: user.id,
+            companyId: user.companyId || undefined,
+            employeeNumber: '',
+            hireDate: new Date(),
+            salary: '0',
+            bankName: user.bankName || '',
+            bankBranch: user.bankBranch || '',
+            bankAccountType: user.bankAccountType || '普通',
+            bankAccountNumber: user.bankAccountNumber || '',
+            bankAccountHolder: user.bankAccountHolder || '',
+          });
+        } catch (empErr) {
+          console.error('Auto-create employee error:', empErr);
+        }
+      }
+      
       const { password: _, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
     } catch (error: any) {
