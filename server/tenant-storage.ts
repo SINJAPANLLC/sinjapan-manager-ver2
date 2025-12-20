@@ -1,8 +1,8 @@
 import { db } from './db';
-import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, leads, leadActivities, clientProjects, clientInvoices, investments, quickNotes, marketingCampaigns, siteCredentials, staffSalaries, staffShifts, advancePayments } from '../shared/schema';
+import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, leads, leadActivities, clientProjects, clientInvoices, investments, quickNotes, marketingCampaigns, siteCredentials, staffSalaries, staffShifts, advancePayments, taskEvidence, staffAffiliates, staffMemos } from '../shared/schema';
 import { eq, and, or, desc, sql, isNull, gte, lte, like, ilike } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Investment, InsertInvestment, QuickNote, InsertQuickNote, MarketingCampaign, InsertMarketingCampaign, SiteCredential, InsertSiteCredential, StaffSalary, InsertStaffSalary, StaffShift, InsertStaffShift, AdvancePayment, InsertAdvancePayment } from '../shared/schema';
+import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Investment, InsertInvestment, QuickNote, InsertQuickNote, MarketingCampaign, InsertMarketingCampaign, SiteCredential, InsertSiteCredential, StaffSalary, InsertStaffSalary, StaffShift, InsertStaffShift, AdvancePayment, InsertAdvancePayment, TaskEvidence, InsertTaskEvidence, StaffAffiliate, InsertStaffAffiliate, StaffMemo, InsertStaffMemo } from '../shared/schema';
 
 export function createTenantStorage(companyId: string | null, options?: { allowGlobal?: boolean }) {
   const requiresTenantScope = !options?.allowGlobal;
@@ -759,6 +759,119 @@ export function createTenantStorage(companyId: string | null, options?: { allowG
       }
       const result = await db.delete(advancePayments).where(and(...conditions)).returning();
       return result.length > 0;
+    },
+
+    async getTaskEvidence(taskId: number): Promise<TaskEvidence[]> {
+      const conditions = [eq(taskEvidence.taskId, taskId)];
+      if (companyId) {
+        conditions.push(eq(taskEvidence.companyId, companyId));
+      }
+      return db.select().from(taskEvidence).where(and(...conditions)).orderBy(desc(taskEvidence.submittedAt));
+    },
+
+    async createTaskEvidence(data: InsertTaskEvidence): Promise<TaskEvidence> {
+      const evidenceData = companyId ? { ...data, companyId } : data;
+      const [evidence] = await db.insert(taskEvidence).values(evidenceData).returning();
+      return evidence;
+    },
+
+    async deleteTaskEvidence(id: number): Promise<boolean> {
+      const conditions = [eq(taskEvidence.id, id)];
+      if (companyId) {
+        conditions.push(eq(taskEvidence.companyId, companyId));
+      }
+      const result = await db.delete(taskEvidence).where(and(...conditions)).returning();
+      return result.length > 0;
+    },
+
+    async getStaffAffiliates(employeeId?: number): Promise<StaffAffiliate[]> {
+      const conditions: any[] = [];
+      if (employeeId) {
+        conditions.push(eq(staffAffiliates.employeeId, employeeId));
+      }
+      if (companyId) {
+        conditions.push(eq(staffAffiliates.companyId, companyId));
+      }
+      if (conditions.length === 0) {
+        return db.select().from(staffAffiliates).orderBy(desc(staffAffiliates.createdAt));
+      }
+      return db.select().from(staffAffiliates).where(and(...conditions)).orderBy(desc(staffAffiliates.createdAt));
+    },
+
+    async createStaffAffiliate(data: InsertStaffAffiliate): Promise<StaffAffiliate> {
+      const affiliateData = companyId ? { ...data, companyId } : data;
+      const [affiliate] = await db.insert(staffAffiliates).values(affiliateData).returning();
+      return affiliate;
+    },
+
+    async updateStaffAffiliate(id: number, data: Partial<InsertStaffAffiliate>): Promise<StaffAffiliate | undefined> {
+      const conditions = [eq(staffAffiliates.id, id)];
+      if (companyId) {
+        conditions.push(eq(staffAffiliates.companyId, companyId));
+      }
+      const [affiliate] = await db.update(staffAffiliates)
+        .set({ ...data, updatedAt: new Date() })
+        .where(and(...conditions))
+        .returning();
+      return affiliate;
+    },
+
+    async deleteStaffAffiliate(id: number): Promise<boolean> {
+      const conditions = [eq(staffAffiliates.id, id)];
+      if (companyId) {
+        conditions.push(eq(staffAffiliates.companyId, companyId));
+      }
+      const result = await db.delete(staffAffiliates).where(and(...conditions)).returning();
+      return result.length > 0;
+    },
+
+    async getStaffMemos(employeeId?: number): Promise<StaffMemo[]> {
+      const conditions: any[] = [];
+      if (employeeId) {
+        conditions.push(eq(staffMemos.employeeId, employeeId));
+      }
+      if (companyId) {
+        conditions.push(eq(staffMemos.companyId, companyId));
+      }
+      if (conditions.length === 0) {
+        return db.select().from(staffMemos).orderBy(desc(staffMemos.createdAt));
+      }
+      return db.select().from(staffMemos).where(and(...conditions)).orderBy(desc(staffMemos.createdAt));
+    },
+
+    async createStaffMemo(data: InsertStaffMemo): Promise<StaffMemo> {
+      const memoData = companyId ? { ...data, companyId } : data;
+      const [memo] = await db.insert(staffMemos).values(memoData).returning();
+      return memo;
+    },
+
+    async updateStaffMemo(id: number, data: Partial<InsertStaffMemo>): Promise<StaffMemo | undefined> {
+      const conditions = [eq(staffMemos.id, id)];
+      if (companyId) {
+        conditions.push(eq(staffMemos.companyId, companyId));
+      }
+      const [memo] = await db.update(staffMemos)
+        .set({ ...data, updatedAt: new Date() })
+        .where(and(...conditions))
+        .returning();
+      return memo;
+    },
+
+    async deleteStaffMemo(id: number): Promise<boolean> {
+      const conditions = [eq(staffMemos.id, id)];
+      if (companyId) {
+        conditions.push(eq(staffMemos.companyId, companyId));
+      }
+      const result = await db.delete(staffMemos).where(and(...conditions)).returning();
+      return result.length > 0;
+    },
+
+    async getTasksByUserId(userId: number): Promise<Task[]> {
+      const conditions = [eq(tasks.assignedTo, userId)];
+      if (companyId) {
+        conditions.push(eq(tasks.companyId, companyId));
+      }
+      return db.select().from(tasks).where(and(...conditions)).orderBy(desc(tasks.createdAt));
     },
   };
 }

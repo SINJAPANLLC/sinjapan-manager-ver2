@@ -528,3 +528,54 @@ export const advancePayments = pgTable("advance_payments", {
 
 export type AdvancePayment = typeof advancePayments.$inferSelect;
 export type InsertAdvancePayment = typeof advancePayments.$inferInsert;
+
+export const taskEvidence = pgTable("task_evidence", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  taskId: integer("task_id").references(() => tasks.id, { onDelete: "cascade" }).notNull(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
+  evidenceType: varchar("evidence_type", { length: 50 }).default("file"),
+  fileName: varchar("file_name", { length: 255 }),
+  fileUrl: text("file_url"),
+  description: text("description"),
+  submittedAt: timestamp("submitted_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type TaskEvidence = typeof taskEvidence.$inferSelect;
+export type InsertTaskEvidence = typeof taskEvidence.$inferInsert;
+
+export const staffAffiliates = pgTable("staff_affiliates", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  employeeId: integer("employee_id").references(() => employees.id, { onDelete: "cascade" }).notNull(),
+  affiliateName: varchar("affiliate_name", { length: 255 }).notNull(),
+  affiliateUrl: text("affiliate_url"),
+  affiliateCode: varchar("affiliate_code", { length: 100 }),
+  platform: varchar("platform", { length: 100 }),
+  commissionRate: decimal("commission_rate", { precision: 5, scale: 2 }),
+  totalClicks: integer("total_clicks").default(0),
+  totalConversions: integer("total_conversions").default(0),
+  totalEarnings: decimal("total_earnings", { precision: 12, scale: 2 }).default("0"),
+  isActive: boolean("is_active").default(true),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type StaffAffiliate = typeof staffAffiliates.$inferSelect;
+export type InsertStaffAffiliate = typeof staffAffiliates.$inferInsert;
+
+export const staffMemos = pgTable("staff_memos", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  employeeId: integer("employee_id").references(() => employees.id, { onDelete: "cascade" }).notNull(),
+  content: text("content").notNull(),
+  category: varchar("category", { length: 50 }).default("general"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type StaffMemo = typeof staffMemos.$inferSelect;
+export type InsertStaffMemo = typeof staffMemos.$inferInsert;

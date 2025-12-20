@@ -24,7 +24,12 @@ import {
   ClipboardList,
   Link2,
   Settings,
-  StickyNote
+  StickyNote,
+  Upload,
+  FileText,
+  ExternalLink,
+  MousePointerClick,
+  TrendingUp
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
@@ -98,6 +103,46 @@ interface AdvancePayment {
   paidAt?: string;
 }
 
+interface StaffTask {
+  id: number;
+  title: string;
+  description?: string;
+  status: string;
+  priority: string;
+  dueDate?: string;
+  createdAt: string;
+}
+
+interface TaskEvidence {
+  id: number;
+  taskId: number;
+  fileName?: string;
+  fileUrl?: string;
+  description?: string;
+  submittedAt: string;
+}
+
+interface StaffAffiliate {
+  id: number;
+  affiliateName: string;
+  affiliateUrl?: string;
+  affiliateCode?: string;
+  platform?: string;
+  commissionRate?: string;
+  totalClicks?: number;
+  totalConversions?: number;
+  totalEarnings?: string;
+  isActive?: boolean;
+  notes?: string;
+}
+
+interface StaffMemo {
+  id: number;
+  content: string;
+  category?: string;
+  createdAt: string;
+}
+
 type DetailTab = 'info' | 'salary' | 'shift' | 'advance' | 'tasks' | 'affiliate' | 'system' | 'memo';
 
 export function StaffPage() {
@@ -114,6 +159,18 @@ export function StaffPage() {
   const [salaries, setSalaries] = useState<Salary[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [advancePayments, setAdvancePayments] = useState<AdvancePayment[]>([]);
+  const [staffTasks, setStaffTasks] = useState<StaffTask[]>([]);
+  const [taskEvidence, setTaskEvidence] = useState<Record<number, TaskEvidence[]>>({});
+  const [affiliates, setAffiliates] = useState<StaffAffiliate[]>([]);
+  const [staffMemos, setStaffMemos] = useState<StaffMemo[]>([]);
+  const [showAffiliateForm, setShowAffiliateForm] = useState(false);
+  const [showMemoForm, setShowMemoForm] = useState(false);
+  const [affiliateForm, setAffiliateForm] = useState({ affiliateName: '', affiliateUrl: '', affiliateCode: '', platform: '', commissionRate: '', notes: '' });
+  const [memoForm, setMemoForm] = useState({ content: '', category: 'general' });
+  const [selectedTask, setSelectedTask] = useState<StaffTask | null>(null);
+  const [showEvidenceForm, setShowEvidenceForm] = useState(false);
+  const [evidenceForm, setEvidenceForm] = useState({ description: '' });
+  const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
   const [showSalaryForm, setShowSalaryForm] = useState(false);
   const [showShiftForm, setShowShiftForm] = useState(false);
   const [showAdvanceForm, setShowAdvanceForm] = useState(false);
@@ -164,6 +221,145 @@ export function StaffPage() {
   useEffect(() => {
     fetchStaff();
   }, []);
+
+  const fetchStaffTasks = async (userId: number) => {
+    try {
+      const res = await fetch('/api/tasks', { credentials: 'include' });
+      if (res.ok) {
+        const tasks = await res.json();
+        const userTasks = tasks.filter((t: any) => t.assignedTo === userId);
+        setStaffTasks(userTasks);
+        userTasks.forEach((task: any) => fetchTaskEvidence(task.id));
+      }
+    } catch (err) {
+      console.error('Failed to fetch tasks:', err);
+    }
+  };
+
+  const fetchTaskEvidence = async (taskId: number) => {
+    try {
+      const res = await fetch(`/api/tasks/${taskId}/evidence`, { credentials: 'include' });
+      if (res.ok) {
+        const evidence = await res.json();
+        setTaskEvidence(prev => ({ ...prev, [taskId]: evidence }));
+      }
+    } catch (err) {
+      console.error('Failed to fetch task evidence:', err);
+    }
+  };
+
+  const handleSubmitEvidence = async () => {
+    if (!selectedTask) return;
+    try {
+      const formData = new FormData();
+      formData.append('description', evidenceForm.description);
+      if (evidenceFile) {
+        formData.append('file', evidenceFile);
+      }
+      const res = await fetch(`/api/tasks/${selectedTask.id}/evidence`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+      if (res.ok) {
+        fetchTaskEvidence(selectedTask.id);
+        setShowEvidenceForm(false);
+        setSelectedTask(null);
+        setEvidenceForm({ description: '' });
+        setEvidenceFile(null);
+      }
+    } catch (err) {
+      console.error('Failed to submit evidence:', err);
+    }
+  };
+
+  const handleDeleteEvidence = async (evidenceId: number, taskId: number) => {
+    if (!confirm('このエビデンスを削除しますか？')) return;
+    try {
+      const res = await fetch(`/api/evidence/${evidenceId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (res.ok) {
+        fetchTaskEvidence(taskId);
+      }
+    } catch (err) {
+      console.error('Failed to delete evidence:', err);
+    }
+  };
+
+  const handleAddAffiliate = async () => {
+    if (!employeeData || !affiliateForm.affiliateName) return;
+    try {
+      const res = await fetch(`/api/employees/${employeeData.id}/affiliates`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          ...affiliateForm,
+          isActive: true,
+        }),
+      });
+      if (res.ok) {
+        const newAffiliate = await res.json();
+        setAffiliates(prev => [...prev, newAffiliate]);
+        setAffiliateForm({ affiliateName: '', platform: '', affiliateUrl: '', affiliateCode: '', commissionRate: '', notes: '' });
+        setShowAffiliateForm(false);
+      }
+    } catch (err) {
+      console.error('Failed to add affiliate:', err);
+    }
+  };
+
+  const handleDeleteAffiliate = async (affiliateId: number) => {
+    if (!confirm('このアフィリエイトを削除しますか？')) return;
+    try {
+      const res = await fetch(`/api/affiliates/${affiliateId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (res.ok) {
+        setAffiliates(prev => prev.filter(a => a.id !== affiliateId));
+      }
+    } catch (err) {
+      console.error('Failed to delete affiliate:', err);
+    }
+  };
+
+  const handleAddMemo = async () => {
+    if (!employeeData || !memoForm.content) return;
+    try {
+      const res = await fetch(`/api/employees/${employeeData.id}/memos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(memoForm),
+      });
+      if (res.ok) {
+        const newMemo = await res.json();
+        setStaffMemos(prev => [newMemo, ...prev]);
+        setMemoForm({ category: 'general', content: '' });
+        setShowMemoForm(false);
+      }
+    } catch (err) {
+      console.error('Failed to add memo:', err);
+    }
+  };
+
+  const handleDeleteMemo = async (memoId: number) => {
+    if (!confirm('このメモを削除しますか？')) return;
+    try {
+      const res = await fetch(`/api/memos/${memoId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (res.ok) {
+        setStaffMemos(prev => prev.filter(m => m.id !== memoId));
+      }
+    } catch (err) {
+      console.error('Failed to delete memo:', err);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!form.name || !form.email) {
@@ -237,7 +433,13 @@ export function StaffPage() {
     setSalaries([]);
     setShifts([]);
     setAdvancePayments([]);
+    setStaffTasks([]);
+    setAffiliates([]);
+    setStaffMemos([]);
     setEmployeeData(null);
+
+    // Fetch tasks for this user
+    fetchStaffTasks(s.id);
 
     // Fetch or auto-create employee record for this user
     try {
@@ -271,15 +473,19 @@ export function StaffPage() {
         
         if (emp) {
           setEmployeeData(emp);
-          // Fetch salaries, shifts, advance payments
-          const [salRes, shiftRes, advRes] = await Promise.all([
+          // Fetch salaries, shifts, advance payments, affiliates, memos
+          const [salRes, shiftRes, advRes, affRes, memoRes] = await Promise.all([
             fetch(`/api/employees/${emp.id}/salaries`, { credentials: 'include' }),
             fetch(`/api/employees/${emp.id}/shifts`, { credentials: 'include' }),
             fetch(`/api/employees/${emp.id}/advance-payments`, { credentials: 'include' }),
+            fetch(`/api/employees/${emp.id}/affiliates`, { credentials: 'include' }),
+            fetch(`/api/employees/${emp.id}/memos`, { credentials: 'include' }),
           ]);
           if (salRes.ok) setSalaries(await salRes.json());
           if (shiftRes.ok) setShifts(await shiftRes.json());
           if (advRes.ok) setAdvancePayments(await advRes.json());
+          if (affRes.ok) setAffiliates(await affRes.json());
+          if (memoRes.ok) setStaffMemos(await memoRes.json());
         }
       }
     } catch (err) {
@@ -1349,53 +1555,423 @@ export function StaffPage() {
 
         {detailTab === 'tasks' && (
           <div className="card overflow-hidden">
-            <div className="p-5 border-b border-slate-100">
-              <h2 className="text-lg font-bold text-slate-800">タスク</h2>
+            <div className="p-5 border-b border-slate-100 flex justify-between items-center">
+              <h2 className="text-lg font-bold text-slate-800">タスク一覧</h2>
+              <span className="text-sm text-slate-500">{staffTasks.length}件</span>
             </div>
-            <div className="p-8 text-center text-slate-400">
-              <ClipboardList size={32} className="mx-auto mb-2 opacity-50" />
-              <p>このスタッフに割り当てられたタスクを管理します</p>
-              <p className="text-xs mt-2">（準備中）</p>
+            {staffTasks.length === 0 ? (
+              <div className="p-8 text-center text-slate-400">
+                <ClipboardList size={32} className="mx-auto mb-2 opacity-50" />
+                <p>割り当てられたタスクがありません</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {staffTasks.map((task) => (
+                  <div key={task.id} className="p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex-1">
+                        <h3 className="font-medium text-slate-800">{task.title}</h3>
+                        {task.description && (
+                          <p className="text-sm text-slate-500 mt-1">{task.description}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={cn(
+                          "px-2 py-1 rounded-full text-xs font-medium",
+                          task.status === 'completed' && "bg-green-100 text-green-700",
+                          task.status === 'in_progress' && "bg-blue-100 text-blue-700",
+                          task.status === 'pending' && "bg-yellow-100 text-yellow-700"
+                        )}>
+                          {task.status === 'completed' ? '完了' : task.status === 'in_progress' ? '進行中' : '未着手'}
+                        </span>
+                        <span className={cn(
+                          "px-2 py-1 rounded-full text-xs font-medium",
+                          task.priority === 'high' && "bg-red-100 text-red-700",
+                          task.priority === 'medium' && "bg-orange-100 text-orange-700",
+                          task.priority === 'low' && "bg-slate-100 text-slate-700"
+                        )}>
+                          {task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-slate-400 mt-2">
+                      <span>作成日: {format(new Date(task.createdAt), 'yyyy/MM/dd')}</span>
+                      {task.dueDate && (
+                        <span>期限: {format(new Date(task.dueDate), 'yyyy/MM/dd')}</span>
+                      )}
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-slate-100">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-slate-600">エビデンス</span>
+                        <button
+                          onClick={() => {
+                            setSelectedTask(task);
+                            setShowEvidenceForm(true);
+                            fetchTaskEvidence(task.id);
+                          }}
+                          className="text-xs text-primary-500 hover:text-primary-600 flex items-center gap-1"
+                        >
+                          <Upload size={12} />
+                          エビデンス提出
+                        </button>
+                      </div>
+                      {taskEvidence[task.id]?.length > 0 && (
+                        <div className="space-y-2">
+                          {taskEvidence[task.id].map((ev) => (
+                            <div key={ev.id} className="flex items-center justify-between bg-slate-50 rounded p-2 text-xs">
+                              <div className="flex items-center gap-2">
+                                <FileText size={14} className="text-slate-400" />
+                                <span>{ev.fileName || ev.description}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {ev.fileUrl && (
+                                  <a href={ev.fileUrl} target="_blank" rel="noopener noreferrer" className="text-primary-500 hover:text-primary-600">
+                                    <ExternalLink size={12} />
+                                  </a>
+                                )}
+                                <button onClick={() => handleDeleteEvidence(ev.id, task.id)} className="text-red-500 hover:text-red-600">
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {showEvidenceForm && selectedTask && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4">
+              <div className="p-5 border-b border-slate-100 flex justify-between items-center">
+                <h2 className="text-lg font-bold text-slate-800">エビデンス提出</h2>
+                <button onClick={() => { setShowEvidenceForm(false); setSelectedTask(null); }} className="text-slate-400 hover:text-slate-600">
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="p-5 space-y-4">
+                <div>
+                  <p className="text-sm font-medium text-slate-700 mb-2">タスク: {selectedTask.title}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">ファイル</label>
+                  <input
+                    type="file"
+                    onChange={(e) => setEvidenceFile(e.target.files?.[0] || null)}
+                    className="input-field"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">説明</label>
+                  <textarea
+                    value={evidenceForm.description}
+                    onChange={(e) => setEvidenceForm({ ...evidenceForm, description: e.target.value })}
+                    className="input-field"
+                    rows={3}
+                    placeholder="エビデンスの説明を入力..."
+                  />
+                </div>
+              </div>
+              <div className="p-5 border-t border-slate-100 flex justify-end gap-2">
+                <button onClick={() => { setShowEvidenceForm(false); setSelectedTask(null); }} className="btn-secondary">
+                  キャンセル
+                </button>
+                <button onClick={handleSubmitEvidence} className="btn-primary">
+                  提出
+                </button>
+              </div>
             </div>
           </div>
         )}
 
         {detailTab === 'affiliate' && (
           <div className="card overflow-hidden">
-            <div className="p-5 border-b border-slate-100">
+            <div className="p-5 border-b border-slate-100 flex justify-between items-center">
               <h2 className="text-lg font-bold text-slate-800">アフィリエイト</h2>
+              {employeeData && (
+                <button onClick={() => setShowAffiliateForm(true)} className="btn-primary text-sm flex items-center gap-2">
+                  <Plus size={16} />
+                  追加
+                </button>
+              )}
             </div>
-            <div className="p-8 text-center text-slate-400">
-              <Link2 size={32} className="mx-auto mb-2 opacity-50" />
-              <p>アフィリエイト情報を管理します</p>
-              <p className="text-xs mt-2">（準備中）</p>
-            </div>
+            {showAffiliateForm && (
+              <div className="p-4 bg-slate-50 border-b border-slate-100">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                  <div>
+                    <label className="text-xs text-slate-500">アフィリエイト名 *</label>
+                    <input type="text" className="input-field text-sm" placeholder="Amazon アソシエイト" value={affiliateForm.affiliateName} onChange={(e) => setAffiliateForm({ ...affiliateForm, affiliateName: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">プラットフォーム</label>
+                    <input type="text" className="input-field text-sm" placeholder="Amazon, A8, 楽天..." value={affiliateForm.platform} onChange={(e) => setAffiliateForm({ ...affiliateForm, platform: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">アフィリエイトURL</label>
+                    <input type="url" className="input-field text-sm" placeholder="https://..." value={affiliateForm.affiliateUrl} onChange={(e) => setAffiliateForm({ ...affiliateForm, affiliateUrl: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">アフィリエイトコード</label>
+                    <input type="text" className="input-field text-sm" placeholder="abc-123" value={affiliateForm.affiliateCode} onChange={(e) => setAffiliateForm({ ...affiliateForm, affiliateCode: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">コミッション率 (%)</label>
+                    <input type="number" className="input-field text-sm" placeholder="10" value={affiliateForm.commissionRate} onChange={(e) => setAffiliateForm({ ...affiliateForm, commissionRate: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">備考</label>
+                    <input type="text" className="input-field text-sm" placeholder="メモ" value={affiliateForm.notes} onChange={(e) => setAffiliateForm({ ...affiliateForm, notes: e.target.value })} />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={handleAddAffiliate} className="btn-primary text-sm">追加</button>
+                  <button onClick={() => setShowAffiliateForm(false)} className="btn-secondary text-sm">キャンセル</button>
+                </div>
+              </div>
+            )}
+            {affiliates.length === 0 && !showAffiliateForm ? (
+              <div className="p-8 text-center text-slate-400">
+                <Link2 size={32} className="mx-auto mb-2 opacity-50" />
+                <p>アフィリエイト情報がありません</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {affiliates.map((aff) => (
+                  <div key={aff.id} className="p-4">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium text-slate-800">{aff.affiliateName}</h3>
+                          {aff.isActive ? (
+                            <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">有効</span>
+                          ) : (
+                            <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-xs rounded-full">無効</span>
+                          )}
+                        </div>
+                        {aff.platform && <p className="text-sm text-slate-500">{aff.platform}</p>}
+                        {aff.affiliateCode && <p className="text-xs text-slate-400 mt-1">コード: {aff.affiliateCode}</p>}
+                      </div>
+                      <button onClick={() => handleDeleteAffiliate(aff.id)} className="text-red-500 hover:text-red-600">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4 mt-3 p-3 bg-slate-50 rounded-lg text-center">
+                      <div>
+                        <p className="text-xs text-slate-500">クリック数</p>
+                        <p className="font-semibold text-slate-800 flex items-center justify-center gap-1">
+                          <MousePointerClick size={14} />
+                          {aff.totalClicks || 0}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500">成約数</p>
+                        <p className="font-semibold text-slate-800 flex items-center justify-center gap-1">
+                          <TrendingUp size={14} />
+                          {aff.totalConversions || 0}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500">収益</p>
+                        <p className="font-semibold text-green-600">¥{Number(aff.totalEarnings || 0).toLocaleString()}</p>
+                      </div>
+                    </div>
+                    {aff.affiliateUrl && (
+                      <a href={aff.affiliateUrl} target="_blank" rel="noopener noreferrer" className="mt-2 text-xs text-primary-500 hover:text-primary-600 flex items-center gap-1">
+                        <ExternalLink size={12} />
+                        リンクを開く
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {detailTab === 'system' && (
           <div className="card overflow-hidden">
             <div className="p-5 border-b border-slate-100">
-              <h2 className="text-lg font-bold text-slate-800">システム</h2>
+              <h2 className="text-lg font-bold text-slate-800">給与システム設定</h2>
             </div>
-            <div className="p-8 text-center text-slate-400">
-              <Settings size={32} className="mx-auto mb-2 opacity-50" />
-              <p>システム設定を管理します</p>
-              <p className="text-xs mt-2">（準備中）</p>
+            <div className="p-5 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-slate-50 rounded-xl p-4">
+                  <h3 className="font-medium text-slate-800 mb-3 flex items-center gap-2">
+                    <DollarSign size={18} className="text-primary-500" />
+                    基本給与情報
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">基本給</span>
+                      <span className="font-medium text-slate-800">¥{Number(employeeData?.salary || 0).toLocaleString()}/月</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">入社日</span>
+                      <span className="font-medium text-slate-800">{employeeData?.hireDate ? format(new Date(employeeData.hireDate), 'yyyy/MM/dd') : '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">社員番号</span>
+                      <span className="font-medium text-slate-800">{employeeData?.employeeNumber || '-'}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-slate-50 rounded-xl p-4">
+                  <h3 className="font-medium text-slate-800 mb-3 flex items-center gap-2">
+                    <Building2 size={18} className="text-primary-500" />
+                    支払い情報
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">締め日</span>
+                      <span className="font-medium text-slate-800">毎月末日</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">支払日</span>
+                      <span className="font-medium text-slate-800">翌月25日</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">支払方法</span>
+                      <span className="font-medium text-slate-800">銀行振込</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-blue-50 rounded-xl p-4">
+                <h3 className="font-medium text-blue-800 mb-3 flex items-center gap-2">
+                  <CreditCard size={18} />
+                  銀行口座情報
+                </h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-blue-600">銀行名</span>
+                    <p className="font-medium text-blue-900">{employeeData?.bankName || selectedStaff?.bankName || '-'}</p>
+                  </div>
+                  <div>
+                    <span className="text-blue-600">支店名</span>
+                    <p className="font-medium text-blue-900">{employeeData?.bankBranch || selectedStaff?.bankBranch || '-'}</p>
+                  </div>
+                  <div>
+                    <span className="text-blue-600">口座種別</span>
+                    <p className="font-medium text-blue-900">{employeeData?.bankAccountType || selectedStaff?.bankAccountType || '-'}</p>
+                  </div>
+                  <div>
+                    <span className="text-blue-600">口座番号</span>
+                    <p className="font-medium text-blue-900">{employeeData?.bankAccountNumber || selectedStaff?.bankAccountNumber || '-'}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-blue-600">口座名義</span>
+                    <p className="font-medium text-blue-900">{employeeData?.bankAccountHolder || selectedStaff?.bankAccountHolder || '-'}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-slate-50 rounded-xl p-4">
+                <h3 className="font-medium text-slate-800 mb-3">給与履歴サマリー</h3>
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <p className="text-xs text-slate-500">支払済み月数</p>
+                    <p className="text-xl font-bold text-slate-800">{salaries.filter(s => s.paidAt).length}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">総支給額</p>
+                    <p className="text-xl font-bold text-green-600">¥{salaries.reduce((sum, s) => sum + Number(s.netSalary || 0), 0).toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">平均月給</p>
+                    <p className="text-xl font-bold text-slate-800">¥{salaries.length > 0 ? Math.round(salaries.reduce((sum, s) => sum + Number(s.netSalary || 0), 0) / salaries.length).toLocaleString() : 0}</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
 
         {detailTab === 'memo' && (
           <div className="card overflow-hidden">
-            <div className="p-5 border-b border-slate-100">
+            <div className="p-5 border-b border-slate-100 flex justify-between items-center">
               <h2 className="text-lg font-bold text-slate-800">メモ</h2>
+              {employeeData && (
+                <button onClick={() => setShowMemoForm(true)} className="btn-primary text-sm flex items-center gap-2">
+                  <Plus size={16} />
+                  メモ追加
+                </button>
+              )}
             </div>
-            <div className="p-8 text-center text-slate-400">
-              <StickyNote size={32} className="mx-auto mb-2 opacity-50" />
-              <p>このスタッフに関するメモを記録します</p>
-              <p className="text-xs mt-2">（準備中）</p>
-            </div>
+            {showMemoForm && (
+              <div className="p-4 bg-slate-50 border-b border-slate-100">
+                <div className="space-y-3 mb-3">
+                  <div>
+                    <label className="text-xs text-slate-500">カテゴリ</label>
+                    <select
+                      className="input-field text-sm"
+                      value={memoForm.category}
+                      onChange={(e) => setMemoForm({ ...memoForm, category: e.target.value })}
+                    >
+                      <option value="general">一般</option>
+                      <option value="performance">パフォーマンス</option>
+                      <option value="feedback">フィードバック</option>
+                      <option value="goal">目標</option>
+                      <option value="other">その他</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">内容 *</label>
+                    <textarea
+                      className="input-field text-sm"
+                      rows={3}
+                      placeholder="メモを入力..."
+                      value={memoForm.content}
+                      onChange={(e) => setMemoForm({ ...memoForm, content: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={handleAddMemo} className="btn-primary text-sm">保存</button>
+                  <button onClick={() => setShowMemoForm(false)} className="btn-secondary text-sm">キャンセル</button>
+                </div>
+              </div>
+            )}
+            {staffMemos.length === 0 && !showMemoForm ? (
+              <div className="p-8 text-center text-slate-400">
+                <StickyNote size={32} className="mx-auto mb-2 opacity-50" />
+                <p>メモがありません</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {staffMemos.map((memo) => (
+                  <div key={memo.id} className="p-4">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className={cn(
+                            "px-2 py-0.5 text-xs rounded-full",
+                            memo.category === 'performance' && "bg-blue-100 text-blue-700",
+                            memo.category === 'feedback' && "bg-green-100 text-green-700",
+                            memo.category === 'goal' && "bg-purple-100 text-purple-700",
+                            memo.category === 'general' && "bg-slate-100 text-slate-700",
+                            memo.category === 'other' && "bg-orange-100 text-orange-700"
+                          )}>
+                            {memo.category === 'performance' ? 'パフォーマンス' :
+                             memo.category === 'feedback' ? 'フィードバック' :
+                             memo.category === 'goal' ? '目標' :
+                             memo.category === 'other' ? 'その他' : '一般'}
+                          </span>
+                          <span className="text-xs text-slate-400">{format(new Date(memo.createdAt), 'yyyy/MM/dd HH:mm')}</span>
+                        </div>
+                        <p className="text-sm text-slate-700 whitespace-pre-wrap">{memo.content}</p>
+                      </div>
+                      <button onClick={() => handleDeleteMemo(memo.id)} className="text-red-500 hover:text-red-600 ml-2">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

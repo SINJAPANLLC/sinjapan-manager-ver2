@@ -3741,4 +3741,166 @@ URL/名前: ${url || '未指定'}
       res.status(500).json({ error: '前払い申請の削除に失敗しました' });
     }
   });
+
+  app.get('/api/users/:userId/tasks', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const tasks = await tenantStorage.getTasksByUserId(parseInt(req.params.userId));
+      res.json(tasks);
+    } catch (error) {
+      console.error('Get user tasks error:', error);
+      res.status(500).json({ error: 'タスクの取得に失敗しました' });
+    }
+  });
+
+  app.get('/api/tasks/:taskId/evidence', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const evidence = await tenantStorage.getTaskEvidence(parseInt(req.params.taskId));
+      res.json(evidence);
+    } catch (error) {
+      console.error('Get task evidence error:', error);
+      res.status(500).json({ error: 'エビデンスの取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/tasks/:taskId/evidence', requireAuth, upload.single('file'), async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const fileUrl = req.file ? `/uploads/${req.file.filename}` : null;
+      const evidence = await tenantStorage.createTaskEvidence({
+        taskId: parseInt(req.params.taskId),
+        userId: req.session.userId,
+        fileName: req.file?.originalname || req.body.fileName,
+        fileUrl: fileUrl || req.body.fileUrl,
+        description: req.body.description,
+        evidenceType: req.file ? 'file' : 'link',
+      });
+      res.json(evidence);
+    } catch (error) {
+      console.error('Create task evidence error:', error);
+      res.status(500).json({ error: 'エビデンスの作成に失敗しました' });
+    }
+  });
+
+  app.delete('/api/evidence/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const success = await tenantStorage.deleteTaskEvidence(parseInt(req.params.id));
+      if (!success) {
+        return res.status(404).json({ error: 'エビデンスが見つかりません' });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete task evidence error:', error);
+      res.status(500).json({ error: 'エビデンスの削除に失敗しました' });
+    }
+  });
+
+  app.get('/api/employees/:employeeId/affiliates', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const affiliates = await tenantStorage.getStaffAffiliates(parseInt(req.params.employeeId));
+      res.json(affiliates);
+    } catch (error) {
+      console.error('Get staff affiliates error:', error);
+      res.status(500).json({ error: 'アフィリエイトの取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/employees/:employeeId/affiliates', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const affiliate = await tenantStorage.createStaffAffiliate({
+        ...req.body,
+        employeeId: parseInt(req.params.employeeId),
+      });
+      res.json(affiliate);
+    } catch (error) {
+      console.error('Create staff affiliate error:', error);
+      res.status(500).json({ error: 'アフィリエイトの作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/affiliates/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const affiliate = await tenantStorage.updateStaffAffiliate(parseInt(req.params.id), req.body);
+      if (!affiliate) {
+        return res.status(404).json({ error: 'アフィリエイトが見つかりません' });
+      }
+      res.json(affiliate);
+    } catch (error) {
+      console.error('Update staff affiliate error:', error);
+      res.status(500).json({ error: 'アフィリエイトの更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/affiliates/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const success = await tenantStorage.deleteStaffAffiliate(parseInt(req.params.id));
+      if (!success) {
+        return res.status(404).json({ error: 'アフィリエイトが見つかりません' });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete staff affiliate error:', error);
+      res.status(500).json({ error: 'アフィリエイトの削除に失敗しました' });
+    }
+  });
+
+  app.get('/api/employees/:employeeId/memos', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const memos = await tenantStorage.getStaffMemos(parseInt(req.params.employeeId));
+      res.json(memos);
+    } catch (error) {
+      console.error('Get staff memos error:', error);
+      res.status(500).json({ error: 'メモの取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/employees/:employeeId/memos', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const memo = await tenantStorage.createStaffMemo({
+        ...req.body,
+        employeeId: parseInt(req.params.employeeId),
+        createdBy: req.session.userId,
+      });
+      res.json(memo);
+    } catch (error) {
+      console.error('Create staff memo error:', error);
+      res.status(500).json({ error: 'メモの作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/memos/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const memo = await tenantStorage.updateStaffMemo(parseInt(req.params.id), req.body);
+      if (!memo) {
+        return res.status(404).json({ error: 'メモが見つかりません' });
+      }
+      res.json(memo);
+    } catch (error) {
+      console.error('Update staff memo error:', error);
+      res.status(500).json({ error: 'メモの更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/memos/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const success = await tenantStorage.deleteStaffMemo(parseInt(req.params.id));
+      if (!success) {
+        return res.status(404).json({ error: 'メモが見つかりません' });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete staff memo error:', error);
+      res.status(500).json({ error: 'メモの削除に失敗しました' });
+    }
+  });
 }
