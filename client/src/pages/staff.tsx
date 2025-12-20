@@ -106,6 +106,20 @@ export function StaffPage() {
   const [salaryForm, setSalaryForm] = useState({ year: new Date().getFullYear(), month: new Date().getMonth() + 1, baseSalary: '', overtimePay: '', bonus: '', deductions: '', notes: '' });
   const [shiftForm, setShiftForm] = useState({ date: '', startTime: '09:00', endTime: '18:00', breakMinutes: 60, notes: '' });
   const [advanceForm, setAdvanceForm] = useState({ amount: '', reason: '' });
+  const [showBasicInfoEdit, setShowBasicInfoEdit] = useState(false);
+  const [basicInfoForm, setBasicInfoForm] = useState({
+    phone: '',
+    department: '',
+    position: '',
+    bankName: '',
+    bankBranch: '',
+    bankAccountType: '普通',
+    bankAccountNumber: '',
+    bankAccountHolder: '',
+    employeeNumber: '',
+    hireDate: '',
+    salary: '',
+  });
   const [form, setForm] = useState({
     email: '',
     name: '',
@@ -339,6 +353,76 @@ export function StaffPage() {
     }
   };
 
+  const startEditBasicInfo = () => {
+    if (!selectedStaff) return;
+    setBasicInfoForm({
+      phone: selectedStaff.phone || '',
+      department: selectedStaff.department || '',
+      position: selectedStaff.position || '',
+      bankName: selectedStaff.bankName || '',
+      bankBranch: selectedStaff.bankBranch || '',
+      bankAccountType: selectedStaff.bankAccountType || '普通',
+      bankAccountNumber: selectedStaff.bankAccountNumber || '',
+      bankAccountHolder: selectedStaff.bankAccountHolder || '',
+      employeeNumber: employeeData?.employeeNumber || '',
+      hireDate: employeeData?.hireDate ? employeeData.hireDate.split('T')[0] : '',
+      salary: employeeData?.salary || '',
+    });
+    setShowBasicInfoEdit(true);
+  };
+
+  const handleSaveBasicInfo = async () => {
+    if (!selectedStaff) return;
+    
+    // Update user info
+    const userRes = await fetch(`/api/users/${selectedStaff.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        phone: basicInfoForm.phone,
+        department: basicInfoForm.department,
+        position: basicInfoForm.position,
+        bankName: basicInfoForm.bankName,
+        bankBranch: basicInfoForm.bankBranch,
+        bankAccountType: basicInfoForm.bankAccountType,
+        bankAccountNumber: basicInfoForm.bankAccountNumber,
+        bankAccountHolder: basicInfoForm.bankAccountHolder,
+      }),
+    });
+
+    if (userRes.ok) {
+      const updatedUser = await userRes.json();
+      setSelectedStaff({ ...selectedStaff, ...updatedUser });
+      setStaff((prev) => prev.map((s) => (s.id === updatedUser.id ? { ...s, ...updatedUser } : s)));
+    }
+
+    // Update employee info if exists
+    if (employeeData) {
+      const empRes = await fetch(`/api/employees/${employeeData.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          employeeNumber: basicInfoForm.employeeNumber,
+          hireDate: basicInfoForm.hireDate || null,
+          salary: basicInfoForm.salary || '0',
+          bankName: basicInfoForm.bankName,
+          bankBranch: basicInfoForm.bankBranch,
+          bankAccountType: basicInfoForm.bankAccountType,
+          bankAccountNumber: basicInfoForm.bankAccountNumber,
+          bankAccountHolder: basicInfoForm.bankAccountHolder,
+        }),
+      });
+      if (empRes.ok) {
+        const updatedEmp = await empRes.json();
+        setEmployeeData(updatedEmp);
+      }
+    }
+
+    setShowBasicInfoEdit(false);
+  };
+
   // Detail view
   if (selectedStaff) {
     return (
@@ -379,60 +463,191 @@ export function StaffPage() {
 
         {detailTab === 'info' && (
           <div className="card p-6">
-            <h2 className="text-lg font-bold text-slate-800 mb-6">基本情報</h2>
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-bold text-slate-800">基本情報</h2>
+              {!showBasicInfoEdit && (
+                <button onClick={startEditBasicInfo} className="btn-secondary text-sm flex items-center gap-2">
+                  <Edit size={14} />
+                  編集
+                </button>
+              )}
+            </div>
+            
+            {showBasicInfoEdit ? (
               <div className="space-y-4">
-                <div>
-                  <p className="text-xs text-slate-400">メールアドレス</p>
-                  <p className="font-medium text-slate-800">{selectedStaff.email}</p>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs text-slate-500">電話番号</label>
+                    <input
+                      type="tel"
+                      className="input-field"
+                      value={basicInfoForm.phone}
+                      onChange={(e) => setBasicInfoForm({ ...basicInfoForm, phone: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">部署</label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      value={basicInfoForm.department}
+                      onChange={(e) => setBasicInfoForm({ ...basicInfoForm, department: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">役職</label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      value={basicInfoForm.position}
+                      onChange={(e) => setBasicInfoForm({ ...basicInfoForm, position: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">社員番号</label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      value={basicInfoForm.employeeNumber}
+                      onChange={(e) => setBasicInfoForm({ ...basicInfoForm, employeeNumber: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">入社日</label>
+                    <input
+                      type="date"
+                      className="input-field"
+                      value={basicInfoForm.hireDate}
+                      onChange={(e) => setBasicInfoForm({ ...basicInfoForm, hireDate: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">基本給</label>
+                    <input
+                      type="number"
+                      className="input-field"
+                      value={basicInfoForm.salary}
+                      onChange={(e) => setBasicInfoForm({ ...basicInfoForm, salary: e.target.value })}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs text-slate-400">電話番号</p>
-                  <p className="font-medium text-slate-800">{selectedStaff.phone || '-'}</p>
+                <div className="border-t pt-4 mt-4">
+                  <p className="text-sm font-medium text-slate-700 mb-3">銀行口座情報</p>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs text-slate-500">銀行名</label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        value={basicInfoForm.bankName}
+                        onChange={(e) => setBasicInfoForm({ ...basicInfoForm, bankName: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-500">支店名</label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        value={basicInfoForm.bankBranch}
+                        onChange={(e) => setBasicInfoForm({ ...basicInfoForm, bankBranch: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-500">口座種別</label>
+                      <select
+                        className="input-field"
+                        value={basicInfoForm.bankAccountType}
+                        onChange={(e) => setBasicInfoForm({ ...basicInfoForm, bankAccountType: e.target.value })}
+                      >
+                        <option value="普通">普通</option>
+                        <option value="当座">当座</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-500">口座番号</label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        value={basicInfoForm.bankAccountNumber}
+                        onChange={(e) => setBasicInfoForm({ ...basicInfoForm, bankAccountNumber: e.target.value })}
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="text-xs text-slate-500">口座名義</label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        value={basicInfoForm.bankAccountHolder}
+                        onChange={(e) => setBasicInfoForm({ ...basicInfoForm, bankAccountHolder: e.target.value })}
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs text-slate-400">部署</p>
-                  <p className="font-medium text-slate-800">{selectedStaff.department || '-'}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-400">役職</p>
-                  <p className="font-medium text-slate-800">{selectedStaff.position || '-'}</p>
+                <div className="flex gap-2 pt-4">
+                  <button onClick={handleSaveBasicInfo} className="btn-primary flex items-center gap-2">
+                    <Check size={16} />
+                    保存
+                  </button>
+                  <button onClick={() => setShowBasicInfoEdit(false)} className="btn-secondary">
+                    キャンセル
+                  </button>
                 </div>
               </div>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-xs text-slate-400">銀行口座</p>
-                  <p className="font-medium text-slate-800">
-                    {selectedStaff.bankName ? `${selectedStaff.bankName} ${selectedStaff.bankBranch || ''}` : '-'}
-                  </p>
-                  {selectedStaff.bankAccountNumber && (
-                    <p className="text-sm text-slate-600">
-                      {selectedStaff.bankAccountType} {selectedStaff.bankAccountNumber}
+            ) : (
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-xs text-slate-400">メールアドレス</p>
+                    <p className="font-medium text-slate-800">{selectedStaff.email}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400">電話番号</p>
+                    <p className="font-medium text-slate-800">{selectedStaff.phone || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400">部署</p>
+                    <p className="font-medium text-slate-800">{selectedStaff.department || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400">役職</p>
+                    <p className="font-medium text-slate-800">{selectedStaff.position || '-'}</p>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-xs text-slate-400">銀行口座</p>
+                    <p className="font-medium text-slate-800">
+                      {selectedStaff.bankName ? `${selectedStaff.bankName} ${selectedStaff.bankBranch || ''}` : '-'}
                     </p>
+                    {selectedStaff.bankAccountNumber && (
+                      <p className="text-sm text-slate-600">
+                        {selectedStaff.bankAccountType} {selectedStaff.bankAccountNumber}
+                      </p>
+                    )}
+                  </div>
+                  {employeeData && (
+                    <>
+                      <div>
+                        <p className="text-xs text-slate-400">社員番号</p>
+                        <p className="font-medium text-slate-800">{employeeData.employeeNumber || '-'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-400">入社日</p>
+                        <p className="font-medium text-slate-800">
+                          {employeeData.hireDate ? format(new Date(employeeData.hireDate), 'yyyy/MM/dd') : '-'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-400">基本給</p>
+                        <p className="font-medium text-slate-800">
+                          ¥{employeeData.salary ? Number(employeeData.salary).toLocaleString() : '-'}
+                        </p>
+                      </div>
+                    </>
                   )}
                 </div>
-                {employeeData && (
-                  <>
-                    <div>
-                      <p className="text-xs text-slate-400">社員番号</p>
-                      <p className="font-medium text-slate-800">{employeeData.employeeNumber || '-'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-400">入社日</p>
-                      <p className="font-medium text-slate-800">
-                        {employeeData.hireDate ? format(new Date(employeeData.hireDate), 'yyyy/MM/dd') : '-'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-400">基本給</p>
-                      <p className="font-medium text-slate-800">
-                        ¥{employeeData.salary ? Number(employeeData.salary).toLocaleString() : '-'}
-                      </p>
-                    </div>
-                  </>
-                )}
               </div>
-            </div>
+            )}
           </div>
         )}
 
