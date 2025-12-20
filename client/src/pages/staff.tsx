@@ -66,6 +66,7 @@ interface Salary {
   deductions?: string;
   netSalary: string;
   notes?: string;
+  paidAt?: string;
 }
 
 interface Shift {
@@ -106,7 +107,7 @@ export function StaffPage() {
   const [showSalaryForm, setShowSalaryForm] = useState(false);
   const [showShiftForm, setShowShiftForm] = useState(false);
   const [showAdvanceForm, setShowAdvanceForm] = useState(false);
-  const [salaryForm, setSalaryForm] = useState({ year: new Date().getFullYear(), month: new Date().getMonth() + 1, baseSalary: '', overtimePay: '', bonus: '', deductions: '', notes: '' });
+  const [salaryForm, setSalaryForm] = useState({ year: new Date().getFullYear(), month: new Date().getMonth() + 1, baseSalary: '', overtimePay: '', bonus: '', deductions: '', notes: '', paidAt: '' });
   const [shiftForm, setShiftForm] = useState({ date: '', startTime: '09:00', endTime: '18:00', breakMinutes: 60, projectName: '', notes: '' });
   const [advanceForm, setAdvanceForm] = useState({ amount: '', reason: '' });
   const [showBasicInfoEdit, setShowBasicInfoEdit] = useState(false);
@@ -284,17 +285,22 @@ export function StaffPage() {
   const handleAddSalary = async () => {
     if (!employeeData || !salaryForm.baseSalary) return;
     const netSalary = Number(salaryForm.baseSalary) + Number(salaryForm.overtimePay || 0) + Number(salaryForm.bonus || 0) - Number(salaryForm.deductions || 0);
+    const payload = {
+      ...salaryForm,
+      netSalary: netSalary.toString(),
+      paidAt: salaryForm.paidAt ? new Date(salaryForm.paidAt) : null,
+    };
     const res = await fetch(`/api/employees/${employeeData.id}/salaries`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ ...salaryForm, netSalary: netSalary.toString() }),
+      body: JSON.stringify(payload),
     });
     if (res.ok) {
       const newSal = await res.json();
       setSalaries([newSal, ...salaries]);
       setShowSalaryForm(false);
-      setSalaryForm({ year: new Date().getFullYear(), month: new Date().getMonth() + 1, baseSalary: '', overtimePay: '', bonus: '', deductions: '', notes: '' });
+      setSalaryForm({ year: new Date().getFullYear(), month: new Date().getMonth() + 1, baseSalary: '', overtimePay: '', bonus: '', deductions: '', notes: '', paidAt: '' });
     }
   };
 
@@ -308,23 +314,29 @@ export function StaffPage() {
       bonus: salary.bonus || '',
       deductions: salary.deductions || '',
       notes: salary.notes || '',
+      paidAt: salary.paidAt ? new Date(salary.paidAt).toISOString().split('T')[0] : '',
     });
   };
 
   const handleUpdateSalary = async () => {
     if (!employeeData || !editingSalary || !salaryForm.baseSalary) return;
     const netSalary = Number(salaryForm.baseSalary) + Number(salaryForm.overtimePay || 0) + Number(salaryForm.bonus || 0) - Number(salaryForm.deductions || 0);
+    const payload = {
+      ...salaryForm,
+      netSalary: netSalary.toString(),
+      paidAt: salaryForm.paidAt ? new Date(salaryForm.paidAt) : null,
+    };
     const res = await fetch(`/api/salaries/${editingSalary.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ ...salaryForm, netSalary: netSalary.toString() }),
+      body: JSON.stringify(payload),
     });
     if (res.ok) {
       const updatedSal = await res.json();
       setSalaries(salaries.map((s) => (s.id === editingSalary.id ? updatedSal : s)));
       setEditingSalary(null);
-      setSalaryForm({ year: new Date().getFullYear(), month: new Date().getMonth() + 1, baseSalary: '', overtimePay: '', bonus: '', deductions: '', notes: '' });
+      setSalaryForm({ year: new Date().getFullYear(), month: new Date().getMonth() + 1, baseSalary: '', overtimePay: '', bonus: '', deductions: '', notes: '', paidAt: '' });
     }
   };
 
@@ -787,6 +799,10 @@ export function StaffPage() {
                     <input type="number" min="1" max="12" className="input-field text-sm" value={salaryForm.month} onChange={(e) => setSalaryForm({ ...salaryForm, month: Number(e.target.value) })} />
                   </div>
                   <div>
+                    <label className="text-xs text-slate-500">支払日</label>
+                    <input type="date" className="input-field text-sm" value={salaryForm.paidAt} onChange={(e) => setSalaryForm({ ...salaryForm, paidAt: e.target.value })} />
+                  </div>
+                  <div>
                     <label className="text-xs text-slate-500">報酬 *</label>
                     <input type="number" className="input-field text-sm" placeholder="300000" value={salaryForm.baseSalary} onChange={(e) => setSalaryForm({ ...salaryForm, baseSalary: e.target.value })} />
                   </div>
@@ -833,7 +849,10 @@ export function StaffPage() {
                       onClick={() => openEditSalary(sal)}
                     >
                       <div>
-                        <p className="font-medium text-slate-800">{sal.year}年{sal.month}月</p>
+                        <p className="font-medium text-slate-800">
+                          {sal.year}年{sal.month}月
+                          {sal.paidAt && <span className="text-sm text-slate-500 ml-2">({format(new Date(sal.paidAt), 'yyyy/MM/dd')})</span>}
+                        </p>
                         <p className="text-sm text-slate-500">
                           報酬: ¥{Number(sal.baseSalary).toLocaleString()}
                           {sal.overtimePay && ` + 残業: ¥${Number(sal.overtimePay).toLocaleString()}`}
@@ -862,7 +881,7 @@ export function StaffPage() {
                     <button
                       onClick={() => {
                         setEditingSalary(null);
-                        setSalaryForm({ year: new Date().getFullYear(), month: new Date().getMonth() + 1, baseSalary: '', overtimePay: '', bonus: '', deductions: '', notes: '' });
+                        setSalaryForm({ year: new Date().getFullYear(), month: new Date().getMonth() + 1, baseSalary: '', overtimePay: '', bonus: '', deductions: '', notes: '', paidAt: '' });
                       }}
                       className="p-2 hover:bg-slate-100 rounded-lg"
                     >
@@ -870,7 +889,7 @@ export function StaffPage() {
                     </button>
                   </div>
                   <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                       <div>
                         <label className="text-xs text-slate-500">年 *</label>
                         <input
@@ -891,6 +910,15 @@ export function StaffPage() {
                             <option key={m} value={m}>{m}月</option>
                           ))}
                         </select>
+                      </div>
+                      <div>
+                        <label className="text-xs text-slate-500">支払日</label>
+                        <input
+                          type="date"
+                          className="input-field"
+                          value={salaryForm.paidAt}
+                          onChange={(e) => setSalaryForm({ ...salaryForm, paidAt: e.target.value })}
+                        />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
@@ -952,7 +980,7 @@ export function StaffPage() {
                       <button
                         onClick={() => {
                           setEditingSalary(null);
-                          setSalaryForm({ year: new Date().getFullYear(), month: new Date().getMonth() + 1, baseSalary: '', overtimePay: '', bonus: '', deductions: '', notes: '' });
+                          setSalaryForm({ year: new Date().getFullYear(), month: new Date().getMonth() + 1, baseSalary: '', overtimePay: '', bonus: '', deductions: '', notes: '', paidAt: '' });
                         }}
                         className="btn-secondary"
                       >
