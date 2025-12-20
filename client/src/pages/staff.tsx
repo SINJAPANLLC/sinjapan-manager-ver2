@@ -635,7 +635,7 @@ export function StaffPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-slate-500">基本給</label>
+                    <label className="text-xs text-slate-500">報酬</label>
                     <input
                       type="number"
                       className="input-field"
@@ -751,7 +751,7 @@ export function StaffPage() {
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-slate-400">基本給</p>
+                        <p className="text-xs text-slate-400">報酬</p>
                         <p className="font-medium text-slate-800">
                           ¥{employeeData.salary ? Number(employeeData.salary).toLocaleString() : '-'}
                         </p>
@@ -787,7 +787,7 @@ export function StaffPage() {
                     <input type="number" min="1" max="12" className="input-field text-sm" value={salaryForm.month} onChange={(e) => setSalaryForm({ ...salaryForm, month: Number(e.target.value) })} />
                   </div>
                   <div>
-                    <label className="text-xs text-slate-500">基本給 *</label>
+                    <label className="text-xs text-slate-500">報酬 *</label>
                     <input type="number" className="input-field text-sm" placeholder="300000" value={salaryForm.baseSalary} onChange={(e) => setSalaryForm({ ...salaryForm, baseSalary: e.target.value })} />
                   </div>
                   <div>
@@ -835,7 +835,7 @@ export function StaffPage() {
                       <div>
                         <p className="font-medium text-slate-800">{sal.year}年{sal.month}月</p>
                         <p className="text-sm text-slate-500">
-                          基本給: ¥{Number(sal.baseSalary).toLocaleString()}
+                          報酬: ¥{Number(sal.baseSalary).toLocaleString()}
                           {sal.overtimePay && ` + 残業: ¥${Number(sal.overtimePay).toLocaleString()}`}
                         </p>
                       </div>
@@ -895,11 +895,11 @@ export function StaffPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="text-xs text-slate-500">基本給 *</label>
+                        <label className="text-xs text-slate-500">報酬 *</label>
                         <input
                           type="number"
                           className="input-field"
-                          placeholder="基本給"
+                          placeholder="報酬"
                           value={salaryForm.baseSalary}
                           onChange={(e) => setSalaryForm({ ...salaryForm, baseSalary: e.target.value })}
                         />
