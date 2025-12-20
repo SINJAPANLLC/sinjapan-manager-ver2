@@ -161,7 +161,23 @@ Optional (for AI features):
 - Frontend served on port 5000
 - CORS enabled for development
 
-## Recent Changes (2025-12-07)
+## Recent Changes (2025-12-20)
+
+### ワークフロータブに図面機能追加
+- **ワークフロー図**: タスクのステータス別フロー図（開始→未着手→進行中→完了→終了）
+- **組織図**: スタッフの階層構造を視覚化（会社→Admin/CEO→Manager→Staff/Agency）
+- React Flowライブラリを使用した対話的なダイアグラム
+- ズーム・パン機能付き
+- ワークフロータブ選択時に左側にカンバン、右側に図面を表示
+
+### スタッフ管理機能の拡張
+- **給料管理（給料タブ）**: 月別給料記録（基本給、残業代、賞与、控除、支給額）
+- **シフト管理（シフトタブ）**: 日付、勤務時間、休憩時間、労働時間の記録
+- **前払い申請（前払い申請タブ）**: 申請金額・理由、承認ワークフロー対応
+- 新規データベーステーブル: staff_salaries, staff_shifts, advance_payments
+- Manager以上の権限で前払い申請の承認・却下・支払い処理
+
+## Previous Changes (2025-12-07)
 
 ### バグ修正
 - **事業削除機能**: 外部キー制約エラーを修正。削除前に関連テーブル（contracts, budgets, campaigns等50+テーブル）のレコードを先に削除
