@@ -1,20 +1,24 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from '../hooks/use-auth';
-import { Plus, Edit2, Trash2, CheckCircle, Clock, AlertCircle, X, Sparkles, Loader2, Target, Users2, Expand, ShieldAlert, Workflow, Briefcase, Network } from 'lucide-react';
+import { Plus, Edit2, Trash2, CheckCircle, Clock, AlertCircle, X, Sparkles, Loader2, Target, Users2, Expand, ShieldAlert, Workflow, Briefcase, Network, Download, Save, RotateCcw } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 import {
   ReactFlow,
-  MiniMap,
   Controls,
   Background,
   useNodesState,
   useEdgesState,
+  addEdge,
+  Connection,
   Node,
   Edge,
   BackgroundVariant,
+  Panel,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 interface Task {
   id: number;
@@ -82,6 +86,11 @@ export function TasksPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedTasks, setGeneratedTasks] = useState<{title: string; description: string; priority: string}[]>([]);
   const [diagramView, setDiagramView] = useState<'workflow' | 'orgchart'>('workflow');
+  const [isExporting, setIsExporting] = useState(false);
+  const [editingNode, setEditingNode] = useState<Node | null>(null);
+  const [nodeLabel, setNodeLabel] = useState('');
+  const diagramRef = useRef<HTMLDivElement>(null);
+  
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -93,48 +102,13 @@ export function TasksPage() {
     assignedTo: '',
   });
 
-  useEffect(() => {
-    fetchTasks();
-    fetchUsers();
-    fetchBusinesses();
-    fetchEmployees();
-  }, []);
-
-  const fetchTasks = async () => {
-    const res = await fetch('/api/tasks');
-    if (res.ok) {
-      setTasks(await res.json());
-    }
-  };
-
-  const fetchUsers = async () => {
-    const res = await fetch('/api/chat/users');
-    if (res.ok) {
-      setUsers(await res.json());
-    }
-  };
-
-  const fetchBusinesses = async () => {
-    const res = await fetch('/api/businesses');
-    if (res.ok) {
-      setBusinesses(await res.json());
-    }
-  };
-
-  const fetchEmployees = async () => {
-    const res = await fetch('/api/employees');
-    if (res.ok) {
-      setEmployees(await res.json());
-    }
-  };
-
-  const workflowNodes: Node[] = useMemo(() => {
+  const defaultWorkflowNodes: Node[] = useMemo(() => {
     const workflowTasks = tasks.filter(t => t.category === 'workflow');
     const pendingTasks = workflowTasks.filter(t => t.status === 'pending');
     const inProgressTasks = workflowTasks.filter(t => t.status === 'in_progress');
     const completedTasks = workflowTasks.filter(t => t.status === 'completed');
     
-    const nodes: Node[] = [
+    return [
       {
         id: 'start',
         type: 'input',
@@ -168,11 +142,9 @@ export function TasksPage() {
         style: { background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', border: 'none', borderRadius: '12px', padding: '10px 20px', fontWeight: 'bold' },
       },
     ];
-    
-    return nodes;
   }, [tasks]);
 
-  const workflowEdges: Edge[] = useMemo(() => {
+  const defaultWorkflowEdges: Edge[] = useMemo(() => {
     return [
       { id: 'e-start-pending', source: 'start', target: 'pending-group', animated: true, style: { stroke: '#8b5cf6' } },
       { id: 'e-start-progress', source: 'start', target: 'progress-group', animated: true, style: { stroke: '#8b5cf6' } },
@@ -182,7 +154,7 @@ export function TasksPage() {
     ];
   }, []);
 
-  const orgChartNodes: Node[] = useMemo(() => {
+  const defaultOrgChartNodes: Node[] = useMemo(() => {
     const nodes: Node[] = [];
     
     const admins = employees.filter(e => e.user?.role === 'admin' || e.user?.role === 'ceo');
@@ -198,8 +170,9 @@ export function TasksPage() {
       style: { background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)', color: 'white', border: 'none', borderRadius: '16px', padding: '15px 30px', fontWeight: 'bold', fontSize: '16px' },
     });
 
-    let xOffset = 0;
     const yLevel1 = 100;
+    const yLevel2 = 220;
+    const yLevel3 = 340;
     const nodeWidth = 180;
     const gap = 30;
     
@@ -212,7 +185,6 @@ export function TasksPage() {
       });
     });
 
-    const yLevel2 = 220;
     managers.forEach((emp, idx) => {
       nodes.push({
         id: `manager-${emp.id}`,
@@ -222,7 +194,6 @@ export function TasksPage() {
       });
     });
 
-    const yLevel3 = 340;
     staff.forEach((emp, idx) => {
       nodes.push({
         id: `staff-${emp.id}`,
@@ -252,7 +223,7 @@ export function TasksPage() {
     return nodes;
   }, [employees]);
 
-  const orgChartEdges: Edge[] = useMemo(() => {
+  const defaultOrgChartEdges: Edge[] = useMemo(() => {
     const edges: Edge[] = [];
     
     const admins = employees.filter(e => e.user?.role === 'admin' || e.user?.role === 'ceo');
@@ -298,6 +269,170 @@ export function TasksPage() {
     
     return edges;
   }, [employees]);
+
+  const [workflowNodes, setWorkflowNodes, onWorkflowNodesChange] = useNodesState(defaultWorkflowNodes);
+  const [workflowEdges, setWorkflowEdges, onWorkflowEdgesChange] = useEdgesState(defaultWorkflowEdges);
+  const [orgChartNodes, setOrgChartNodes, onOrgChartNodesChange] = useNodesState(defaultOrgChartNodes);
+  const [orgChartEdges, setOrgChartEdges, onOrgChartEdgesChange] = useEdgesState(defaultOrgChartEdges);
+
+  useEffect(() => {
+    setWorkflowNodes(defaultWorkflowNodes);
+    setWorkflowEdges(defaultWorkflowEdges);
+  }, [defaultWorkflowNodes, defaultWorkflowEdges]);
+
+  useEffect(() => {
+    setOrgChartNodes(defaultOrgChartNodes);
+    setOrgChartEdges(defaultOrgChartEdges);
+  }, [defaultOrgChartNodes, defaultOrgChartEdges]);
+
+  useEffect(() => {
+    fetchTasks();
+    fetchUsers();
+    fetchBusinesses();
+    fetchEmployees();
+  }, []);
+
+  const fetchTasks = async () => {
+    const res = await fetch('/api/tasks');
+    if (res.ok) {
+      setTasks(await res.json());
+    }
+  };
+
+  const fetchUsers = async () => {
+    const res = await fetch('/api/chat/users');
+    if (res.ok) {
+      setUsers(await res.json());
+    }
+  };
+
+  const fetchBusinesses = async () => {
+    const res = await fetch('/api/businesses');
+    if (res.ok) {
+      setBusinesses(await res.json());
+    }
+  };
+
+  const fetchEmployees = async () => {
+    const res = await fetch('/api/employees');
+    if (res.ok) {
+      setEmployees(await res.json());
+    }
+  };
+
+  const onWorkflowConnect = useCallback(
+    (params: Connection) => setWorkflowEdges((eds) => addEdge({ ...params, animated: true, style: { stroke: '#8b5cf6' } }, eds)),
+    [setWorkflowEdges]
+  );
+
+  const onOrgChartConnect = useCallback(
+    (params: Connection) => setOrgChartEdges((eds) => addEdge({ ...params, style: { stroke: '#3b82f6' } }, eds)),
+    [setOrgChartEdges]
+  );
+
+  const addNewNode = (type: 'workflow' | 'orgchart') => {
+    const newNode: Node = {
+      id: `custom-${Date.now()}`,
+      data: { label: '新しいノード' },
+      position: { x: Math.random() * 300 + 100, y: Math.random() * 200 + 100 },
+      style: { 
+        background: type === 'workflow' ? '#e0e7ff' : '#dbeafe', 
+        border: `2px solid ${type === 'workflow' ? '#6366f1' : '#3b82f6'}`, 
+        borderRadius: '12px', 
+        padding: '10px 15px', 
+        minWidth: '120px',
+        textAlign: 'center',
+      },
+    };
+    
+    if (type === 'workflow') {
+      setWorkflowNodes((nds) => [...nds, newNode]);
+    } else {
+      setOrgChartNodes((nds) => [...nds, newNode]);
+    }
+  };
+
+  const onNodeDoubleClick = useCallback((event: React.MouseEvent, node: Node) => {
+    setEditingNode(node);
+    setNodeLabel(typeof node.data.label === 'string' ? node.data.label : '');
+  }, []);
+
+  const saveNodeLabel = () => {
+    if (!editingNode) return;
+    
+    const updateNode = (nodes: Node[]) => 
+      nodes.map((n) => n.id === editingNode.id ? { ...n, data: { ...n.data, label: nodeLabel } } : n);
+    
+    if (diagramView === 'workflow') {
+      setWorkflowNodes(updateNode);
+    } else {
+      setOrgChartNodes(updateNode);
+    }
+    
+    setEditingNode(null);
+    setNodeLabel('');
+  };
+
+  const deleteSelectedNode = (nodeId: string) => {
+    if (diagramView === 'workflow') {
+      setWorkflowNodes((nds) => nds.filter((n) => n.id !== nodeId));
+      setWorkflowEdges((eds) => eds.filter((e) => e.source !== nodeId && e.target !== nodeId));
+    } else {
+      setOrgChartNodes((nds) => nds.filter((n) => n.id !== nodeId));
+      setOrgChartEdges((eds) => eds.filter((e) => e.source !== nodeId && e.target !== nodeId));
+    }
+    setEditingNode(null);
+  };
+
+  const resetDiagram = () => {
+    if (diagramView === 'workflow') {
+      setWorkflowNodes(defaultWorkflowNodes);
+      setWorkflowEdges(defaultWorkflowEdges);
+    } else {
+      setOrgChartNodes(defaultOrgChartNodes);
+      setOrgChartEdges(defaultOrgChartEdges);
+    }
+  };
+
+  const exportToPDF = async () => {
+    if (!diagramRef.current) return;
+    setIsExporting(true);
+    
+    try {
+      const canvas = await html2canvas(diagramRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4',
+      });
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+      const imgX = (pdfWidth - imgWidth * ratio) / 2;
+      const imgY = 10;
+      
+      pdf.setFontSize(16);
+      pdf.text(diagramView === 'workflow' ? 'ワークフロー図' : '組織図', pdfWidth / 2, 10, { align: 'center' });
+      
+      pdf.addImage(imgData, 'PNG', imgX, imgY + 5, imgWidth * ratio * 0.9, imgHeight * ratio * 0.9);
+      
+      const filename = diagramView === 'workflow' ? 'workflow-diagram.pdf' : 'org-chart.pdf';
+      pdf.save(filename);
+    } catch (error) {
+      console.error('PDF export failed:', error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -607,28 +742,87 @@ export function TasksPage() {
                 組織図
               </button>
             </div>
-            <div className="h-[400px]">
+            <div ref={diagramRef} className="h-[400px]">
               {diagramView === 'workflow' ? (
                 <ReactFlow
                   nodes={workflowNodes}
                   edges={workflowEdges}
+                  onNodesChange={onWorkflowNodesChange}
+                  onEdgesChange={onWorkflowEdgesChange}
+                  onConnect={onWorkflowConnect}
+                  onNodeDoubleClick={onNodeDoubleClick}
                   fitView
                   attributionPosition="bottom-left"
                 >
                   <Controls />
                   <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
+                  <Panel position="top-right" className="flex gap-2">
+                    <button
+                      onClick={() => addNewNode('workflow')}
+                      className="px-3 py-1.5 bg-purple-500 text-white rounded-lg text-sm font-medium hover:bg-purple-600 flex items-center gap-1"
+                    >
+                      <Plus size={14} />
+                      ノード追加
+                    </button>
+                    <button
+                      onClick={resetDiagram}
+                      className="px-3 py-1.5 bg-slate-500 text-white rounded-lg text-sm font-medium hover:bg-slate-600 flex items-center gap-1"
+                    >
+                      <RotateCcw size={14} />
+                      リセット
+                    </button>
+                    <button
+                      onClick={exportToPDF}
+                      disabled={isExporting}
+                      className="px-3 py-1.5 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 flex items-center gap-1 disabled:opacity-50"
+                    >
+                      {isExporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+                      PDF
+                    </button>
+                  </Panel>
                 </ReactFlow>
               ) : (
                 <ReactFlow
                   nodes={orgChartNodes}
                   edges={orgChartEdges}
+                  onNodesChange={onOrgChartNodesChange}
+                  onEdgesChange={onOrgChartEdgesChange}
+                  onConnect={onOrgChartConnect}
+                  onNodeDoubleClick={onNodeDoubleClick}
                   fitView
                   attributionPosition="bottom-left"
                 >
                   <Controls />
                   <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
+                  <Panel position="top-right" className="flex gap-2">
+                    <button
+                      onClick={() => addNewNode('orgchart')}
+                      className="px-3 py-1.5 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 flex items-center gap-1"
+                    >
+                      <Plus size={14} />
+                      ノード追加
+                    </button>
+                    <button
+                      onClick={resetDiagram}
+                      className="px-3 py-1.5 bg-slate-500 text-white rounded-lg text-sm font-medium hover:bg-slate-600 flex items-center gap-1"
+                    >
+                      <RotateCcw size={14} />
+                      リセット
+                    </button>
+                    <button
+                      onClick={exportToPDF}
+                      disabled={isExporting}
+                      className="px-3 py-1.5 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 flex items-center gap-1 disabled:opacity-50"
+                    >
+                      {isExporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+                      PDF
+                    </button>
+                  </Panel>
                 </ReactFlow>
               )}
+            </div>
+            <div className="px-4 py-2 bg-slate-50 border-t border-slate-200 text-xs text-slate-500">
+              ヒント: ノードをドラッグして移動、ダブルクリックで編集、ノード間をドラッグして接続
             </div>
           </div>
         </div>
@@ -714,6 +908,40 @@ export function TasksPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {editingNode && (
+        <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl animate-slide-up p-6">
+            <h3 className="text-lg font-bold text-slate-800 mb-4">ノードを編集</h3>
+            <textarea
+              value={nodeLabel}
+              onChange={(e) => setNodeLabel(e.target.value)}
+              className="input-field mb-4"
+              rows={3}
+              placeholder="ノードのラベル"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => deleteSelectedNode(editingNode.id)}
+                className="px-4 py-2 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 flex items-center gap-2"
+              >
+                <Trash2 size={16} />
+                削除
+              </button>
+              <button
+                onClick={() => { setEditingNode(null); setNodeLabel(''); }}
+                className="flex-1 btn-secondary"
+              >
+                キャンセル
+              </button>
+              <button onClick={saveNodeLabel} className="flex-1 btn-primary flex items-center justify-center gap-2">
+                <Save size={16} />
+                保存
+              </button>
+            </div>
           </div>
         </div>
       )}

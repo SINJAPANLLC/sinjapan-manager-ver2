@@ -29,6 +29,8 @@
     "express": "^4.21.2",
     "express-session": "^1.18.2",
     "googleapis": "^167.0.0",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.4",
     "lucide-react": "^0.555.0",
     "memorystore": "^1.6.7",
     "multer": "^2.0.2",
