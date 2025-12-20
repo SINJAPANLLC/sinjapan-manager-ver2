@@ -17,10 +17,14 @@ import {
   ArrowLeft,
   Check,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  CheckCircle,
+  XCircle,
+  Banknote
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
+import { useAuth } from '../hooks/use-auth';
 
 interface Staff {
   id: number;
@@ -93,6 +97,8 @@ interface AdvancePayment {
 type DetailTab = 'info' | 'salary' | 'shift' | 'advance';
 
 export function StaffPage() {
+  const { user } = useAuth();
+  const canApprove = user && ['admin', 'ceo', 'manager'].includes(user.role);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -428,6 +434,19 @@ export function StaffPage() {
       setAdvancePayments([newAdv, ...advancePayments]);
       setShowAdvanceForm(false);
       setAdvanceForm({ amount: '', reason: '' });
+    }
+  };
+
+  const handleUpdateAdvanceStatus = async (advanceId: number, status: 'approved' | 'rejected' | 'paid') => {
+    const res = await fetch(`/api/advance-payments/${advanceId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ status }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setAdvancePayments(advancePayments.map(a => a.id === advanceId ? { ...a, ...updated } : a));
     }
   };
 
@@ -1254,28 +1273,65 @@ export function StaffPage() {
             {advancePayments.length > 0 && (
               <div className="divide-y divide-slate-100">
                 {advancePayments.map((adv) => (
-                  <div key={adv.id} className="p-4 flex justify-between items-center">
-                    <div>
+                  <div key={adv.id} className="p-4 flex justify-between items-center gap-4">
+                    <div className="flex-1">
                       <p className="font-medium text-slate-800">
                         ¥{Number(adv.amount).toLocaleString()}
                       </p>
                       <p className="text-sm text-slate-500">{adv.reason || '-'}</p>
                       <p className="text-xs text-slate-400">
-                        {format(new Date(adv.requestedAt), 'yyyy/MM/dd HH:mm')}
+                        申請日: {format(new Date(adv.requestedAt), 'yyyy/MM/dd HH:mm')}
                       </p>
+                      {adv.paidAt && (
+                        <p className="text-xs text-green-600">
+                          振込日: {format(new Date(adv.paidAt), 'yyyy/MM/dd')}
+                        </p>
+                      )}
                     </div>
-                    <span className={cn(
-                      "px-3 py-1 rounded-full text-xs font-medium",
-                      adv.status === 'pending' && "bg-yellow-100 text-yellow-700",
-                      adv.status === 'approved' && "bg-blue-100 text-blue-700",
-                      adv.status === 'paid' && "bg-green-100 text-green-700",
-                      adv.status === 'rejected' && "bg-red-100 text-red-700"
-                    )}>
-                      {adv.status === 'pending' && '申請中'}
-                      {adv.status === 'approved' && '承認済'}
-                      {adv.status === 'paid' && '支払済'}
-                      {adv.status === 'rejected' && '却下'}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {canApprove && adv.status === 'pending' && (
+                        <>
+                          <button
+                            onClick={() => handleUpdateAdvanceStatus(adv.id, 'approved')}
+                            className="px-3 py-1.5 bg-blue-500 text-white rounded-lg text-xs hover:bg-blue-600 flex items-center gap-1"
+                            title="承認"
+                          >
+                            <CheckCircle size={14} />
+                            承認
+                          </button>
+                          <button
+                            onClick={() => handleUpdateAdvanceStatus(adv.id, 'rejected')}
+                            className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-xs hover:bg-red-600 flex items-center gap-1"
+                            title="却下"
+                          >
+                            <XCircle size={14} />
+                            却下
+                          </button>
+                        </>
+                      )}
+                      {canApprove && adv.status === 'approved' && (
+                        <button
+                          onClick={() => handleUpdateAdvanceStatus(adv.id, 'paid')}
+                          className="px-3 py-1.5 bg-green-500 text-white rounded-lg text-xs hover:bg-green-600 flex items-center gap-1"
+                          title="振込済みにする"
+                        >
+                          <Banknote size={14} />
+                          振込済み
+                        </button>
+                      )}
+                      <span className={cn(
+                        "px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap",
+                        adv.status === 'pending' && "bg-yellow-100 text-yellow-700",
+                        adv.status === 'approved' && "bg-blue-100 text-blue-700",
+                        adv.status === 'paid' && "bg-green-100 text-green-700",
+                        adv.status === 'rejected' && "bg-red-100 text-red-700"
+                      )}>
+                        {adv.status === 'pending' && '申請中'}
+                        {adv.status === 'approved' && '承認済'}
+                        {adv.status === 'paid' && '支払済'}
+                        {adv.status === 'rejected' && '却下'}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
