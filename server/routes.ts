@@ -423,7 +423,14 @@ export function registerRoutes(app: Express) {
   });
 
   app.patch('/api/employees/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
-    const employee = await storage.updateEmployee(parseInt(req.params.id), req.body);
+    const updateData = { ...req.body };
+    // Convert hireDate string to Date object if provided
+    if (updateData.hireDate && typeof updateData.hireDate === 'string') {
+      updateData.hireDate = new Date(updateData.hireDate);
+    } else if (updateData.hireDate === null || updateData.hireDate === '') {
+      updateData.hireDate = null;
+    }
+    const employee = await storage.updateEmployee(parseInt(req.params.id), updateData);
     if (!employee) {
       return res.status(404).json({ message: '従業員が見つかりません' });
     }
