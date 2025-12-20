@@ -100,6 +100,12 @@ export function StaffPage() {
   const [salaries, setSalaries] = useState<Salary[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [advancePayments, setAdvancePayments] = useState<AdvancePayment[]>([]);
+  const [showSalaryForm, setShowSalaryForm] = useState(false);
+  const [showShiftForm, setShowShiftForm] = useState(false);
+  const [showAdvanceForm, setShowAdvanceForm] = useState(false);
+  const [salaryForm, setSalaryForm] = useState({ year: new Date().getFullYear(), month: new Date().getMonth() + 1, baseSalary: '', overtimePay: '', bonus: '', deductions: '', notes: '' });
+  const [shiftForm, setShiftForm] = useState({ date: '', startTime: '09:00', endTime: '18:00', breakMinutes: 60, notes: '' });
+  const [advanceForm, setAdvanceForm] = useState({ amount: '', reason: '' });
   const [form, setForm] = useState({
     email: '',
     name: '',
@@ -231,6 +237,58 @@ export function StaffPage() {
     setEmployeeData(null);
   };
 
+  const handleAddSalary = async () => {
+    if (!employeeData || !salaryForm.baseSalary) return;
+    const netSalary = Number(salaryForm.baseSalary) + Number(salaryForm.overtimePay || 0) + Number(salaryForm.bonus || 0) - Number(salaryForm.deductions || 0);
+    const res = await fetch(`/api/employees/${employeeData.id}/salaries`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ ...salaryForm, netSalary: netSalary.toString() }),
+    });
+    if (res.ok) {
+      const newSal = await res.json();
+      setSalaries([newSal, ...salaries]);
+      setShowSalaryForm(false);
+      setSalaryForm({ year: new Date().getFullYear(), month: new Date().getMonth() + 1, baseSalary: '', overtimePay: '', bonus: '', deductions: '', notes: '' });
+    }
+  };
+
+  const handleAddShift = async () => {
+    if (!employeeData || !shiftForm.date || !shiftForm.startTime || !shiftForm.endTime) return;
+    const start = shiftForm.startTime.split(':').map(Number);
+    const end = shiftForm.endTime.split(':').map(Number);
+    const workMinutes = (end[0] * 60 + end[1]) - (start[0] * 60 + start[1]) - (shiftForm.breakMinutes || 0);
+    const res = await fetch(`/api/employees/${employeeData.id}/shifts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ ...shiftForm, workMinutes }),
+    });
+    if (res.ok) {
+      const newShift = await res.json();
+      setShifts([newShift, ...shifts]);
+      setShowShiftForm(false);
+      setShiftForm({ date: '', startTime: '09:00', endTime: '18:00', breakMinutes: 60, notes: '' });
+    }
+  };
+
+  const handleAddAdvance = async () => {
+    if (!employeeData || !advanceForm.amount) return;
+    const res = await fetch(`/api/employees/${employeeData.id}/advance-payments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ ...advanceForm, status: 'pending' }),
+    });
+    if (res.ok) {
+      const newAdv = await res.json();
+      setAdvancePayments([newAdv, ...advancePayments]);
+      setShowAdvanceForm(false);
+      setAdvanceForm({ amount: '', reason: '' });
+    }
+  };
+
   // Detail view
   if (selectedStaff) {
     return (
@@ -330,15 +388,61 @@ export function StaffPage() {
 
         {detailTab === 'salary' && (
           <div className="card overflow-hidden">
-            <div className="p-5 border-b border-slate-100">
+            <div className="p-5 border-b border-slate-100 flex justify-between items-center">
               <h2 className="text-lg font-bold text-slate-800">給料記録</h2>
+              {employeeData && (
+                <button onClick={() => setShowSalaryForm(true)} className="btn-primary text-sm flex items-center gap-2">
+                  <Plus size={16} />
+                  給料を追加
+                </button>
+              )}
             </div>
-            {salaries.length === 0 ? (
+            {showSalaryForm && (
+              <div className="p-4 bg-slate-50 border-b border-slate-100">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                  <div>
+                    <label className="text-xs text-slate-500">年</label>
+                    <input type="number" className="input-field text-sm" value={salaryForm.year} onChange={(e) => setSalaryForm({ ...salaryForm, year: Number(e.target.value) })} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">月</label>
+                    <input type="number" min="1" max="12" className="input-field text-sm" value={salaryForm.month} onChange={(e) => setSalaryForm({ ...salaryForm, month: Number(e.target.value) })} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">基本給 *</label>
+                    <input type="number" className="input-field text-sm" placeholder="300000" value={salaryForm.baseSalary} onChange={(e) => setSalaryForm({ ...salaryForm, baseSalary: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">残業代</label>
+                    <input type="number" className="input-field text-sm" value={salaryForm.overtimePay} onChange={(e) => setSalaryForm({ ...salaryForm, overtimePay: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">賞与</label>
+                    <input type="number" className="input-field text-sm" value={salaryForm.bonus} onChange={(e) => setSalaryForm({ ...salaryForm, bonus: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">控除</label>
+                    <input type="number" className="input-field text-sm" value={salaryForm.deductions} onChange={(e) => setSalaryForm({ ...salaryForm, deductions: e.target.value })} />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={handleAddSalary} className="btn-primary text-sm">保存</button>
+                  <button onClick={() => setShowSalaryForm(false)} className="btn-secondary text-sm">キャンセル</button>
+                </div>
+              </div>
+            )}
+            {!employeeData && (
+              <div className="p-8 text-center text-slate-400">
+                <p>従業員データが登録されていません。HR Hubで登録してください。</p>
+              </div>
+            )}
+            {employeeData && salaries.length === 0 && !showSalaryForm && (
               <div className="p-8 text-center text-slate-400">
                 <DollarSign size={32} className="mx-auto mb-2 opacity-50" />
                 <p>給料記録がありません</p>
               </div>
-            ) : (
+            )}
+            {salaries.length > 0 && (
               <div className="divide-y divide-slate-100">
                 {salaries.map((sal) => (
                   <div key={sal.id} className="p-4 flex justify-between items-center">
@@ -361,15 +465,53 @@ export function StaffPage() {
 
         {detailTab === 'shift' && (
           <div className="card overflow-hidden">
-            <div className="p-5 border-b border-slate-100">
+            <div className="p-5 border-b border-slate-100 flex justify-between items-center">
               <h2 className="text-lg font-bold text-slate-800">シフト記録</h2>
+              {employeeData && (
+                <button onClick={() => setShowShiftForm(true)} className="btn-primary text-sm flex items-center gap-2">
+                  <Plus size={16} />
+                  シフトを追加
+                </button>
+              )}
             </div>
-            {shifts.length === 0 ? (
+            {showShiftForm && (
+              <div className="p-4 bg-slate-50 border-b border-slate-100">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                  <div>
+                    <label className="text-xs text-slate-500">日付 *</label>
+                    <input type="date" className="input-field text-sm" value={shiftForm.date} onChange={(e) => setShiftForm({ ...shiftForm, date: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">開始時間 *</label>
+                    <input type="time" className="input-field text-sm" value={shiftForm.startTime} onChange={(e) => setShiftForm({ ...shiftForm, startTime: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">終了時間 *</label>
+                    <input type="time" className="input-field text-sm" value={shiftForm.endTime} onChange={(e) => setShiftForm({ ...shiftForm, endTime: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">休憩(分)</label>
+                    <input type="number" className="input-field text-sm" value={shiftForm.breakMinutes} onChange={(e) => setShiftForm({ ...shiftForm, breakMinutes: Number(e.target.value) })} />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={handleAddShift} className="btn-primary text-sm">保存</button>
+                  <button onClick={() => setShowShiftForm(false)} className="btn-secondary text-sm">キャンセル</button>
+                </div>
+              </div>
+            )}
+            {!employeeData && (
+              <div className="p-8 text-center text-slate-400">
+                <p>従業員データが登録されていません。HR Hubで登録してください。</p>
+              </div>
+            )}
+            {employeeData && shifts.length === 0 && !showShiftForm && (
               <div className="p-8 text-center text-slate-400">
                 <Clock size={32} className="mx-auto mb-2 opacity-50" />
                 <p>シフト記録がありません</p>
               </div>
-            ) : (
+            )}
+            {shifts.length > 0 && (
               <div className="divide-y divide-slate-100">
                 {shifts.map((shift) => (
                   <div key={shift.id} className="p-4">
@@ -389,15 +531,45 @@ export function StaffPage() {
 
         {detailTab === 'advance' && (
           <div className="card overflow-hidden">
-            <div className="p-5 border-b border-slate-100">
+            <div className="p-5 border-b border-slate-100 flex justify-between items-center">
               <h2 className="text-lg font-bold text-slate-800">前払い申請</h2>
+              {employeeData && (
+                <button onClick={() => setShowAdvanceForm(true)} className="btn-primary text-sm flex items-center gap-2">
+                  <Plus size={16} />
+                  前払い申請
+                </button>
+              )}
             </div>
-            {advancePayments.length === 0 ? (
+            {showAdvanceForm && (
+              <div className="p-4 bg-slate-50 border-b border-slate-100">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                  <div>
+                    <label className="text-xs text-slate-500">金額 *</label>
+                    <input type="number" className="input-field text-sm" placeholder="50000" value={advanceForm.amount} onChange={(e) => setAdvanceForm({ ...advanceForm, amount: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">理由</label>
+                    <input type="text" className="input-field text-sm" placeholder="緊急の出費のため" value={advanceForm.reason} onChange={(e) => setAdvanceForm({ ...advanceForm, reason: e.target.value })} />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={handleAddAdvance} className="btn-primary text-sm">申請する</button>
+                  <button onClick={() => setShowAdvanceForm(false)} className="btn-secondary text-sm">キャンセル</button>
+                </div>
+              </div>
+            )}
+            {!employeeData && (
+              <div className="p-8 text-center text-slate-400">
+                <p>従業員データが登録されていません。HR Hubで登録してください。</p>
+              </div>
+            )}
+            {employeeData && advancePayments.length === 0 && !showAdvanceForm && (
               <div className="p-8 text-center text-slate-400">
                 <CreditCard size={32} className="mx-auto mb-2 opacity-50" />
                 <p>前払い申請がありません</p>
               </div>
-            ) : (
+            )}
+            {advancePayments.length > 0 && (
               <div className="divide-y divide-slate-100">
                 {advancePayments.map((adv) => (
                   <div key={adv.id} className="p-4 flex justify-between items-center">
