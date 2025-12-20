@@ -111,6 +111,7 @@ export function StaffPage() {
   const [advanceForm, setAdvanceForm] = useState({ amount: '', reason: '' });
   const [showBasicInfoEdit, setShowBasicInfoEdit] = useState(false);
   const [shiftCalendarDate, setShiftCalendarDate] = useState(new Date());
+  const [editingShift, setEditingShift] = useState<Shift | null>(null);
   const [basicInfoForm, setBasicInfoForm] = useState({
     phone: '',
     department: '',
@@ -312,6 +313,50 @@ export function StaffPage() {
       setShifts([newShift, ...shifts]);
       setShowShiftForm(false);
       setShiftForm({ date: '', startTime: '09:00', endTime: '18:00', breakMinutes: 60, projectName: '', notes: '' });
+    }
+  };
+
+  const openEditShift = (shift: Shift) => {
+    setEditingShift(shift);
+    const shiftDate = new Date(shift.date);
+    setShiftForm({
+      date: `${shiftDate.getFullYear()}-${String(shiftDate.getMonth() + 1).padStart(2, '0')}-${String(shiftDate.getDate()).padStart(2, '0')}`,
+      startTime: shift.startTime || '09:00',
+      endTime: shift.endTime || '18:00',
+      breakMinutes: shift.breakMinutes || 60,
+      projectName: shift.projectName || '',
+      notes: shift.notes || '',
+    });
+  };
+
+  const handleUpdateShift = async () => {
+    if (!employeeData || !editingShift || !shiftForm.date || !shiftForm.startTime || !shiftForm.endTime) return;
+    const start = shiftForm.startTime.split(':').map(Number);
+    const end = shiftForm.endTime.split(':').map(Number);
+    const workMinutes = (end[0] * 60 + end[1]) - (start[0] * 60 + start[1]) - (shiftForm.breakMinutes || 0);
+    const res = await fetch(`/api/shifts/${editingShift.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ ...shiftForm, workMinutes }),
+    });
+    if (res.ok) {
+      const updatedShift = await res.json();
+      setShifts(shifts.map((s) => (s.id === editingShift.id ? updatedShift : s)));
+      setEditingShift(null);
+      setShiftForm({ date: '', startTime: '09:00', endTime: '18:00', breakMinutes: 60, projectName: '', notes: '' });
+    }
+  };
+
+  const handleDeleteShift = async (shiftId: number) => {
+    if (!employeeData || !confirm('このシフトを削除しますか？')) return;
+    const res = await fetch(`/api/shifts/${shiftId}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    if (res.ok) {
+      setShifts(shifts.filter((s) => s.id !== shiftId));
+      setEditingShift(null);
     }
   };
 
@@ -881,7 +926,12 @@ export function StaffPage() {
                             {day}
                           </div>
                           {dayShifts.map((shift) => (
-                            <div key={shift.id} className="bg-primary-500 text-white px-1 py-0.5 rounded text-[10px] truncate mb-0.5" title={shift.projectName || ''}>
+                            <div
+                              key={shift.id}
+                              className="bg-primary-500 text-white px-1 py-0.5 rounded text-[10px] truncate mb-0.5 cursor-pointer hover:bg-primary-600"
+                              title={shift.projectName || 'クリックで編集'}
+                              onClick={() => openEditShift(shift)}
+                            >
                               {shift.projectName ? `${shift.projectName} ` : ''}{shift.startTime}-{shift.endTime}
                             </div>
                           ))}
@@ -891,6 +941,99 @@ export function StaffPage() {
                     
                     return cells;
                   })()}
+                </div>
+              </div>
+            )}
+
+            {editingShift && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-2xl p-6 w-full max-w-lg mx-4 animate-fade-in">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-bold text-slate-800">シフトを編集</h3>
+                    <button
+                      onClick={() => {
+                        setEditingShift(null);
+                        setShiftForm({ date: '', startTime: '09:00', endTime: '18:00', breakMinutes: 60, projectName: '', notes: '' });
+                      }}
+                      className="p-2 hover:bg-slate-100 rounded-lg"
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs text-slate-500">日付 *</label>
+                        <input
+                          type="date"
+                          className="input-field"
+                          value={shiftForm.date}
+                          onChange={(e) => setShiftForm({ ...shiftForm, date: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-slate-500">案件名</label>
+                        <input
+                          type="text"
+                          className="input-field"
+                          placeholder="案件名を入力"
+                          value={shiftForm.projectName}
+                          onChange={(e) => setShiftForm({ ...shiftForm, projectName: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <label className="text-xs text-slate-500">開始時間 *</label>
+                        <input
+                          type="time"
+                          className="input-field"
+                          value={shiftForm.startTime}
+                          onChange={(e) => setShiftForm({ ...shiftForm, startTime: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-slate-500">終了時間 *</label>
+                        <input
+                          type="time"
+                          className="input-field"
+                          value={shiftForm.endTime}
+                          onChange={(e) => setShiftForm({ ...shiftForm, endTime: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-slate-500">休憩(分)</label>
+                        <input
+                          type="number"
+                          className="input-field"
+                          value={shiftForm.breakMinutes}
+                          onChange={(e) => setShiftForm({ ...shiftForm, breakMinutes: Number(e.target.value) })}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2 pt-4">
+                      <button onClick={handleUpdateShift} className="btn-primary flex items-center gap-2">
+                        <Check size={16} />
+                        保存
+                      </button>
+                      <button
+                        onClick={() => handleDeleteShift(editingShift.id)}
+                        className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center gap-2"
+                      >
+                        <Trash2 size={16} />
+                        削除
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingShift(null);
+                          setShiftForm({ date: '', startTime: '09:00', endTime: '18:00', breakMinutes: 60, projectName: '', notes: '' });
+                        }}
+                        className="btn-secondary"
+                      >
+                        キャンセル
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
