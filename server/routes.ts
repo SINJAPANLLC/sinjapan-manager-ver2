@@ -194,7 +194,6 @@ export function registerRoutes(app: Express) {
             userId: user.id,
             companyId: user.companyId || undefined,
             employeeNumber: '',
-            hireDate: new Date(),
             salary: '0',
             bankName: user.bankName || '',
             bankBranch: user.bankBranch || '',

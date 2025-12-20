@@ -224,7 +224,7 @@ export function StaffPage() {
             body: JSON.stringify({
               userId: s.id,
               employeeNumber: '',
-              hireDate: new Date().toISOString().split('T')[0],
+              hireDate: null,
               salary: '0',
               bankName: s.bankName || '',
               bankBranch: s.bankBranch || '',
@@ -322,7 +322,7 @@ export function StaffPage() {
       body: JSON.stringify({
         userId: selectedStaff.id,
         employeeNumber: '',
-        hireDate: new Date().toISOString().split('T')[0],
+        hireDate: null,
         salary: '0',
         bankName: selectedStaff.bankName || '',
         bankBranch: selectedStaff.bankBranch || '',
