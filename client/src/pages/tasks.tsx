@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from '../hooks/use-auth';
-import { Plus, Edit2, Trash2, CheckCircle, Clock, AlertCircle, X, Sparkles, Loader2, Target, Users2, Expand, ShieldAlert, Workflow, Briefcase, Network, Download, Save, RotateCcw } from 'lucide-react';
+import { Plus, Edit2, Trash2, CheckCircle, Clock, AlertCircle, X, Sparkles, Loader2, Target, Users2, Expand, ShieldAlert, Workflow, Briefcase, Network, Download, Save, RotateCcw, Maximize2, Minimize2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 import {
@@ -89,6 +89,8 @@ export function TasksPage() {
   const [isExporting, setIsExporting] = useState(false);
   const [editingNode, setEditingNode] = useState<Node | null>(null);
   const [nodeLabel, setNodeLabel] = useState('');
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const diagramRef = useRef<HTMLDivElement>(null);
   
   const [formData, setFormData] = useState({
@@ -356,6 +358,26 @@ export function TasksPage() {
     setEditingNode(node);
     setNodeLabel(typeof node.data.label === 'string' ? node.data.label : '');
   }, []);
+
+  const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+    setSelectedNodeId(node.id);
+  }, []);
+
+  const deleteSelectedNodeDirect = () => {
+    if (!selectedNodeId) return;
+    if (diagramView === 'workflow') {
+      setWorkflowNodes((nds) => nds.filter((n) => n.id !== selectedNodeId));
+      setWorkflowEdges((eds) => eds.filter((e) => e.source !== selectedNodeId && e.target !== selectedNodeId));
+    } else {
+      setOrgChartNodes((nds) => nds.filter((n) => n.id !== selectedNodeId));
+      setOrgChartEdges((eds) => eds.filter((e) => e.source !== selectedNodeId && e.target !== selectedNodeId));
+    }
+    setSelectedNodeId(null);
+  };
+
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+  };
 
   const saveNodeLabel = () => {
     if (!editingNode) return;
@@ -719,7 +741,10 @@ export function TasksPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border-2 border-slate-200 overflow-hidden">
+          <div className={cn(
+            "bg-white rounded-2xl border-2 border-slate-200 overflow-hidden transition-all duration-300",
+            isFullscreen && "fixed inset-4 z-50 shadow-2xl"
+          )}>
             <div className="flex border-b border-slate-200">
               <button
                 onClick={() => setDiagramView('workflow')}
@@ -741,8 +766,15 @@ export function TasksPage() {
                 <Network size={18} />
                 組織図
               </button>
+              <button
+                onClick={toggleFullscreen}
+                className="px-4 py-3 text-slate-600 hover:bg-slate-50 transition-colors"
+                title={isFullscreen ? "縮小" : "全画面"}
+              >
+                {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+              </button>
             </div>
-            <div ref={diagramRef} className="h-[400px]">
+            <div ref={diagramRef} className={cn("transition-all", isFullscreen ? "h-[calc(100vh-180px)]" : "h-[400px]")}>
               {diagramView === 'workflow' ? (
                 <ReactFlow
                   nodes={workflowNodes}
@@ -751,25 +783,34 @@ export function TasksPage() {
                   onEdgesChange={onWorkflowEdgesChange}
                   onConnect={onWorkflowConnect}
                   onNodeDoubleClick={onNodeDoubleClick}
+                  onNodeClick={onNodeClick}
                   fitView
                   attributionPosition="bottom-left"
                 >
                   <Controls />
                   <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
-                  <Panel position="top-right" className="flex gap-2">
+                  <Panel position="top-right" className="flex gap-2 flex-wrap">
                     <button
                       onClick={() => addNewNode('workflow')}
                       className="px-3 py-1.5 bg-purple-500 text-white rounded-lg text-sm font-medium hover:bg-purple-600 flex items-center gap-1"
                     >
                       <Plus size={14} />
-                      ノード追加
+                      追加
                     </button>
+                    {selectedNodeId && (
+                      <button
+                        onClick={deleteSelectedNodeDirect}
+                        className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 flex items-center gap-1"
+                      >
+                        <Trash2 size={14} />
+                        削除
+                      </button>
+                    )}
                     <button
                       onClick={resetDiagram}
                       className="px-3 py-1.5 bg-slate-500 text-white rounded-lg text-sm font-medium hover:bg-slate-600 flex items-center gap-1"
                     >
                       <RotateCcw size={14} />
-                      リセット
                     </button>
                     <button
                       onClick={exportToPDF}
@@ -789,25 +830,34 @@ export function TasksPage() {
                   onEdgesChange={onOrgChartEdgesChange}
                   onConnect={onOrgChartConnect}
                   onNodeDoubleClick={onNodeDoubleClick}
+                  onNodeClick={onNodeClick}
                   fitView
                   attributionPosition="bottom-left"
                 >
                   <Controls />
                   <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
-                  <Panel position="top-right" className="flex gap-2">
+                  <Panel position="top-right" className="flex gap-2 flex-wrap">
                     <button
                       onClick={() => addNewNode('orgchart')}
                       className="px-3 py-1.5 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 flex items-center gap-1"
                     >
                       <Plus size={14} />
-                      ノード追加
+                      追加
                     </button>
+                    {selectedNodeId && (
+                      <button
+                        onClick={deleteSelectedNodeDirect}
+                        className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 flex items-center gap-1"
+                      >
+                        <Trash2 size={14} />
+                        削除
+                      </button>
+                    )}
                     <button
                       onClick={resetDiagram}
                       className="px-3 py-1.5 bg-slate-500 text-white rounded-lg text-sm font-medium hover:bg-slate-600 flex items-center gap-1"
                     >
                       <RotateCcw size={14} />
-                      リセット
                     </button>
                     <button
                       onClick={exportToPDF}
@@ -822,7 +872,7 @@ export function TasksPage() {
               )}
             </div>
             <div className="px-4 py-2 bg-slate-50 border-t border-slate-200 text-xs text-slate-500">
-              ヒント: ノードをドラッグして移動、ダブルクリックで編集、ノード間をドラッグして接続
+              ヒント: ノードをクリックして選択→削除ボタン、ダブルクリックで編集、ドラッグで移動・接続
             </div>
           </div>
         </div>
