@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/use-auth';
-import { Edit2, Search, UserCog, X, Mail, Calendar, Building, DollarSign, Clock, CreditCard, Plus, Trash2, Check, ArrowLeft, Loader2 } from 'lucide-react';
+import { Edit2, Search, UserCog, X, Mail, Calendar, Building, DollarSign, Clock, CreditCard, Plus, Trash2, Check, ArrowLeft, Loader2, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '../lib/utils';
 
@@ -856,16 +856,14 @@ export function EmployeesPage() {
               </div>
             </div>
 
-            <div className="mt-5 pt-4 border-t border-slate-100 flex gap-2">
-              <span className="px-2 py-1 bg-blue-50 text-blue-600 rounded-lg text-xs font-medium flex items-center gap-1">
-                <DollarSign size={12} /> 給料
-              </span>
-              <span className="px-2 py-1 bg-green-50 text-green-600 rounded-lg text-xs font-medium flex items-center gap-1">
-                <Clock size={12} /> シフト
-              </span>
-              <span className="px-2 py-1 bg-amber-50 text-amber-600 rounded-lg text-xs font-medium flex items-center gap-1">
-                <CreditCard size={12} /> 前払い
-              </span>
+            <div className="mt-5 pt-4 border-t border-slate-100">
+              <button
+                onClick={(e) => { e.stopPropagation(); openDetail(employee); }}
+                className="w-full btn-primary text-sm py-2 flex items-center justify-center gap-2"
+              >
+                <Eye size={16} />
+                詳細を見る（給料・シフト・前払い）
+              </button>
             </div>
           </div>
         ))}
