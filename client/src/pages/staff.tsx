@@ -112,6 +112,7 @@ export function StaffPage() {
   const [showBasicInfoEdit, setShowBasicInfoEdit] = useState(false);
   const [shiftCalendarDate, setShiftCalendarDate] = useState(new Date());
   const [editingShift, setEditingShift] = useState<Shift | null>(null);
+  const [editingSalary, setEditingSalary] = useState<Salary | null>(null);
   const [basicInfoForm, setBasicInfoForm] = useState({
     phone: '',
     department: '',
@@ -294,6 +295,48 @@ export function StaffPage() {
       setSalaries([newSal, ...salaries]);
       setShowSalaryForm(false);
       setSalaryForm({ year: new Date().getFullYear(), month: new Date().getMonth() + 1, baseSalary: '', overtimePay: '', bonus: '', deductions: '', notes: '' });
+    }
+  };
+
+  const openEditSalary = (salary: Salary) => {
+    setEditingSalary(salary);
+    setSalaryForm({
+      year: salary.year,
+      month: salary.month,
+      baseSalary: salary.baseSalary,
+      overtimePay: salary.overtimePay || '',
+      bonus: salary.bonus || '',
+      deductions: salary.deductions || '',
+      notes: salary.notes || '',
+    });
+  };
+
+  const handleUpdateSalary = async () => {
+    if (!employeeData || !editingSalary || !salaryForm.baseSalary) return;
+    const netSalary = Number(salaryForm.baseSalary) + Number(salaryForm.overtimePay || 0) + Number(salaryForm.bonus || 0) - Number(salaryForm.deductions || 0);
+    const res = await fetch(`/api/salaries/${editingSalary.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ ...salaryForm, netSalary: netSalary.toString() }),
+    });
+    if (res.ok) {
+      const updatedSal = await res.json();
+      setSalaries(salaries.map((s) => (s.id === editingSalary.id ? updatedSal : s)));
+      setEditingSalary(null);
+      setSalaryForm({ year: new Date().getFullYear(), month: new Date().getMonth() + 1, baseSalary: '', overtimePay: '', bonus: '', deductions: '', notes: '' });
+    }
+  };
+
+  const handleDeleteSalary = async (salaryId: number) => {
+    if (!employeeData || !confirm('この給料記録を削除しますか？')) return;
+    const res = await fetch(`/api/salaries/${salaryId}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    if (res.ok) {
+      setSalaries(salaries.filter((s) => s.id !== salaryId));
+      setEditingSalary(null);
     }
   };
 
@@ -784,7 +827,11 @@ export function StaffPage() {
               <>
                 <div className="divide-y divide-slate-100">
                   {salaries.map((sal) => (
-                    <div key={sal.id} className="p-4 flex justify-between items-center">
+                    <div
+                      key={sal.id}
+                      className="p-4 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition-colors"
+                      onClick={() => openEditSalary(sal)}
+                    >
                       <div>
                         <p className="font-medium text-slate-800">{sal.year}年{sal.month}月</p>
                         <p className="text-sm text-slate-500">
@@ -805,6 +852,116 @@ export function StaffPage() {
                   </p>
                 </div>
               </>
+            )}
+
+            {editingSalary && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-2xl p-6 w-full max-w-lg mx-4 animate-fade-in">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-bold text-slate-800">給料を編集</h3>
+                    <button
+                      onClick={() => {
+                        setEditingSalary(null);
+                        setSalaryForm({ year: new Date().getFullYear(), month: new Date().getMonth() + 1, baseSalary: '', overtimePay: '', bonus: '', deductions: '', notes: '' });
+                      }}
+                      className="p-2 hover:bg-slate-100 rounded-lg"
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs text-slate-500">年 *</label>
+                        <input
+                          type="number"
+                          className="input-field"
+                          value={salaryForm.year}
+                          onChange={(e) => setSalaryForm({ ...salaryForm, year: Number(e.target.value) })}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-slate-500">月 *</label>
+                        <select
+                          className="input-field"
+                          value={salaryForm.month}
+                          onChange={(e) => setSalaryForm({ ...salaryForm, month: Number(e.target.value) })}
+                        >
+                          {[1,2,3,4,5,6,7,8,9,10,11,12].map((m) => (
+                            <option key={m} value={m}>{m}月</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs text-slate-500">基本給 *</label>
+                        <input
+                          type="number"
+                          className="input-field"
+                          placeholder="基本給"
+                          value={salaryForm.baseSalary}
+                          onChange={(e) => setSalaryForm({ ...salaryForm, baseSalary: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-slate-500">残業代</label>
+                        <input
+                          type="number"
+                          className="input-field"
+                          placeholder="残業代"
+                          value={salaryForm.overtimePay}
+                          onChange={(e) => setSalaryForm({ ...salaryForm, overtimePay: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs text-slate-500">賞与</label>
+                        <input
+                          type="number"
+                          className="input-field"
+                          placeholder="賞与"
+                          value={salaryForm.bonus}
+                          onChange={(e) => setSalaryForm({ ...salaryForm, bonus: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-slate-500">控除</label>
+                        <input
+                          type="number"
+                          className="input-field"
+                          placeholder="控除"
+                          value={salaryForm.deductions}
+                          onChange={(e) => setSalaryForm({ ...salaryForm, deductions: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2 pt-4">
+                      <button onClick={handleUpdateSalary} className="btn-primary flex items-center gap-2">
+                        <Check size={16} />
+                        保存
+                      </button>
+                      <button
+                        onClick={() => handleDeleteSalary(editingSalary.id)}
+                        className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center gap-2"
+                      >
+                        <Trash2 size={16} />
+                        削除
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingSalary(null);
+                          setSalaryForm({ year: new Date().getFullYear(), month: new Date().getMonth() + 1, baseSalary: '', overtimePay: '', bonus: '', deductions: '', notes: '' });
+                        }}
+                        className="btn-secondary"
+                      >
+                        キャンセル
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         )}
