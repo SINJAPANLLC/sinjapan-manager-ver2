@@ -20,7 +20,11 @@ import {
   ChevronRight,
   CheckCircle,
   XCircle,
-  Banknote
+  Banknote,
+  ClipboardList,
+  Link2,
+  Settings,
+  StickyNote
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
@@ -94,7 +98,7 @@ interface AdvancePayment {
   paidAt?: string;
 }
 
-type DetailTab = 'info' | 'salary' | 'shift' | 'advance';
+type DetailTab = 'info' | 'salary' | 'shift' | 'advance' | 'tasks' | 'affiliate' | 'system' | 'memo';
 
 export function StaffPage() {
   const { user } = useAuth();
@@ -590,6 +594,10 @@ export function StaffPage() {
             { id: 'salary' as DetailTab, label: '給料', icon: DollarSign },
             { id: 'shift' as DetailTab, label: 'シフト', icon: Clock },
             { id: 'advance' as DetailTab, label: '前払い申請', icon: CreditCard },
+            { id: 'tasks' as DetailTab, label: 'タスク', icon: ClipboardList },
+            { id: 'affiliate' as DetailTab, label: 'アフィリエイト', icon: Link2 },
+            { id: 'system' as DetailTab, label: 'システム', icon: Settings },
+            { id: 'memo' as DetailTab, label: 'メモ', icon: StickyNote },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -1336,6 +1344,58 @@ export function StaffPage() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {detailTab === 'tasks' && (
+          <div className="card overflow-hidden">
+            <div className="p-5 border-b border-slate-100">
+              <h2 className="text-lg font-bold text-slate-800">タスク</h2>
+            </div>
+            <div className="p-8 text-center text-slate-400">
+              <ClipboardList size={32} className="mx-auto mb-2 opacity-50" />
+              <p>このスタッフに割り当てられたタスクを管理します</p>
+              <p className="text-xs mt-2">（準備中）</p>
+            </div>
+          </div>
+        )}
+
+        {detailTab === 'affiliate' && (
+          <div className="card overflow-hidden">
+            <div className="p-5 border-b border-slate-100">
+              <h2 className="text-lg font-bold text-slate-800">アフィリエイト</h2>
+            </div>
+            <div className="p-8 text-center text-slate-400">
+              <Link2 size={32} className="mx-auto mb-2 opacity-50" />
+              <p>アフィリエイト情報を管理します</p>
+              <p className="text-xs mt-2">（準備中）</p>
+            </div>
+          </div>
+        )}
+
+        {detailTab === 'system' && (
+          <div className="card overflow-hidden">
+            <div className="p-5 border-b border-slate-100">
+              <h2 className="text-lg font-bold text-slate-800">システム</h2>
+            </div>
+            <div className="p-8 text-center text-slate-400">
+              <Settings size={32} className="mx-auto mb-2 opacity-50" />
+              <p>システム設定を管理します</p>
+              <p className="text-xs mt-2">（準備中）</p>
+            </div>
+          </div>
+        )}
+
+        {detailTab === 'memo' && (
+          <div className="card overflow-hidden">
+            <div className="p-5 border-b border-slate-100">
+              <h2 className="text-lg font-bold text-slate-800">メモ</h2>
+            </div>
+            <div className="p-8 text-center text-slate-400">
+              <StickyNote size={32} className="mx-auto mb-2 opacity-50" />
+              <p>このスタッフに関するメモを記録します</p>
+              <p className="text-xs mt-2">（準備中）</p>
+            </div>
           </div>
         )}
       </div>
