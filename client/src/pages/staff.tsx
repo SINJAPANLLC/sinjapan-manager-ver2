@@ -284,7 +284,7 @@ export function StaffPage() {
 
   const handleAddSalary = async () => {
     if (!employeeData || !salaryForm.baseSalary) return;
-    const netSalary = Number(salaryForm.baseSalary) + Number(salaryForm.overtimePay || 0) + Number(salaryForm.bonus || 0) - Number(salaryForm.deductions || 0);
+    const netSalary = Number(salaryForm.baseSalary) - Number(salaryForm.deductions || 0);
     const payload = {
       ...salaryForm,
       netSalary: netSalary.toString(),
@@ -320,7 +320,7 @@ export function StaffPage() {
 
   const handleUpdateSalary = async () => {
     if (!employeeData || !editingSalary || !salaryForm.baseSalary) return;
-    const netSalary = Number(salaryForm.baseSalary) + Number(salaryForm.overtimePay || 0) + Number(salaryForm.bonus || 0) - Number(salaryForm.deductions || 0);
+    const netSalary = Number(salaryForm.baseSalary) - Number(salaryForm.deductions || 0);
     const payload = {
       ...salaryForm,
       netSalary: netSalary.toString(),
@@ -807,14 +807,6 @@ export function StaffPage() {
                     <input type="number" className="input-field text-sm" placeholder="300000" value={salaryForm.baseSalary} onChange={(e) => setSalaryForm({ ...salaryForm, baseSalary: e.target.value })} />
                   </div>
                   <div>
-                    <label className="text-xs text-slate-500">残業代</label>
-                    <input type="number" className="input-field text-sm" value={salaryForm.overtimePay} onChange={(e) => setSalaryForm({ ...salaryForm, overtimePay: e.target.value })} />
-                  </div>
-                  <div>
-                    <label className="text-xs text-slate-500">賞与</label>
-                    <input type="number" className="input-field text-sm" value={salaryForm.bonus} onChange={(e) => setSalaryForm({ ...salaryForm, bonus: e.target.value })} />
-                  </div>
-                  <div>
                     <label className="text-xs text-slate-500">控除</label>
                     <input type="number" className="input-field text-sm" value={salaryForm.deductions} onChange={(e) => setSalaryForm({ ...salaryForm, deductions: e.target.value })} />
                   </div>
@@ -859,8 +851,7 @@ export function StaffPage() {
                         </p>
                         <p className="text-sm text-slate-500">
                           報酬: ¥{Number(sal.baseSalary).toLocaleString()}
-                          {sal.overtimePay && ` + 残業: ¥${Number(sal.overtimePay).toLocaleString()}`}
-                        </p>
+                                                  </p>
                       </div>
                       <p className="font-bold text-lg text-primary-600">
                         ¥{Number(sal.netSalary).toLocaleString()}
@@ -934,28 +925,6 @@ export function StaffPage() {
                           placeholder="報酬"
                           value={salaryForm.baseSalary}
                           onChange={(e) => setSalaryForm({ ...salaryForm, baseSalary: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-slate-500">残業代</label>
-                        <input
-                          type="number"
-                          className="input-field"
-                          placeholder="残業代"
-                          value={salaryForm.overtimePay}
-                          onChange={(e) => setSalaryForm({ ...salaryForm, overtimePay: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-xs text-slate-500">賞与</label>
-                        <input
-                          type="number"
-                          className="input-field"
-                          placeholder="賞与"
-                          value={salaryForm.bonus}
-                          onChange={(e) => setSalaryForm({ ...salaryForm, bonus: e.target.value })}
                         />
                       </div>
                       <div>
