@@ -12,7 +12,8 @@ import {
   TrendingUp,
   Loader2,
   Calendar,
-  BarChart3
+  BarChart3,
+  Gift
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
@@ -60,7 +61,7 @@ export function AgencyPage() {
   const [showSaleModal, setShowSaleModal] = useState(false);
   const [editingAgency, setEditingAgency] = useState<Agency | null>(null);
   const [selectedAgency, setSelectedAgency] = useState<Agency | null>(null);
-  const [viewMode, setViewMode] = useState<'list' | 'sales'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'incentive' | 'sales'>('list');
   
   const [form, setForm] = useState({
     email: '',
@@ -231,11 +232,24 @@ export function AgencyPage() {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => setViewMode(viewMode === 'list' ? 'sales' : 'list')}
-            className="btn-secondary flex items-center gap-2"
+            onClick={() => setViewMode('incentive')}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg transition-colors",
+              viewMode === 'incentive' ? "bg-primary-500 text-white" : "btn-secondary"
+            )}
           >
-            {viewMode === 'list' ? <BarChart3 size={18} /> : <Building2 size={18} />}
-            {viewMode === 'list' ? '売上一覧' : '代理店一覧'}
+            <Gift size={18} />
+            インセンティブ表
+          </button>
+          <button
+            onClick={() => setViewMode('sales')}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg transition-colors",
+              viewMode === 'sales' ? "bg-primary-500 text-white" : "btn-secondary"
+            )}
+          >
+            <BarChart3 size={18} />
+            売上一覧
           </button>
           <button
             onClick={() => {
@@ -355,6 +369,62 @@ export function AgencyPage() {
               <p>代理店が見つかりません</p>
             </div>
           )}
+        </div>
+      ) : viewMode === 'incentive' ? (
+        <div className="card overflow-hidden">
+          <div className="p-5 border-b border-slate-100">
+            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <Gift size={20} className="text-primary-500" />
+              インセンティブ表
+            </h2>
+            <p className="text-sm text-slate-500 mt-1">代理店ごとのインセンティブ率と実績</p>
+          </div>
+          <table className="w-full">
+            <thead className="bg-slate-50">
+              <tr>
+                <th className="text-left p-4 text-sm font-medium text-slate-600">代理店名</th>
+                <th className="text-right p-4 text-sm font-medium text-slate-600">売上件数</th>
+                <th className="text-right p-4 text-sm font-medium text-slate-600">総売上</th>
+                <th className="text-right p-4 text-sm font-medium text-slate-600">総手数料</th>
+                <th className="text-right p-4 text-sm font-medium text-slate-600">手数料率</th>
+              </tr>
+            </thead>
+            <tbody>
+              {agencies.map((agency) => {
+                const agencySalesData = getAgencySales(agency.id);
+                const totalSales = getAgencyTotalSales(agency.id);
+                const totalCommission = agencySalesData.reduce((sum, s) => sum + parseFloat(s.commission || '0'), 0);
+                const commissionRate = totalSales > 0 ? ((totalCommission / totalSales) * 100).toFixed(1) : '0';
+                return (
+                  <tr key={agency.id} className="border-t border-slate-100 hover:bg-slate-50">
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white font-bold text-sm">
+                          {agency.name.charAt(0)}
+                        </div>
+                        <span className="font-medium text-slate-800">{agency.name}</span>
+                      </div>
+                    </td>
+                    <td className="p-4 text-right text-sm">{agencySalesData.length}件</td>
+                    <td className="p-4 text-right text-sm font-medium">¥{totalSales.toLocaleString()}</td>
+                    <td className="p-4 text-right text-sm text-green-600 font-medium">¥{totalCommission.toLocaleString()}</td>
+                    <td className="p-4 text-right">
+                      <span className="px-2 py-1 bg-primary-50 text-primary-700 rounded-full text-xs font-medium">
+                        {commissionRate}%
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+              {agencies.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="p-8 text-center text-slate-400">
+                    代理店がありません
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       ) : (
         <div className="card overflow-hidden">
