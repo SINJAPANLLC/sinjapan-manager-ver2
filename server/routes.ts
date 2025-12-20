@@ -237,6 +237,28 @@ export function registerRoutes(app: Express) {
     res.json(userWithoutPassword);
   });
 
+  app.post('/api/users/:id/avatar', requireAuth, upload.single('avatar'), async (req: Request, res: Response) => {
+    try {
+      const currentUser = await storage.getUser(req.session.userId!);
+      const targetId = parseInt(req.params.id);
+      if (!currentUser || (currentUser.id !== targetId && !['admin', 'ceo', 'manager'].includes(currentUser.role))) {
+        return res.status(403).json({ message: '権限がありません' });
+      }
+      if (!req.file) {
+        return res.status(400).json({ message: 'ファイルがありません' });
+      }
+      const avatarUrl = `/uploads/${req.file.filename}`;
+      const user = await storage.updateUser(targetId, { avatarUrl });
+      if (!user) {
+        return res.status(404).json({ message: 'ユーザーが見つかりません' });
+      }
+      res.json({ avatarUrl });
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      res.status(500).json({ message: 'アップロードに失敗しました' });
+    }
+  });
+
   app.delete('/api/users/:id', requireRole('admin', 'ceo'), async (req: Request, res: Response) => {
     const currentUser = (req as any).currentUser;
     const targetId = parseInt(req.params.id);

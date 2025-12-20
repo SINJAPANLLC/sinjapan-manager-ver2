@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/use-auth';
-import { User, Lock, Save, Loader2, CheckCircle, Building2, CreditCard, Plus, Pencil, Trash2, X, Phone, Mail, Globe, Landmark, Calendar, Users, Shield, CheckCircle2, XCircle, MapPin, RefreshCw, Link2, Key, Eye, EyeOff, Copy } from 'lucide-react';
+import { User, Lock, Save, Loader2, CheckCircle, Building2, CreditCard, Plus, Pencil, Trash2, X, Phone, Mail, Globe, Landmark, Calendar, Users, Shield, CheckCircle2, XCircle, MapPin, RefreshCw, Link2, Key, Eye, EyeOff, Copy, Camera } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 
@@ -885,6 +885,8 @@ export function SettingsPage() {
     department: user?.department || '',
     position: user?.position || '',
   });
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '');
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -958,6 +960,35 @@ export function SettingsPage() {
     const res = await fetch('/api/companies');
     if (res.ok) {
       setCompanies(await res.json());
+    }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.id) return;
+
+    setIsUploadingAvatar(true);
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    try {
+      const res = await fetch(`/api/users/${user.id}/avatar`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setAvatarUrl(data.avatarUrl);
+        await refetch();
+        setMessage({ type: 'success', text: 'アイコンを更新しました' });
+      } else {
+        setMessage({ type: 'error', text: 'アップロードに失敗しました' });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'エラーが発生しました' });
+    } finally {
+      setIsUploadingAvatar(false);
     }
   };
 
@@ -1299,6 +1330,35 @@ export function SettingsPage() {
               <h2 className="text-lg font-bold text-slate-800">プロフィール</h2>
             </div>
             <form onSubmit={handleProfileSubmit} className="p-6 space-y-5">
+              <div className="flex items-center gap-6">
+                <div className="relative">
+                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-3xl font-bold overflow-hidden">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      user?.name?.charAt(0).toUpperCase() || 'U'
+                    )}
+                  </div>
+                  <label className="absolute bottom-0 right-0 p-2 bg-white rounded-full shadow-lg cursor-pointer hover:bg-slate-50 transition-colors border border-slate-200">
+                    {isUploadingAvatar ? (
+                      <Loader2 size={16} className="animate-spin text-primary-500" />
+                    ) : (
+                      <Camera size={16} className="text-slate-600" />
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      className="hidden"
+                      disabled={isUploadingAvatar}
+                    />
+                  </label>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-700">プロフィール画像</p>
+                  <p className="text-xs text-slate-400 mt-1">JPG, PNG, GIF（最大5MB）</p>
+                </div>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">名前</label>
                 <input
