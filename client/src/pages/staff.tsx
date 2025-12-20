@@ -15,7 +15,9 @@ import {
   Clock,
   CreditCard,
   ArrowLeft,
-  Check
+  Check,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
@@ -107,6 +109,7 @@ export function StaffPage() {
   const [shiftForm, setShiftForm] = useState({ date: '', startTime: '09:00', endTime: '18:00', breakMinutes: 60, notes: '' });
   const [advanceForm, setAdvanceForm] = useState({ amount: '', reason: '' });
   const [showBasicInfoEdit, setShowBasicInfoEdit] = useState(false);
+  const [shiftCalendarDate, setShiftCalendarDate] = useState(new Date());
   const [basicInfoForm, setBasicInfoForm] = useState({
     phone: '',
     department: '',
@@ -763,7 +766,26 @@ export function StaffPage() {
         {detailTab === 'shift' && (
           <div className="card overflow-hidden">
             <div className="p-5 border-b border-slate-100 flex justify-between items-center">
-              <h2 className="text-lg font-bold text-slate-800">シフト記録</h2>
+              <div className="flex items-center gap-4">
+                <h2 className="text-lg font-bold text-slate-800">シフト記録</h2>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShiftCalendarDate(new Date(shiftCalendarDate.getFullYear(), shiftCalendarDate.getMonth() - 1))}
+                    className="p-1 hover:bg-slate-100 rounded"
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                  <span className="font-medium text-slate-700 min-w-[100px] text-center">
+                    {shiftCalendarDate.getFullYear()}年{shiftCalendarDate.getMonth() + 1}月
+                  </span>
+                  <button
+                    onClick={() => setShiftCalendarDate(new Date(shiftCalendarDate.getFullYear(), shiftCalendarDate.getMonth() + 1))}
+                    className="p-1 hover:bg-slate-100 rounded"
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                </div>
+              </div>
               {employeeData && (
                 <button onClick={() => setShowShiftForm(true)} className="btn-primary text-sm flex items-center gap-2">
                   <Plus size={16} />
@@ -805,25 +827,66 @@ export function StaffPage() {
                 </button>
               </div>
             )}
-            {employeeData && shifts.length === 0 && !showShiftForm && (
-              <div className="p-8 text-center text-slate-400">
-                <Clock size={32} className="mx-auto mb-2 opacity-50" />
-                <p>シフト記録がありません</p>
-              </div>
-            )}
-            {shifts.length > 0 && (
-              <div className="divide-y divide-slate-100">
-                {shifts.map((shift) => (
-                  <div key={shift.id} className="p-4">
-                    <p className="font-medium text-slate-800">
-                      {format(new Date(shift.date), 'yyyy/MM/dd')}
-                    </p>
-                    <p className="text-sm text-slate-500">
-                      {shift.startTime} - {shift.endTime}
-                      {shift.workMinutes && ` (${Math.floor(shift.workMinutes / 60)}時間${shift.workMinutes % 60}分)`}
-                    </p>
-                  </div>
-                ))}
+            {employeeData && (
+              <div className="p-4">
+                <div className="grid grid-cols-7 gap-1 mb-2">
+                  {['日', '月', '火', '水', '木', '金', '土'].map((day, i) => (
+                    <div key={day} className={cn(
+                      "text-center text-xs font-medium py-2",
+                      i === 0 ? "text-red-500" : i === 6 ? "text-blue-500" : "text-slate-500"
+                    )}>
+                      {day}
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-7 gap-1">
+                  {(() => {
+                    const year = shiftCalendarDate.getFullYear();
+                    const month = shiftCalendarDate.getMonth();
+                    const firstDay = new Date(year, month, 1).getDay();
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                    const cells = [];
+                    
+                    for (let i = 0; i < firstDay; i++) {
+                      cells.push(<div key={`empty-${i}`} className="h-20 bg-slate-50 rounded" />);
+                    }
+                    
+                    for (let day = 1; day <= daysInMonth; day++) {
+                      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                      const dayShifts = shifts.filter((s) => {
+                        const shiftDate = new Date(s.date);
+                        return shiftDate.getFullYear() === year && shiftDate.getMonth() === month && shiftDate.getDate() === day;
+                      });
+                      const dayOfWeek = new Date(year, month, day).getDay();
+                      const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
+                      
+                      cells.push(
+                        <div
+                          key={day}
+                          className={cn(
+                            "h-20 border rounded p-1 text-xs overflow-hidden",
+                            isToday ? "border-primary-500 bg-primary-50" : "border-slate-200",
+                            dayOfWeek === 0 ? "bg-red-50" : dayOfWeek === 6 ? "bg-blue-50" : ""
+                          )}
+                        >
+                          <div className={cn(
+                            "font-medium mb-1",
+                            dayOfWeek === 0 ? "text-red-500" : dayOfWeek === 6 ? "text-blue-500" : "text-slate-700"
+                          )}>
+                            {day}
+                          </div>
+                          {dayShifts.map((shift) => (
+                            <div key={shift.id} className="bg-primary-500 text-white px-1 py-0.5 rounded text-[10px] truncate mb-0.5">
+                              {shift.startTime}-{shift.endTime}
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    }
+                    
+                    return cells;
+                  })()}
+                </div>
               </div>
             )}
           </div>
