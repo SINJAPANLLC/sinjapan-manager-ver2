@@ -750,7 +750,7 @@ export function StaffPage() {
                   className="w-full btn-primary text-sm py-2 flex items-center justify-center gap-2"
                 >
                   <Eye size={14} />
-                  詳細を見る（給料・シフト・前払い）
+                  詳細を見る
                 </button>
                 <div className="flex gap-2">
                   <button
