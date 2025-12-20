@@ -75,6 +75,7 @@ interface Shift {
   endTime: string;
   breakMinutes?: number;
   workMinutes?: number;
+  projectName?: string;
   notes?: string;
 }
 
@@ -106,7 +107,7 @@ export function StaffPage() {
   const [showShiftForm, setShowShiftForm] = useState(false);
   const [showAdvanceForm, setShowAdvanceForm] = useState(false);
   const [salaryForm, setSalaryForm] = useState({ year: new Date().getFullYear(), month: new Date().getMonth() + 1, baseSalary: '', overtimePay: '', bonus: '', deductions: '', notes: '' });
-  const [shiftForm, setShiftForm] = useState({ date: '', startTime: '09:00', endTime: '18:00', breakMinutes: 60, notes: '' });
+  const [shiftForm, setShiftForm] = useState({ date: '', startTime: '09:00', endTime: '18:00', breakMinutes: 60, projectName: '', notes: '' });
   const [advanceForm, setAdvanceForm] = useState({ amount: '', reason: '' });
   const [showBasicInfoEdit, setShowBasicInfoEdit] = useState(false);
   const [shiftCalendarDate, setShiftCalendarDate] = useState(new Date());
@@ -310,7 +311,7 @@ export function StaffPage() {
       const newShift = await res.json();
       setShifts([newShift, ...shifts]);
       setShowShiftForm(false);
-      setShiftForm({ date: '', startTime: '09:00', endTime: '18:00', breakMinutes: 60, notes: '' });
+      setShiftForm({ date: '', startTime: '09:00', endTime: '18:00', breakMinutes: 60, projectName: '', notes: '' });
     }
   };
 
@@ -795,10 +796,14 @@ export function StaffPage() {
             </div>
             {showShiftForm && (
               <div className="p-4 bg-slate-50 border-b border-slate-100">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3">
                   <div>
                     <label className="text-xs text-slate-500">日付 *</label>
                     <input type="date" className="input-field text-sm" value={shiftForm.date} onChange={(e) => setShiftForm({ ...shiftForm, date: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">案件名</label>
+                    <input type="text" className="input-field text-sm" placeholder="案件名を入力" value={shiftForm.projectName} onChange={(e) => setShiftForm({ ...shiftForm, projectName: e.target.value })} />
                   </div>
                   <div>
                     <label className="text-xs text-slate-500">開始時間 *</label>
@@ -876,8 +881,8 @@ export function StaffPage() {
                             {day}
                           </div>
                           {dayShifts.map((shift) => (
-                            <div key={shift.id} className="bg-primary-500 text-white px-1 py-0.5 rounded text-[10px] truncate mb-0.5">
-                              {shift.startTime}-{shift.endTime}
+                            <div key={shift.id} className="bg-primary-500 text-white px-1 py-0.5 rounded text-[10px] truncate mb-0.5" title={shift.projectName || ''}>
+                              {shift.projectName ? `${shift.projectName} ` : ''}{shift.startTime}-{shift.endTime}
                             </div>
                           ))}
                         </div>

@@ -499,6 +499,7 @@ export const staffShifts = pgTable("staff_shifts", {
   endTime: varchar("end_time", { length: 10 }),
   breakMinutes: integer("break_minutes").default(0),
   workHours: decimal("work_hours", { precision: 5, scale: 2 }).default("0"),
+  projectName: varchar("project_name", { length: 255 }),
   status: varchar("status", { length: 50 }).default("scheduled"),
   notes: text("notes"),
   createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
