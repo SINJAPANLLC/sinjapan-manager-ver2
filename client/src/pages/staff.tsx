@@ -732,22 +732,30 @@ export function StaffPage() {
               </div>
             )}
             {salaries.length > 0 && (
-              <div className="divide-y divide-slate-100">
-                {salaries.map((sal) => (
-                  <div key={sal.id} className="p-4 flex justify-between items-center">
-                    <div>
-                      <p className="font-medium text-slate-800">{sal.year}年{sal.month}月</p>
-                      <p className="text-sm text-slate-500">
-                        基本給: ¥{Number(sal.baseSalary).toLocaleString()}
-                        {sal.overtimePay && ` + 残業: ¥${Number(sal.overtimePay).toLocaleString()}`}
+              <>
+                <div className="divide-y divide-slate-100">
+                  {salaries.map((sal) => (
+                    <div key={sal.id} className="p-4 flex justify-between items-center">
+                      <div>
+                        <p className="font-medium text-slate-800">{sal.year}年{sal.month}月</p>
+                        <p className="text-sm text-slate-500">
+                          基本給: ¥{Number(sal.baseSalary).toLocaleString()}
+                          {sal.overtimePay && ` + 残業: ¥${Number(sal.overtimePay).toLocaleString()}`}
+                        </p>
+                      </div>
+                      <p className="font-bold text-lg text-primary-600">
+                        ¥{Number(sal.netSalary).toLocaleString()}
                       </p>
                     </div>
-                    <p className="font-bold text-lg text-primary-600">
-                      ¥{Number(sal.netSalary).toLocaleString()}
-                    </p>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+                <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
+                  <p className="font-bold text-slate-700">合計</p>
+                  <p className="font-bold text-xl text-primary-700">
+                    ¥{salaries.reduce((sum, sal) => sum + Number(sal.netSalary), 0).toLocaleString()}
+                  </p>
+                </div>
+              </>
             )}
           </div>
         )}
