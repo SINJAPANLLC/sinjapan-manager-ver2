@@ -376,7 +376,7 @@ export function StaffPage() {
     
     // Update user info
     const userRes = await fetch(`/api/users/${selectedStaff.id}`, {
-      method: 'PUT',
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({
@@ -411,7 +411,7 @@ export function StaffPage() {
     // Update employee info if exists
     if (employeeData) {
       const empRes = await fetch(`/api/employees/${employeeData.id}`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
