@@ -9,7 +9,13 @@ import {
   Phone,
   X,
   Building2,
-  Loader2
+  Loader2,
+  Eye,
+  DollarSign,
+  Clock,
+  CreditCard,
+  ArrowLeft,
+  Check
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
@@ -31,12 +37,69 @@ interface Staff {
   createdAt: string;
 }
 
+interface Employee {
+  id: number;
+  userId: number;
+  employeeNumber?: string;
+  hireDate?: string;
+  salary?: string;
+  bankName?: string;
+  bankBranch?: string;
+  bankAccountType?: string;
+  bankAccountNumber?: string;
+  bankAccountHolder?: string;
+  emergencyContact?: string;
+  emergencyPhone?: string;
+  notes?: string;
+  user?: Staff;
+}
+
+interface Salary {
+  id: number;
+  year: number;
+  month: number;
+  baseSalary: string;
+  overtimePay?: string;
+  bonus?: string;
+  deductions?: string;
+  netSalary: string;
+  notes?: string;
+}
+
+interface Shift {
+  id: number;
+  date: string;
+  startTime: string;
+  endTime: string;
+  breakMinutes?: number;
+  workMinutes?: number;
+  notes?: string;
+}
+
+interface AdvancePayment {
+  id: number;
+  amount: string;
+  reason?: string;
+  status: string;
+  requestedAt: string;
+  approvedAt?: string;
+  paidAt?: string;
+}
+
+type DetailTab = 'info' | 'salary' | 'shift' | 'advance';
+
 export function StaffPage() {
   const [staff, setStaff] = useState<Staff[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
+  const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
+  const [employeeData, setEmployeeData] = useState<Employee | null>(null);
+  const [detailTab, setDetailTab] = useState<DetailTab>('info');
+  const [salaries, setSalaries] = useState<Salary[]>([]);
+  const [shifts, setShifts] = useState<Shift[]>([]);
+  const [advancePayments, setAdvancePayments] = useState<AdvancePayment[]>([]);
   const [form, setForm] = useState({
     email: '',
     name: '',
@@ -131,6 +194,244 @@ export function StaffPage() {
     (s.department || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const openDetail = async (s: Staff) => {
+    setSelectedStaff(s);
+    setDetailTab('info');
+    setSalaries([]);
+    setShifts([]);
+    setAdvancePayments([]);
+    setEmployeeData(null);
+
+    // Fetch employee record for this user
+    try {
+      const empRes = await fetch('/api/employees', { credentials: 'include' });
+      if (empRes.ok) {
+        const employees = await empRes.json();
+        const emp = employees.find((e: Employee) => e.userId === s.id);
+        if (emp) {
+          setEmployeeData(emp);
+          // Fetch salaries, shifts, advance payments
+          const [salRes, shiftRes, advRes] = await Promise.all([
+            fetch(`/api/employees/${emp.id}/salaries`, { credentials: 'include' }),
+            fetch(`/api/employees/${emp.id}/shifts`, { credentials: 'include' }),
+            fetch(`/api/employees/${emp.id}/advance-payments`, { credentials: 'include' }),
+          ]);
+          if (salRes.ok) setSalaries(await salRes.json());
+          if (shiftRes.ok) setShifts(await shiftRes.json());
+          if (advRes.ok) setAdvancePayments(await advRes.json());
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch employee data:', err);
+    }
+  };
+
+  const closeDetail = () => {
+    setSelectedStaff(null);
+    setEmployeeData(null);
+  };
+
+  // Detail view
+  if (selectedStaff) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={closeDetail}
+            className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
+          >
+            <ArrowLeft size={20} className="text-slate-600" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800">{selectedStaff.name}</h1>
+            <p className="text-slate-500 text-sm">{selectedStaff.position || 'スタッフ'} · {selectedStaff.department || '-'}</p>
+          </div>
+        </div>
+
+        <div className="flex gap-2 bg-white rounded-xl p-1 border border-slate-200 w-fit">
+          {[
+            { id: 'info' as DetailTab, label: '基本情報', icon: UserCheck },
+            { id: 'salary' as DetailTab, label: '給料', icon: DollarSign },
+            { id: 'shift' as DetailTab, label: 'シフト', icon: Clock },
+            { id: 'advance' as DetailTab, label: '前払い申請', icon: CreditCard },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setDetailTab(tab.id)}
+              className={cn(
+                "px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2",
+                detailTab === tab.id ? "bg-primary-500 text-white" : "text-slate-600 hover:bg-slate-100"
+              )}
+            >
+              <tab.icon size={16} />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {detailTab === 'info' && (
+          <div className="card p-6">
+            <h2 className="text-lg font-bold text-slate-800 mb-6">基本情報</h2>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <p className="text-xs text-slate-400">メールアドレス</p>
+                  <p className="font-medium text-slate-800">{selectedStaff.email}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400">電話番号</p>
+                  <p className="font-medium text-slate-800">{selectedStaff.phone || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400">部署</p>
+                  <p className="font-medium text-slate-800">{selectedStaff.department || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400">役職</p>
+                  <p className="font-medium text-slate-800">{selectedStaff.position || '-'}</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-xs text-slate-400">銀行口座</p>
+                  <p className="font-medium text-slate-800">
+                    {selectedStaff.bankName ? `${selectedStaff.bankName} ${selectedStaff.bankBranch || ''}` : '-'}
+                  </p>
+                  {selectedStaff.bankAccountNumber && (
+                    <p className="text-sm text-slate-600">
+                      {selectedStaff.bankAccountType} {selectedStaff.bankAccountNumber}
+                    </p>
+                  )}
+                </div>
+                {employeeData && (
+                  <>
+                    <div>
+                      <p className="text-xs text-slate-400">社員番号</p>
+                      <p className="font-medium text-slate-800">{employeeData.employeeNumber || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400">入社日</p>
+                      <p className="font-medium text-slate-800">
+                        {employeeData.hireDate ? format(new Date(employeeData.hireDate), 'yyyy/MM/dd') : '-'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400">基本給</p>
+                      <p className="font-medium text-slate-800">
+                        ¥{employeeData.salary ? Number(employeeData.salary).toLocaleString() : '-'}
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {detailTab === 'salary' && (
+          <div className="card overflow-hidden">
+            <div className="p-5 border-b border-slate-100">
+              <h2 className="text-lg font-bold text-slate-800">給料記録</h2>
+            </div>
+            {salaries.length === 0 ? (
+              <div className="p-8 text-center text-slate-400">
+                <DollarSign size={32} className="mx-auto mb-2 opacity-50" />
+                <p>給料記録がありません</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {salaries.map((sal) => (
+                  <div key={sal.id} className="p-4 flex justify-between items-center">
+                    <div>
+                      <p className="font-medium text-slate-800">{sal.year}年{sal.month}月</p>
+                      <p className="text-sm text-slate-500">
+                        基本給: ¥{Number(sal.baseSalary).toLocaleString()}
+                        {sal.overtimePay && ` + 残業: ¥${Number(sal.overtimePay).toLocaleString()}`}
+                      </p>
+                    </div>
+                    <p className="font-bold text-lg text-primary-600">
+                      ¥{Number(sal.netSalary).toLocaleString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {detailTab === 'shift' && (
+          <div className="card overflow-hidden">
+            <div className="p-5 border-b border-slate-100">
+              <h2 className="text-lg font-bold text-slate-800">シフト記録</h2>
+            </div>
+            {shifts.length === 0 ? (
+              <div className="p-8 text-center text-slate-400">
+                <Clock size={32} className="mx-auto mb-2 opacity-50" />
+                <p>シフト記録がありません</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {shifts.map((shift) => (
+                  <div key={shift.id} className="p-4">
+                    <p className="font-medium text-slate-800">
+                      {format(new Date(shift.date), 'yyyy/MM/dd')}
+                    </p>
+                    <p className="text-sm text-slate-500">
+                      {shift.startTime} - {shift.endTime}
+                      {shift.workMinutes && ` (${Math.floor(shift.workMinutes / 60)}時間${shift.workMinutes % 60}分)`}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {detailTab === 'advance' && (
+          <div className="card overflow-hidden">
+            <div className="p-5 border-b border-slate-100">
+              <h2 className="text-lg font-bold text-slate-800">前払い申請</h2>
+            </div>
+            {advancePayments.length === 0 ? (
+              <div className="p-8 text-center text-slate-400">
+                <CreditCard size={32} className="mx-auto mb-2 opacity-50" />
+                <p>前払い申請がありません</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {advancePayments.map((adv) => (
+                  <div key={adv.id} className="p-4 flex justify-between items-center">
+                    <div>
+                      <p className="font-medium text-slate-800">
+                        ¥{Number(adv.amount).toLocaleString()}
+                      </p>
+                      <p className="text-sm text-slate-500">{adv.reason || '-'}</p>
+                      <p className="text-xs text-slate-400">
+                        {format(new Date(adv.requestedAt), 'yyyy/MM/dd HH:mm')}
+                      </p>
+                    </div>
+                    <span className={cn(
+                      "px-3 py-1 rounded-full text-xs font-medium",
+                      adv.status === 'pending' && "bg-yellow-100 text-yellow-700",
+                      adv.status === 'approved' && "bg-blue-100 text-blue-700",
+                      adv.status === 'paid' && "bg-green-100 text-green-700",
+                      adv.status === 'rejected' && "bg-red-100 text-red-700"
+                    )}>
+                      {adv.status === 'pending' && '申請中'}
+                      {adv.status === 'approved' && '承認済'}
+                      {adv.status === 'paid' && '支払済'}
+                      {adv.status === 'rejected' && '却下'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex justify-between items-center">
@@ -212,20 +513,29 @@ export function StaffPage() {
                 )}
               </div>
 
-              <div className="flex gap-2 mt-4 pt-3 border-t border-slate-100">
+              <div className="mt-4 pt-3 border-t border-slate-100 space-y-2">
                 <button
-                  onClick={() => openEditModal(s)}
-                  className="flex-1 btn-secondary text-sm py-1.5"
+                  onClick={() => openDetail(s)}
+                  className="w-full btn-primary text-sm py-2 flex items-center justify-center gap-2"
                 >
-                  <Edit size={14} className="inline mr-1" />
-                  編集
+                  <Eye size={14} />
+                  詳細を見る（給料・シフト・前払い）
                 </button>
-                <button
-                  onClick={() => handleDelete(s.id)}
-                  className="btn-secondary text-sm py-1.5 text-red-600 border-red-200 hover:bg-red-50"
-                >
-                  <Trash2 size={14} />
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => openEditModal(s)}
+                    className="flex-1 btn-secondary text-sm py-1.5"
+                  >
+                    <Edit size={14} className="inline mr-1" />
+                    編集
+                  </button>
+                  <button
+                    onClick={() => handleDelete(s.id)}
+                    className="btn-secondary text-sm py-1.5 text-red-600 border-red-200 hover:bg-red-50"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
