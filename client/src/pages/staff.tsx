@@ -289,6 +289,32 @@ export function StaffPage() {
     }
   };
 
+  const createEmployeeRecord = async () => {
+    if (!selectedStaff) return;
+    const res = await fetch('/api/employees', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        userId: selectedStaff.id,
+        employeeNumber: '',
+        hireDate: new Date().toISOString().split('T')[0],
+        salary: '0',
+        bankName: selectedStaff.bankName || '',
+        bankBranch: selectedStaff.bankBranch || '',
+        bankAccountType: selectedStaff.bankAccountType || '普通',
+        bankAccountNumber: selectedStaff.bankAccountNumber || '',
+        bankAccountHolder: selectedStaff.bankAccountHolder || '',
+      }),
+    });
+    if (res.ok) {
+      const newEmp = await res.json();
+      setEmployeeData(newEmp);
+    } else {
+      alert('従業員レコードの作成に失敗しました');
+    }
+  };
+
   // Detail view
   if (selectedStaff) {
     return (
@@ -432,8 +458,11 @@ export function StaffPage() {
               </div>
             )}
             {!employeeData && (
-              <div className="p-8 text-center text-slate-400">
-                <p>従業員データが登録されていません。HR Hubで登録してください。</p>
+              <div className="p-8 text-center">
+                <p className="text-slate-400 mb-4">従業員データが登録されていません</p>
+                <button onClick={createEmployeeRecord} className="btn-primary">
+                  従業員として登録する
+                </button>
               </div>
             )}
             {employeeData && salaries.length === 0 && !showSalaryForm && (
@@ -501,8 +530,11 @@ export function StaffPage() {
               </div>
             )}
             {!employeeData && (
-              <div className="p-8 text-center text-slate-400">
-                <p>従業員データが登録されていません。HR Hubで登録してください。</p>
+              <div className="p-8 text-center">
+                <p className="text-slate-400 mb-4">従業員データが登録されていません</p>
+                <button onClick={createEmployeeRecord} className="btn-primary">
+                  従業員として登録する
+                </button>
               </div>
             )}
             {employeeData && shifts.length === 0 && !showShiftForm && (
@@ -559,8 +591,11 @@ export function StaffPage() {
               </div>
             )}
             {!employeeData && (
-              <div className="p-8 text-center text-slate-400">
-                <p>従業員データが登録されていません。HR Hubで登録してください。</p>
+              <div className="p-8 text-center">
+                <p className="text-slate-400 mb-4">従業員データが登録されていません</p>
+                <button onClick={createEmployeeRecord} className="btn-primary">
+                  従業員として登録する
+                </button>
               </div>
             )}
             {employeeData && advancePayments.length === 0 && !showAdvanceForm && (
