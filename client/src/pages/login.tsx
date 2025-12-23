@@ -147,6 +147,17 @@ export function LoginPage() {
               )}
             </button>
           </form>
+
+          <div className="mt-6 pt-6 border-t border-slate-100 text-center">
+            <p className="text-sm text-slate-500 mb-3">アカウントをお持ちでない方</p>
+            <a
+              href="/register"
+              className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium text-sm"
+            >
+              新規アカウント登録
+              <ArrowRight size={16} />
+            </a>
+          </div>
         </div>
       </div>
     </div>

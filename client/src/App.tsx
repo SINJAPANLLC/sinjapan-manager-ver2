@@ -21,10 +21,13 @@ import { StaffPage } from './pages/staff';
 import { AgencyPage } from './pages/agency';
 import { ClientsPage } from './pages/clients';
 import { MarketingPage } from './pages/marketing';
+import { RegisterPage } from './pages/register';
 import { Loader2 } from 'lucide-react';
+import { useLocation } from 'wouter';
 
 function AppRoutes() {
   const { user, isLoading } = useAuth();
+  const [location] = useLocation();
 
   if (isLoading) {
     return (
@@ -38,6 +41,9 @@ function AppRoutes() {
   }
 
   if (!user) {
+    if (location === '/register') {
+      return <RegisterPage />;
+    }
     return <LoginPage />;
   }
 

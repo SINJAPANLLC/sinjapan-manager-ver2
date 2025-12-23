@@ -196,6 +196,39 @@ export function registerRoutes(app: Express) {
     }
   });
 
+  app.post('/api/register', async (req: Request, res: Response) => {
+    try {
+      const { email, password, name, phone, role } = req.body;
+      
+      if (!['staff', 'agency', 'client'].includes(role)) {
+        return res.status(400).json({ message: '無効なロールです' });
+      }
+      
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: 'このメールアドレスは既に登録されています' });
+      }
+      
+      const tenant = (req as any).tenant;
+      
+      const user = await storage.createUser({
+        email,
+        password,
+        name,
+        phone,
+        role,
+        companyId: tenant?.id,
+        isActive: true,
+      });
+      
+      const { password: _, ...userWithoutPassword } = user;
+      res.status(201).json(userWithoutPassword);
+    } catch (error) {
+      console.error('Registration error:', error);
+      res.status(500).json({ message: '登録に失敗しました' });
+    }
+  });
+
   app.post('/api/auth/logout', (req: Request, res: Response) => {
     req.session.destroy(() => {
       res.json({ message: 'ログアウトしました' });
