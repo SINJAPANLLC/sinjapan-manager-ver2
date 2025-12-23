@@ -478,7 +478,7 @@ export function registerRoutes(app: Express) {
 
   app.post('/api/tasks/:id/approve-reward', requireRole('admin', 'ceo'), async (req: Request, res: Response) => {
     const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
-    const task = await tenantStorage.getTask(parseInt(req.params.id));
+    const task = await storage.getTask(parseInt(req.params.id));
     if (!task) {
       return res.status(404).json({ message: 'タスクが見つかりません' });
     }
@@ -555,7 +555,7 @@ export function registerRoutes(app: Express) {
         rewardPaidAt: now 
       });
       
-      const updatedTask = await tenantStorage.getTask(parseInt(req.params.id));
+      const updatedTask = await storage.getTask(parseInt(req.params.id));
       res.json({ message: '報酬を承認し、給料に反映しました', task: updatedTask });
     } catch (err) {
       console.error('報酬承認エラー:', err);

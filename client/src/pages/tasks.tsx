@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from '../hooks/use-auth';
-import { Plus, Edit2, Trash2, CheckCircle, Clock, AlertCircle, X, Sparkles, Loader2, Target, Users2, Expand, ShieldAlert, Workflow, Briefcase, Network, Download, Save, RotateCcw, Maximize2, Minimize2, Building2, Repeat, User } from 'lucide-react';
+import { Plus, Edit2, Trash2, CheckCircle, Clock, AlertCircle, X, Sparkles, Loader2, Target, Users2, Expand, ShieldAlert, Workflow, Briefcase, Network, Download, Save, RotateCcw, Maximize2, Minimize2, Building2, Repeat, User, FileText, ExternalLink, Eye } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 import {
@@ -70,6 +70,16 @@ interface Employee {
   };
 }
 
+interface TaskEvidence {
+  id: number;
+  taskId: number;
+  description?: string;
+  fileName?: string;
+  fileUrl?: string;
+  uploadedBy?: number;
+  createdAt?: string;
+}
+
 const categories = [
   { id: 'direct', label: '直結', icon: Target, color: 'from-red-500 to-red-600', bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700' },
   { id: 'organization', label: '組織', icon: Users2, color: 'from-blue-500 to-blue-600', bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700' },
@@ -103,6 +113,8 @@ export function TasksPage() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const diagramRef = useRef<HTMLDivElement>(null);
   const [pendingApprovalCount, setPendingApprovalCount] = useState(0);
+  const [taskEvidence, setTaskEvidence] = useState<Record<number, TaskEvidence[]>>({});
+  const [evidenceModalTask, setEvidenceModalTask] = useState<Task | null>(null);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -347,6 +359,23 @@ export function TasksPage() {
       console.error('承認エラー:', err);
       alert('承認中にエラーが発生しました');
     }
+  };
+
+  const fetchTaskEvidence = async (taskId: number) => {
+    try {
+      const res = await fetch(`/api/tasks/${taskId}/evidence`, { credentials: 'include' });
+      if (res.ok) {
+        const evidence = await res.json();
+        setTaskEvidence(prev => ({ ...prev, [taskId]: evidence }));
+      }
+    } catch (err) {
+      console.error('Failed to fetch task evidence:', err);
+    }
+  };
+
+  const openEvidenceModal = (task: Task) => {
+    setEvidenceModalTask(task);
+    fetchTaskEvidence(task.id);
   };
 
   const fetchUsers = async () => {
@@ -848,6 +877,9 @@ export function TasksPage() {
                                   承認
                                 </button>
                               )}
+                              <button onClick={() => openEvidenceModal(task)} className="p-1 text-indigo-600 hover:bg-indigo-50 rounded transition-colors" title="エビデンス確認">
+                                <Eye size={12} />
+                              </button>
                               <button onClick={() => openModal(task)} className="p-1 text-primary-600 hover:bg-primary-50 rounded transition-colors">
                                 <Edit2 size={12} />
                               </button>
@@ -1106,6 +1138,13 @@ export function TasksPage() {
                                 承認
                               </button>
                             )}
+                            <button
+                              onClick={() => openEvidenceModal(task)}
+                              className="p-1 text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                              title="エビデンス確認"
+                            >
+                              <Eye size={12} />
+                            </button>
                             <button
                               onClick={() => openModal(task)}
                               className="p-1 text-primary-600 hover:bg-primary-50 rounded transition-colors"
@@ -1430,6 +1469,105 @@ export function TasksPage() {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {evidenceModalTask && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-gradient-to-r from-indigo-500 to-indigo-600">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <FileText size={20} />
+                エビデンス確認
+              </h2>
+              <button onClick={() => setEvidenceModalTask(null)} className="text-white/80 hover:text-white transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-4 max-h-[70vh] overflow-y-auto">
+              <div className="mb-4 p-3 bg-slate-50 rounded-xl">
+                <h3 className="font-medium text-slate-800">{evidenceModalTask.title}</h3>
+                {evidenceModalTask.description && (
+                  <p className="text-sm text-slate-500 mt-1">{evidenceModalTask.description}</p>
+                )}
+                <div className="flex gap-2 mt-2">
+                  <span className={cn(
+                    "px-2 py-0.5 rounded text-xs font-medium",
+                    evidenceModalTask.status === 'completed' ? "bg-green-100 text-green-700" :
+                    evidenceModalTask.status === 'in_progress' ? "bg-blue-100 text-blue-700" :
+                    "bg-slate-100 text-slate-700"
+                  )}>
+                    {evidenceModalTask.status === 'completed' ? '完了' : 
+                     evidenceModalTask.status === 'in_progress' ? '進行中' : '未着手'}
+                  </span>
+                  {evidenceModalTask.rewardAmount && parseFloat(evidenceModalTask.rewardAmount) > 0 && (
+                    <span className={cn(
+                      "px-2 py-0.5 rounded text-xs font-medium",
+                      evidenceModalTask.rewardApprovedAt ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                    )}>
+                      ¥{parseFloat(evidenceModalTask.rewardAmount).toLocaleString()}
+                      {evidenceModalTask.rewardApprovedAt ? " (承認済み)" : " (未承認)"}
+                    </span>
+                  )}
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <h4 className="font-medium text-slate-700 flex items-center gap-2">
+                  <FileText size={16} />
+                  提出されたエビデンス
+                </h4>
+                {taskEvidence[evidenceModalTask.id]?.length > 0 ? (
+                  <div className="space-y-2">
+                    {taskEvidence[evidenceModalTask.id].map((ev) => (
+                      <div key={ev.id} className="flex items-center justify-between bg-slate-50 rounded-xl p-3 border border-slate-200">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                            <FileText size={20} className="text-indigo-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-slate-800">{ev.fileName || '説明のみ'}</p>
+                            {ev.description && (
+                              <p className="text-sm text-slate-500">{ev.description}</p>
+                            )}
+                            {ev.createdAt && (
+                              <p className="text-xs text-slate-400 mt-1">
+                                {format(new Date(ev.createdAt), 'yyyy/MM/dd HH:mm')}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        {ev.fileUrl && (
+                          <a 
+                            href={ev.fileUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                            title="ファイルを開く"
+                          >
+                            <ExternalLink size={18} />
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-slate-400">
+                    <FileText size={40} className="mx-auto mb-2 opacity-50" />
+                    <p>エビデンスはまだ提出されていません</p>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="p-4 border-t border-slate-200 bg-slate-50">
+              <button
+                onClick={() => setEvidenceModalTask(null)}
+                className="w-full py-2.5 rounded-xl bg-slate-200 text-slate-700 hover:bg-slate-300 transition-colors font-medium"
+              >
+                閉じる
+              </button>
             </div>
           </div>
         </div>
