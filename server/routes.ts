@@ -408,11 +408,15 @@ export function registerRoutes(app: Express) {
   });
 
   app.post('/api/tasks', requireRole('admin', 'ceo', 'manager', 'staff'), async (req: Request, res: Response) => {
-    const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+    const currentUser = await storage.getUser(req.session.userId!);
+    let companyIdForTask = getCompanyId(req);
+    if (!companyIdForTask && currentUser?.companyId) {
+      companyIdForTask = currentUser.companyId;
+    }
+    const tenantStorage = createTenantStorage(companyIdForTask, { allowGlobal: true });
     const { assignmentType, ...taskData } = req.body;
     
     if (assignmentType && assignmentType !== 'individual') {
-      const companyIdForTask = getCompanyId(req);
       if (!companyIdForTask) {
         return res.status(400).json({ message: 'グループ割り当てにはテナントコンテキストが必要です' });
       }
