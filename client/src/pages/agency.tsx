@@ -51,14 +51,29 @@ interface Business {
   name: string;
 }
 
+interface AgencyIncentive {
+  id: number;
+  projectName: string;
+  description?: string;
+  incentiveType: string;
+  incentiveValue: string;
+  targetAgencyId?: number;
+  status: string;
+  startDate?: string;
+  endDate?: string;
+  createdAt: string;
+}
+
 export function AgencyPage() {
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [sales, setSales] = useState<AgencySale[]>([]);
   const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [incentives, setIncentives] = useState<AgencyIncentive[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [showSaleModal, setShowSaleModal] = useState(false);
+  const [showIncentiveModal, setShowIncentiveModal] = useState(false);
   const [editingAgency, setEditingAgency] = useState<Agency | null>(null);
   const [selectedAgency, setSelectedAgency] = useState<Agency | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'incentive' | 'sales'>('list');
@@ -86,6 +101,17 @@ export function AgencyPage() {
     saleDate: format(new Date(), 'yyyy-MM-dd'),
   });
 
+  const [incentiveForm, setIncentiveForm] = useState({
+    projectName: '',
+    description: '',
+    incentiveType: 'percentage',
+    incentiveValue: '',
+    targetAgencyId: '',
+    status: 'active',
+    startDate: format(new Date(), 'yyyy-MM-dd'),
+    endDate: '',
+  });
+
   const fetchAgencies = async () => {
     setIsLoading(true);
     const res = await fetch('/api/users');
@@ -110,10 +136,18 @@ export function AgencyPage() {
     }
   };
 
+  const fetchIncentives = async () => {
+    const res = await fetch('/api/agency/incentives', { credentials: 'include' });
+    if (res.ok) {
+      setIncentives(await res.json());
+    }
+  };
+
   useEffect(() => {
     fetchAgencies();
     fetchSales();
     fetchBusinesses();
+    fetchIncentives();
   }, []);
 
   const handleSubmit = async () => {
@@ -204,6 +238,49 @@ export function AgencyPage() {
     });
     if (res.ok) {
       fetchSales();
+    }
+  };
+
+  const handleIncentiveSubmit = async () => {
+    if (!incentiveForm.projectName || !incentiveForm.incentiveValue) {
+      alert('案件名とインセンティブ値は必須です');
+      return;
+    }
+
+    const res = await fetch('/api/agency/incentives', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        ...incentiveForm,
+        targetAgencyId: incentiveForm.targetAgencyId ? parseInt(incentiveForm.targetAgencyId) : null,
+      }),
+    });
+
+    if (res.ok) {
+      setShowIncentiveModal(false);
+      setIncentiveForm({
+        projectName: '',
+        description: '',
+        incentiveType: 'percentage',
+        incentiveValue: '',
+        targetAgencyId: '',
+        status: 'active',
+        startDate: format(new Date(), 'yyyy-MM-dd'),
+        endDate: '',
+      });
+      fetchIncentives();
+    } else {
+      const data = await res.json();
+      alert(data.error || 'エラーが発生しました');
+    }
+  };
+
+  const handleDeleteIncentive = async (id: number) => {
+    if (!confirm('このインセンティブを削除しますか？')) return;
+    const res = await fetch(`/api/agency/incentives/${id}`, { method: 'DELETE', credentials: 'include' });
+    if (res.ok) {
+      fetchIncentives();
     }
   };
 
@@ -372,54 +449,91 @@ export function AgencyPage() {
         </div>
       ) : viewMode === 'incentive' ? (
         <div className="card overflow-hidden">
-          <div className="p-5 border-b border-slate-100">
-            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-              <Gift size={20} className="text-primary-500" />
-              インセンティブ表
-            </h2>
-            <p className="text-sm text-slate-500 mt-1">代理店ごとのインセンティブ率と実績</p>
+          <div className="p-5 border-b border-slate-100 flex justify-between items-center">
+            <div>
+              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <Gift size={20} className="text-primary-500" />
+                インセンティブ管理
+              </h2>
+              <p className="text-sm text-slate-500 mt-1">案件ごとのインセンティブ設定</p>
+            </div>
+            <button
+              onClick={() => setShowIncentiveModal(true)}
+              className="btn-primary flex items-center gap-2"
+            >
+              <Plus size={18} />
+              インセンティブ登録
+            </button>
           </div>
           <table className="w-full">
             <thead className="bg-slate-50">
               <tr>
-                <th className="text-left p-4 text-sm font-medium text-slate-600">代理店名</th>
-                <th className="text-right p-4 text-sm font-medium text-slate-600">売上件数</th>
-                <th className="text-right p-4 text-sm font-medium text-slate-600">総売上</th>
-                <th className="text-right p-4 text-sm font-medium text-slate-600">総手数料</th>
-                <th className="text-right p-4 text-sm font-medium text-slate-600">手数料率</th>
+                <th className="text-left p-4 text-sm font-medium text-slate-600">案件名</th>
+                <th className="text-left p-4 text-sm font-medium text-slate-600">説明</th>
+                <th className="text-left p-4 text-sm font-medium text-slate-600">対象代理店</th>
+                <th className="text-center p-4 text-sm font-medium text-slate-600">インセンティブ</th>
+                <th className="text-center p-4 text-sm font-medium text-slate-600">期間</th>
+                <th className="text-center p-4 text-sm font-medium text-slate-600">ステータス</th>
+                <th className="text-center p-4 text-sm font-medium text-slate-600">操作</th>
               </tr>
             </thead>
             <tbody>
-              {agencies.map((agency) => {
-                const agencySalesData = getAgencySales(agency.id);
-                const totalSales = getAgencyTotalSales(agency.id);
-                const totalCommission = agencySalesData.reduce((sum, s) => sum + parseFloat(s.commission || '0'), 0);
-                const commissionRate = totalSales > 0 ? ((totalCommission / totalSales) * 100).toFixed(1) : '0';
+              {incentives.map((incentive) => {
+                const targetAgency = agencies.find(a => a.id === incentive.targetAgencyId);
                 return (
-                  <tr key={agency.id} className="border-t border-slate-100 hover:bg-slate-50">
+                  <tr key={incentive.id} className="border-t border-slate-100 hover:bg-slate-50">
                     <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white font-bold text-sm">
-                          {agency.name.charAt(0)}
-                        </div>
-                        <span className="font-medium text-slate-800">{agency.name}</span>
-                      </div>
+                      <span className="font-medium text-slate-800">{incentive.projectName}</span>
                     </td>
-                    <td className="p-4 text-right text-sm">{agencySalesData.length}件</td>
-                    <td className="p-4 text-right text-sm font-medium">¥{totalSales.toLocaleString()}</td>
-                    <td className="p-4 text-right text-sm text-green-600 font-medium">¥{totalCommission.toLocaleString()}</td>
-                    <td className="p-4 text-right">
-                      <span className="px-2 py-1 bg-primary-50 text-primary-700 rounded-full text-xs font-medium">
-                        {commissionRate}%
+                    <td className="p-4 text-sm text-slate-500">{incentive.description || '-'}</td>
+                    <td className="p-4 text-sm">
+                      {targetAgency ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white font-bold text-xs">
+                            {targetAgency.name.charAt(0)}
+                          </div>
+                          <span>{targetAgency.name}</span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-400">全代理店</span>
+                      )}
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                        {incentive.incentiveType === 'percentage'
+                          ? `${incentive.incentiveValue}%`
+                          : `¥${parseFloat(incentive.incentiveValue).toLocaleString()}`}
                       </span>
+                    </td>
+                    <td className="p-4 text-center text-sm text-slate-500">
+                      {incentive.startDate ? format(new Date(incentive.startDate), 'yyyy/MM/dd') : '-'}
+                      {incentive.endDate && ` ~ ${format(new Date(incentive.endDate), 'yyyy/MM/dd')}`}
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className={cn(
+                        "px-2 py-1 rounded-full text-xs font-medium",
+                        incentive.status === 'active' ? "bg-green-100 text-green-700" :
+                        incentive.status === 'inactive' ? "bg-slate-100 text-slate-600" :
+                        "bg-red-100 text-red-700"
+                      )}>
+                        {incentive.status === 'active' ? '有効' : incentive.status === 'inactive' ? '無効' : '終了'}
+                      </span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <button
+                        onClick={() => handleDeleteIncentive(incentive.id)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </td>
                   </tr>
                 );
               })}
-              {agencies.length === 0 && (
+              {incentives.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-slate-400">
-                    代理店がありません
+                  <td colSpan={7} className="p-8 text-center text-slate-400">
+                    インセンティブが登録されていません
                   </td>
                 </tr>
               )}
@@ -694,6 +808,120 @@ export function AgencyPage() {
                 </button>
                 <button onClick={handleSaleSubmit} className="flex-1 btn-primary">
                   追加
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showIncentiveModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg p-6 animate-slide-up max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold text-slate-800">インセンティブ登録</h2>
+              <button onClick={() => setShowIncentiveModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">案件名 *</label>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="例: Webサイト制作案件"
+                  value={incentiveForm.projectName}
+                  onChange={(e) => setIncentiveForm({ ...incentiveForm, projectName: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">説明</label>
+                <textarea
+                  className="input-field min-h-[80px]"
+                  placeholder="インセンティブの詳細説明"
+                  value={incentiveForm.description}
+                  onChange={(e) => setIncentiveForm({ ...incentiveForm, description: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">対象代理店</label>
+                <select
+                  className="input-field"
+                  value={incentiveForm.targetAgencyId}
+                  onChange={(e) => setIncentiveForm({ ...incentiveForm, targetAgencyId: e.target.value })}
+                >
+                  <option value="">全代理店対象</option>
+                  {agencies.map(a => (
+                    <option key={a.id} value={a.id}>{a.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-slate-600 mb-1">インセンティブ種類 *</label>
+                  <select
+                    className="input-field"
+                    value={incentiveForm.incentiveType}
+                    onChange={(e) => setIncentiveForm({ ...incentiveForm, incentiveType: e.target.value })}
+                  >
+                    <option value="percentage">パーセント (%)</option>
+                    <option value="fixed">固定金額 (¥)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-600 mb-1">
+                    {incentiveForm.incentiveType === 'percentage' ? 'インセンティブ率 (%) *' : 'インセンティブ金額 (¥) *'}
+                  </label>
+                  <input
+                    type="number"
+                    className="input-field"
+                    placeholder={incentiveForm.incentiveType === 'percentage' ? '例: 10' : '例: 50000'}
+                    value={incentiveForm.incentiveValue}
+                    onChange={(e) => setIncentiveForm({ ...incentiveForm, incentiveValue: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-slate-600 mb-1">開始日</label>
+                  <input
+                    type="date"
+                    className="input-field"
+                    value={incentiveForm.startDate}
+                    onChange={(e) => setIncentiveForm({ ...incentiveForm, startDate: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-600 mb-1">終了日</label>
+                  <input
+                    type="date"
+                    className="input-field"
+                    value={incentiveForm.endDate}
+                    onChange={(e) => setIncentiveForm({ ...incentiveForm, endDate: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">ステータス</label>
+                <select
+                  className="input-field"
+                  value={incentiveForm.status}
+                  onChange={(e) => setIncentiveForm({ ...incentiveForm, status: e.target.value })}
+                >
+                  <option value="active">有効</option>
+                  <option value="inactive">無効</option>
+                  <option value="ended">終了</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button onClick={() => setShowIncentiveModal(false)} className="flex-1 btn-secondary">
+                  キャンセル
+                </button>
+                <button onClick={handleIncentiveSubmit} className="flex-1 btn-primary">
+                  登録
                 </button>
               </div>
             </div>

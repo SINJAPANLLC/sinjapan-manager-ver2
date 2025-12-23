@@ -487,6 +487,59 @@ export function registerRoutes(app: Express) {
     res.json({ message: '削除しました' });
   });
 
+  app.get('/api/agency/incentives', requireRole('admin', 'ceo', 'manager', 'agency'), async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const incentives = await tenantStorage.getAgencyIncentives();
+      res.json(incentives);
+    } catch (error) {
+      console.error('Get agency incentives error:', error);
+      res.status(500).json({ error: 'インセンティブの取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/agency/incentives', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const incentive = await tenantStorage.createAgencyIncentive({
+        ...req.body,
+        createdBy: req.session.userId,
+      });
+      res.json(incentive);
+    } catch (error) {
+      console.error('Create agency incentive error:', error);
+      res.status(500).json({ error: 'インセンティブの作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/agency/incentives/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const incentive = await tenantStorage.updateAgencyIncentive(parseInt(req.params.id), req.body);
+      if (!incentive) {
+        return res.status(404).json({ error: 'インセンティブが見つかりません' });
+      }
+      res.json(incentive);
+    } catch (error) {
+      console.error('Update agency incentive error:', error);
+      res.status(500).json({ error: 'インセンティブの更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/agency/incentives/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const success = await tenantStorage.deleteAgencyIncentive(parseInt(req.params.id));
+      if (!success) {
+        return res.status(404).json({ error: 'インセンティブが見つかりません' });
+      }
+      res.json({ message: '削除しました' });
+    } catch (error) {
+      console.error('Delete agency incentive error:', error);
+      res.status(500).json({ error: 'インセンティブの削除に失敗しました' });
+    }
+  });
+
   app.get('/api/dashboard/stats', requireAuth, async (req: Request, res: Response) => {
     const user = await storage.getUser(req.session.userId!);
     if (!user) {

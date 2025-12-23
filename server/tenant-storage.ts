@@ -1,8 +1,8 @@
 import { db } from './db';
-import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, leads, leadActivities, clientProjects, clientInvoices, investments, quickNotes, marketingCampaigns, siteCredentials, staffSalaries, staffShifts, advancePayments, taskEvidence, staffAffiliates, staffMemos } from '../shared/schema';
+import { users, customers, tasks, notifications, chatMessages, employees, agencySales, agencyIncentives, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, leads, leadActivities, clientProjects, clientInvoices, investments, quickNotes, marketingCampaigns, siteCredentials, staffSalaries, staffShifts, advancePayments, taskEvidence, staffAffiliates, staffMemos } from '../shared/schema';
 import { eq, and, or, desc, sql, isNull, gte, lte, like, ilike } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Investment, InsertInvestment, QuickNote, InsertQuickNote, MarketingCampaign, InsertMarketingCampaign, SiteCredential, InsertSiteCredential, StaffSalary, InsertStaffSalary, StaffShift, InsertStaffShift, AdvancePayment, InsertAdvancePayment, TaskEvidence, InsertTaskEvidence, StaffAffiliate, InsertStaffAffiliate, StaffMemo, InsertStaffMemo } from '../shared/schema';
+import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, AgencyIncentive, InsertAgencyIncentive, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Investment, InsertInvestment, QuickNote, InsertQuickNote, MarketingCampaign, InsertMarketingCampaign, SiteCredential, InsertSiteCredential, StaffSalary, InsertStaffSalary, StaffShift, InsertStaffShift, AdvancePayment, InsertAdvancePayment, TaskEvidence, InsertTaskEvidence, StaffAffiliate, InsertStaffAffiliate, StaffMemo, InsertStaffMemo } from '../shared/schema';
 
 export function createTenantStorage(companyId: string | null, options?: { allowGlobal?: boolean }) {
   const requiresTenantScope = !options?.allowGlobal;
@@ -872,6 +872,40 @@ export function createTenantStorage(companyId: string | null, options?: { allowG
         conditions.push(eq(tasks.companyId, companyId));
       }
       return db.select().from(tasks).where(and(...conditions)).orderBy(desc(tasks.createdAt));
+    },
+
+    async getAgencyIncentives(): Promise<AgencyIncentive[]> {
+      if (companyId) {
+        return db.select().from(agencyIncentives).where(eq(agencyIncentives.companyId, companyId)).orderBy(desc(agencyIncentives.createdAt));
+      }
+      return db.select().from(agencyIncentives).orderBy(desc(agencyIncentives.createdAt));
+    },
+
+    async createAgencyIncentive(data: InsertAgencyIncentive): Promise<AgencyIncentive> {
+      const incentiveData = companyId ? { ...data, companyId } : data;
+      const [incentive] = await db.insert(agencyIncentives).values(incentiveData).returning();
+      return incentive;
+    },
+
+    async updateAgencyIncentive(id: number, data: Partial<InsertAgencyIncentive>): Promise<AgencyIncentive | undefined> {
+      const conditions = [eq(agencyIncentives.id, id)];
+      if (companyId) {
+        conditions.push(eq(agencyIncentives.companyId, companyId));
+      }
+      const [incentive] = await db.update(agencyIncentives)
+        .set({ ...data, updatedAt: new Date() })
+        .where(and(...conditions))
+        .returning();
+      return incentive;
+    },
+
+    async deleteAgencyIncentive(id: number): Promise<boolean> {
+      const conditions = [eq(agencyIncentives.id, id)];
+      if (companyId) {
+        conditions.push(eq(agencyIncentives.companyId, companyId));
+      }
+      const result = await db.delete(agencyIncentives).where(and(...conditions)).returning();
+      return result.length > 0;
     },
   };
 }
