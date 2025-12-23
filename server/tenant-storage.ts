@@ -816,6 +816,22 @@ export function createTenantStorage(companyId: string | null, options?: { allowG
       return affiliate;
     },
 
+    async recordAffiliateConversion(id: number, amount: number): Promise<StaffAffiliate | undefined> {
+      const conditions = [eq(staffAffiliates.id, id)];
+      if (companyId) {
+        conditions.push(eq(staffAffiliates.companyId, companyId));
+      }
+      const [affiliate] = await db.update(staffAffiliates)
+        .set({
+          totalConversions: sql`COALESCE(${staffAffiliates.totalConversions}, 0) + 1`,
+          totalEarnings: sql`COALESCE(${staffAffiliates.totalEarnings}, 0) + ${amount}`,
+          updatedAt: new Date()
+        })
+        .where(and(...conditions))
+        .returning();
+      return affiliate;
+    },
+
     async deleteStaffAffiliate(id: number): Promise<boolean> {
       const conditions = [eq(staffAffiliates.id, id)];
       if (companyId) {

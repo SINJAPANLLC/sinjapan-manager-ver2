@@ -3959,4 +3959,38 @@ URL/名前: ${url || '未指定'}
       res.status(500).json({ error: 'メモの削除に失敗しました' });
     }
   });
+
+  // Public affiliate click tracking (no auth required)
+  app.get('/ref/:code', async (req: Request, res: Response) => {
+    try {
+      const code = req.params.code;
+      const affiliate = await storage.getAffiliateByCode(code);
+      if (affiliate) {
+        await storage.incrementAffiliateClicks(affiliate.id);
+        if (affiliate.affiliateUrl) {
+          return res.redirect(affiliate.affiliateUrl);
+        }
+      }
+      res.redirect('/');
+    } catch (error) {
+      console.error('Affiliate click tracking error:', error);
+      res.redirect('/');
+    }
+  });
+
+  // Record affiliate conversion
+  app.post('/api/affiliates/:id/conversion', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const { amount } = req.body;
+      const affiliate = await tenantStorage.recordAffiliateConversion(parseInt(req.params.id), parseFloat(amount) || 0);
+      if (!affiliate) {
+        return res.status(404).json({ error: 'アフィリエイトが見つかりません' });
+      }
+      res.json(affiliate);
+    } catch (error) {
+      console.error('Record affiliate conversion error:', error);
+      res.status(500).json({ error: '成約の記録に失敗しました' });
+    }
+  });
 }

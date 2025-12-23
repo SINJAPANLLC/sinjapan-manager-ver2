@@ -1788,7 +1788,24 @@ export function StaffPage() {
                           )}
                         </div>
                         {aff.platform && <p className="text-sm text-slate-500">{aff.platform}</p>}
-                        {aff.affiliateCode && <p className="text-xs text-slate-400 mt-1">コード: {aff.affiliateCode}</p>}
+                        {aff.affiliateCode && (
+                          <div className="mt-1">
+                            <p className="text-xs text-slate-400">コード: <span className="font-mono font-medium text-slate-600">{aff.affiliateCode}</span></p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-xs text-slate-400">追跡URL:</span>
+                              <code className="text-xs bg-slate-100 px-2 py-0.5 rounded font-mono">{window.location.origin}/ref/{aff.affiliateCode}</code>
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(`${window.location.origin}/ref/${aff.affiliateCode}`);
+                                  alert('URLをコピーしました');
+                                }}
+                                className="text-xs text-primary-500 hover:text-primary-600"
+                              >
+                                コピー
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                       <button onClick={() => handleDeleteAffiliate(aff.id)} className="text-red-500 hover:text-red-600">
                         <Trash2 size={16} />
@@ -1814,12 +1831,38 @@ export function StaffPage() {
                         <p className="font-semibold text-green-600">¥{Number(aff.totalEarnings || 0).toLocaleString()}</p>
                       </div>
                     </div>
-                    {aff.affiliateUrl && (
-                      <a href={aff.affiliateUrl} target="_blank" rel="noopener noreferrer" className="mt-2 text-xs text-primary-500 hover:text-primary-600 flex items-center gap-1">
-                        <ExternalLink size={12} />
-                        リンクを開く
-                      </a>
-                    )}
+                    <div className="mt-3 flex items-center gap-2">
+                      <button
+                        onClick={async () => {
+                          const amountStr = prompt('成約金額を入力してください（円）');
+                          if (amountStr === null) return;
+                          const amount = parseFloat(amountStr) || 0;
+                          try {
+                            const res = await fetch(`/api/affiliates/${aff.id}/conversion`, {
+                              method: 'POST',
+                              credentials: 'include',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ amount }),
+                            });
+                            if (res.ok) {
+                              const updated = await res.json();
+                              setAffiliates(prev => prev.map(a => a.id === aff.id ? updated : a));
+                            }
+                          } catch (err) {
+                            console.error('Failed to record conversion:', err);
+                          }
+                        }}
+                        className="btn-secondary text-xs px-3 py-1"
+                      >
+                        成約を記録
+                      </button>
+                      {aff.affiliateUrl && (
+                        <a href={aff.affiliateUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary-500 hover:text-primary-600 flex items-center gap-1">
+                          <ExternalLink size={12} />
+                          リンクを開く
+                        </a>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

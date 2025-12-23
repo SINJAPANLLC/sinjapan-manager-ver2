@@ -1,5 +1,5 @@
 import { db } from './db';
-import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, systemSettings, leads, leadActivities, clientProjects, clientInvoices, companies, quickNotes, investments } from '../shared/schema';
+import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, systemSettings, leads, leadActivities, clientProjects, clientInvoices, companies, quickNotes, investments, staffAffiliates } from '../shared/schema';
 import { eq, and, or, desc, sql, isNull, gte, lte, like, ilike } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, SystemSetting, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Company, InsertCompany, QuickNote, InsertQuickNote, Investment, InsertInvestment } from '../shared/schema';
@@ -825,5 +825,17 @@ export const storage = {
       total: sql<number>`COALESCE(SUM(${investments.amount}), 0)`,
     }).from(investments);
     return { total: parseFloat(String(result[0]?.total || 0)) };
+  },
+
+  // Affiliate tracking
+  async getAffiliateByCode(code: string): Promise<any> {
+    const [affiliate] = await db.select().from(staffAffiliates).where(eq(staffAffiliates.affiliateCode, code));
+    return affiliate;
+  },
+
+  async incrementAffiliateClicks(id: number): Promise<void> {
+    await db.update(staffAffiliates)
+      .set({ totalClicks: sql`COALESCE(${staffAffiliates.totalClicks}, 0) + 1` })
+      .where(eq(staffAffiliates.id, id));
   },
 };
