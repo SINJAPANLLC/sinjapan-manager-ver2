@@ -448,97 +448,141 @@ export function AgencyPage() {
           )}
         </div>
       ) : viewMode === 'incentive' ? (
-        <div className="card overflow-hidden">
-          <div className="p-5 border-b border-slate-100 flex justify-between items-center">
-            <div>
-              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <Gift size={20} className="text-primary-500" />
-                インセンティブ管理
-              </h2>
-              <p className="text-sm text-slate-500 mt-1">案件ごとのインセンティブ設定</p>
-            </div>
-            <button
-              onClick={() => setShowIncentiveModal(true)}
-              className="btn-primary flex items-center gap-2"
-            >
-              <Plus size={18} />
-              インセンティブ登録
-            </button>
-          </div>
-          <table className="w-full">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="text-left p-4 text-sm font-medium text-slate-600">案件名</th>
-                <th className="text-left p-4 text-sm font-medium text-slate-600">説明</th>
-                <th className="text-left p-4 text-sm font-medium text-slate-600">対象代理店</th>
-                <th className="text-center p-4 text-sm font-medium text-slate-600">インセンティブ</th>
-                <th className="text-center p-4 text-sm font-medium text-slate-600">期間</th>
-                <th className="text-center p-4 text-sm font-medium text-slate-600">ステータス</th>
-                <th className="text-center p-4 text-sm font-medium text-slate-600">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {incentives.map((incentive) => {
-                const targetAgency = agencies.find(a => a.id === incentive.targetAgencyId);
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          <div className="card p-4 lg:col-span-1">
+            <h3 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
+              <Building2 size={18} className="text-orange-500" />
+              代理店一覧
+            </h3>
+            <div className="space-y-2 max-h-[500px] overflow-y-auto">
+              {agencies.map((a) => {
+                const agencyIncentives = incentives.filter(i => i.targetAgencyId === a.id || !i.targetAgencyId);
                 return (
-                  <tr key={incentive.id} className="border-t border-slate-100 hover:bg-slate-50">
-                    <td className="p-4">
-                      <span className="font-medium text-slate-800">{incentive.projectName}</span>
-                    </td>
-                    <td className="p-4 text-sm text-slate-500">{incentive.description || '-'}</td>
-                    <td className="p-4 text-sm">
-                      {targetAgency ? (
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white font-bold text-xs">
-                            {targetAgency.name.charAt(0)}
-                          </div>
-                          <span>{targetAgency.name}</span>
-                        </div>
-                      ) : (
-                        <span className="text-slate-400">全代理店</span>
-                      )}
-                    </td>
-                    <td className="p-4 text-center">
-                      <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
-                        {incentive.incentiveType === 'percentage'
-                          ? `${incentive.incentiveValue}%`
-                          : `¥${parseFloat(incentive.incentiveValue).toLocaleString()}`}
+                  <div 
+                    key={a.id} 
+                    className="p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                    onClick={() => setSelectedAgency(a)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white font-bold text-sm">
+                        {a.name.charAt(0)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-slate-800 text-sm truncate">{a.name}</p>
+                        <p className="text-xs text-slate-500 truncate">{a.email}</p>
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between text-xs">
+                      <span className="text-slate-500">適用中: {agencyIncentives.filter(i => i.status === 'active').length}件</span>
+                      <span className="text-green-600 font-medium">
+                        ¥{getAgencyTotalSales(a.id).toLocaleString()}
                       </span>
-                    </td>
-                    <td className="p-4 text-center text-sm text-slate-500">
-                      {incentive.startDate ? format(new Date(incentive.startDate), 'yyyy/MM/dd') : '-'}
-                      {incentive.endDate && ` ~ ${format(new Date(incentive.endDate), 'yyyy/MM/dd')}`}
-                    </td>
-                    <td className="p-4 text-center">
-                      <span className={cn(
-                        "px-2 py-1 rounded-full text-xs font-medium",
-                        incentive.status === 'active' ? "bg-green-100 text-green-700" :
-                        incentive.status === 'inactive' ? "bg-slate-100 text-slate-600" :
-                        "bg-red-100 text-red-700"
-                      )}>
-                        {incentive.status === 'active' ? '有効' : incentive.status === 'inactive' ? '無効' : '終了'}
-                      </span>
-                    </td>
-                    <td className="p-4 text-center">
-                      <button
-                        onClick={() => handleDeleteIncentive(incentive.id)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </td>
-                  </tr>
+                    </div>
+                  </div>
                 );
               })}
-              {incentives.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="p-8 text-center text-slate-400">
-                    インセンティブが登録されていません
-                  </td>
-                </tr>
+              {agencies.length === 0 && (
+                <div className="text-center py-6 text-slate-400">
+                  <Building2 size={32} className="mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">代理店がありません</p>
+                </div>
               )}
-            </tbody>
-          </table>
+            </div>
+          </div>
+          <div className="card overflow-hidden lg:col-span-3">
+            <div className="p-5 border-b border-slate-100 flex justify-between items-center">
+              <div>
+                <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                  <Gift size={20} className="text-primary-500" />
+                  インセンティブ管理
+                </h2>
+                <p className="text-sm text-slate-500 mt-1">案件ごとのインセンティブ設定</p>
+              </div>
+              <button
+                onClick={() => setShowIncentiveModal(true)}
+                className="btn-primary flex items-center gap-2"
+              >
+                <Plus size={18} />
+                インセンティブ登録
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="text-left p-4 text-sm font-medium text-slate-600">案件名</th>
+                    <th className="text-left p-4 text-sm font-medium text-slate-600">説明</th>
+                    <th className="text-left p-4 text-sm font-medium text-slate-600">対象代理店</th>
+                    <th className="text-center p-4 text-sm font-medium text-slate-600">インセンティブ</th>
+                    <th className="text-center p-4 text-sm font-medium text-slate-600">期間</th>
+                    <th className="text-center p-4 text-sm font-medium text-slate-600">ステータス</th>
+                    <th className="text-center p-4 text-sm font-medium text-slate-600">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {incentives.map((incentive) => {
+                    const targetAgency = agencies.find(a => a.id === incentive.targetAgencyId);
+                    return (
+                      <tr key={incentive.id} className="border-t border-slate-100 hover:bg-slate-50">
+                        <td className="p-4">
+                          <span className="font-medium text-slate-800">{incentive.projectName}</span>
+                        </td>
+                        <td className="p-4 text-sm text-slate-500">{incentive.description || '-'}</td>
+                        <td className="p-4 text-sm">
+                          {targetAgency ? (
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white font-bold text-xs">
+                                {targetAgency.name.charAt(0)}
+                              </div>
+                              <span>{targetAgency.name}</span>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400">全代理店</span>
+                          )}
+                        </td>
+                        <td className="p-4 text-center">
+                          <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                            {incentive.incentiveType === 'percentage'
+                              ? `${incentive.incentiveValue}%`
+                              : `¥${parseFloat(incentive.incentiveValue).toLocaleString()}`}
+                          </span>
+                        </td>
+                        <td className="p-4 text-center text-sm text-slate-500">
+                          {incentive.startDate ? format(new Date(incentive.startDate), 'yyyy/MM/dd') : '-'}
+                          {incentive.endDate && ` ~ ${format(new Date(incentive.endDate), 'yyyy/MM/dd')}`}
+                        </td>
+                        <td className="p-4 text-center">
+                          <span className={cn(
+                            "px-2 py-1 rounded-full text-xs font-medium",
+                            incentive.status === 'active' ? "bg-green-100 text-green-700" :
+                            incentive.status === 'inactive' ? "bg-slate-100 text-slate-600" :
+                            "bg-red-100 text-red-700"
+                          )}>
+                            {incentive.status === 'active' ? '有効' : incentive.status === 'inactive' ? '無効' : '終了'}
+                          </span>
+                        </td>
+                        <td className="p-4 text-center">
+                          <button
+                            onClick={() => handleDeleteIncentive(incentive.id)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {incentives.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="p-8 text-center text-slate-400">
+                        インセンティブが登録されていません
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       ) : (
         <div className="card overflow-hidden">
