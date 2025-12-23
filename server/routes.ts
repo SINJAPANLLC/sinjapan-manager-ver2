@@ -4120,6 +4120,27 @@ URL/名前: ${url || '未指定'}
     }
   });
 
+  app.put('/api/shifts/:id/approve', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const userId = (req.session as any).user?.id;
+      const { approvalStatus } = req.body;
+      const updateData: any = {
+        approvalStatus,
+        approvedBy: userId,
+        approvedAt: new Date(),
+      };
+      const shift = await tenantStorage.updateStaffShift(parseInt(req.params.id), updateData);
+      if (!shift) {
+        return res.status(404).json({ error: 'シフトが見つかりません' });
+      }
+      res.json(shift);
+    } catch (error) {
+      console.error('Approve shift error:', error);
+      res.status(500).json({ error: 'シフトの承認に失敗しました' });
+    }
+  });
+
   // Advance Payments API
   app.get('/api/employees/:employeeId/advance-payments', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     try {
@@ -4173,8 +4194,8 @@ URL/名前: ${url || '未指定'}
     try {
       const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
       const amount = parseFloat(req.body.amount || 0);
-      const feeAmount = (amount * 0.05).toFixed(2);
-      const netAmount = (amount - parseFloat(feeAmount)).toFixed(2);
+      const feeAmount = 330; // Fixed transfer fee
+      const netAmount = Math.max(0, amount - feeAmount).toFixed(2);
       
       const payment = await tenantStorage.createAdvancePayment({
         ...req.body,

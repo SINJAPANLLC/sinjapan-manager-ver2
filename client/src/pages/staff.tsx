@@ -203,6 +203,10 @@ export function StaffPage() {
     deduction2Amount: '',
     deduction3Name: '',
     deduction3Amount: '',
+    deduction4Name: '',
+    deduction4Amount: '',
+    deduction5Name: '',
+    deduction5Amount: '',
   });
   const [selectedTask, setSelectedTask] = useState<StaffTask | null>(null);
   const [showEvidenceForm, setShowEvidenceForm] = useState(false);
@@ -212,7 +216,7 @@ export function StaffPage() {
   const [showShiftForm, setShowShiftForm] = useState(false);
   const [showAdvanceForm, setShowAdvanceForm] = useState(false);
   const [salaryForm, setSalaryForm] = useState({ year: new Date().getFullYear(), month: new Date().getMonth() + 1, baseSalary: '', overtimePay: '', bonus: '', deductions: '', notes: '', paidAt: '' });
-  const [shiftForm, setShiftForm] = useState({ date: '', startTime: '09:00', endTime: '18:00', breakMinutes: 60, projectName: '', notes: '' });
+  const [shiftForm, setShiftForm] = useState({ date: '', startTime: '09:00', endTime: '18:00', breakMinutes: 60, projectName: '', amount: '', notes: '' });
   const [advanceForm, setAdvanceForm] = useState({ amount: '', reason: '' });
   const [showBasicInfoEdit, setShowBasicInfoEdit] = useState(false);
   const [shiftCalendarDate, setShiftCalendarDate] = useState(new Date());
@@ -669,13 +673,26 @@ export function StaffPage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ ...shiftForm, workMinutes }),
+      body: JSON.stringify({ ...shiftForm, workMinutes, amount: shiftForm.amount ? parseFloat(shiftForm.amount) : 0 }),
     });
     if (res.ok) {
       const newShift = await res.json();
       setShifts([newShift, ...shifts]);
       setShowShiftForm(false);
-      setShiftForm({ date: '', startTime: '09:00', endTime: '18:00', breakMinutes: 60, projectName: '', notes: '' });
+      setShiftForm({ date: '', startTime: '09:00', endTime: '18:00', breakMinutes: 60, projectName: '', amount: '', notes: '' });
+    }
+  };
+
+  const handleApproveShift = async (shiftId: number, approved: boolean) => {
+    const res = await fetch(`/api/shifts/${shiftId}/approve`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ approvalStatus: approved ? 'approved' : 'rejected' }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setShifts(shifts.map((s) => s.id === shiftId ? updated : s));
     }
   };
 
@@ -688,6 +705,7 @@ export function StaffPage() {
       endTime: shift.endTime || '18:00',
       breakMinutes: shift.breakMinutes || 60,
       projectName: shift.projectName || '',
+      amount: (shift as any).amount?.toString() || '',
       notes: shift.notes || '',
     });
   };
@@ -701,13 +719,13 @@ export function StaffPage() {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ ...shiftForm, workMinutes }),
+      body: JSON.stringify({ ...shiftForm, workMinutes, amount: shiftForm.amount ? parseFloat(shiftForm.amount) : 0 }),
     });
     if (res.ok) {
       const updatedShift = await res.json();
       setShifts(shifts.map((s) => (s.id === editingShift.id ? updatedShift : s)));
       setEditingShift(null);
-      setShiftForm({ date: '', startTime: '09:00', endTime: '18:00', breakMinutes: 60, projectName: '', notes: '' });
+      setShiftForm({ date: '', startTime: '09:00', endTime: '18:00', breakMinutes: 60, projectName: '', amount: '', notes: '' });
     }
   };
 
@@ -1354,6 +1372,10 @@ export function StaffPage() {
                     <label className="text-xs text-slate-500">休憩(分)</label>
                     <input type="number" className="input-field text-sm" value={shiftForm.breakMinutes} onChange={(e) => setShiftForm({ ...shiftForm, breakMinutes: Number(e.target.value) })} />
                   </div>
+                  <div>
+                    <label className="text-xs text-slate-500">金額(円)</label>
+                    <input type="number" className="input-field text-sm" placeholder="0" value={shiftForm.amount} onChange={(e) => setShiftForm({ ...shiftForm, amount: e.target.value })} />
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <button onClick={handleAddShift} className="btn-primary text-sm">保存</button>
@@ -1417,16 +1439,26 @@ export function StaffPage() {
                           )}>
                             {day}
                           </div>
-                          {dayShifts.map((shift) => (
-                            <div
-                              key={shift.id}
-                              className="bg-primary-500 text-white px-1 py-0.5 rounded text-[10px] truncate mb-0.5 cursor-pointer hover:bg-primary-600"
-                              title={shift.projectName || 'クリックで編集'}
-                              onClick={() => openEditShift(shift)}
-                            >
-                              {shift.projectName ? `${shift.projectName} ` : ''}{shift.startTime}-{shift.endTime}
-                            </div>
-                          ))}
+                          {dayShifts.map((shift) => {
+                            const approvalStatus = (shift as any).approvalStatus || 'pending';
+                            const amount = Number((shift as any).amount || 0);
+                            return (
+                              <div
+                                key={shift.id}
+                                className={cn(
+                                  "px-1 py-0.5 rounded text-[10px] truncate mb-0.5 cursor-pointer",
+                                  approvalStatus === 'approved' ? "bg-green-500 text-white hover:bg-green-600" :
+                                  approvalStatus === 'rejected' ? "bg-red-400 text-white hover:bg-red-500" :
+                                  "bg-primary-500 text-white hover:bg-primary-600"
+                                )}
+                                title={`${shift.projectName || ''} ${amount > 0 ? `¥${amount.toLocaleString()}` : ''} [${approvalStatus === 'approved' ? '承認済' : approvalStatus === 'rejected' ? '却下' : '未承認'}]`}
+                                onClick={() => openEditShift(shift)}
+                              >
+                                {shift.projectName ? `${shift.projectName} ` : ''}{shift.startTime}-{shift.endTime}
+                                {amount > 0 && <span className="ml-0.5">¥{(amount / 1000).toFixed(0)}k</span>}
+                              </div>
+                            );
+                          })}
                         </div>
                       );
                     }
@@ -1445,7 +1477,7 @@ export function StaffPage() {
                     <button
                       onClick={() => {
                         setEditingShift(null);
-                        setShiftForm({ date: '', startTime: '09:00', endTime: '18:00', breakMinutes: 60, projectName: '', notes: '' });
+                        setShiftForm({ date: '', startTime: '09:00', endTime: '18:00', breakMinutes: 60, projectName: '', amount: '', notes: '' });
                       }}
                       className="p-2 hover:bg-slate-100 rounded-lg"
                     >
@@ -1503,6 +1535,60 @@ export function StaffPage() {
                         />
                       </div>
                     </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs text-slate-500">金額(円)</label>
+                        <input
+                          type="number"
+                          className="input-field"
+                          placeholder="0"
+                          value={shiftForm.amount}
+                          onChange={(e) => setShiftForm({ ...shiftForm, amount: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-slate-500">承認状態</label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className={cn(
+                            "px-3 py-1 rounded-full text-xs font-medium",
+                            (editingShift as any)?.approvalStatus === 'approved' && "bg-green-100 text-green-700",
+                            (editingShift as any)?.approvalStatus === 'rejected' && "bg-red-100 text-red-700",
+                            (!(editingShift as any)?.approvalStatus || (editingShift as any)?.approvalStatus === 'pending') && "bg-yellow-100 text-yellow-700"
+                          )}>
+                            {(editingShift as any)?.approvalStatus === 'approved' ? '承認済' :
+                             (editingShift as any)?.approvalStatus === 'rejected' ? '却下' : '未承認'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    {canApprove && (editingShift as any)?.approvalStatus !== 'approved' && (
+                      <div className="flex gap-2 pt-2">
+                        <button
+                          onClick={() => {
+                            handleApproveShift(editingShift.id, true);
+                            setEditingShift(null);
+                            setShiftForm({ date: '', startTime: '09:00', endTime: '18:00', breakMinutes: 60, projectName: '', amount: '', notes: '' });
+                          }}
+                          className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center gap-2 text-sm"
+                        >
+                          <CheckCircle size={16} />
+                          承認する
+                        </button>
+                        {(editingShift as any)?.approvalStatus !== 'rejected' && (
+                          <button
+                            onClick={() => {
+                              handleApproveShift(editingShift.id, false);
+                              setEditingShift(null);
+                              setShiftForm({ date: '', startTime: '09:00', endTime: '18:00', breakMinutes: 60, projectName: '', amount: '', notes: '' });
+                            }}
+                            className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 flex items-center gap-2 text-sm"
+                          >
+                            <XCircle size={16} />
+                            却下
+                          </button>
+                        )}
+                      </div>
+                    )}
                     <div className="flex gap-2 pt-4">
                       <button onClick={handleUpdateShift} className="btn-primary flex items-center gap-2">
                         <Check size={16} />
@@ -1518,7 +1604,7 @@ export function StaffPage() {
                       <button
                         onClick={() => {
                           setEditingShift(null);
-                          setShiftForm({ date: '', startTime: '09:00', endTime: '18:00', breakMinutes: 60, projectName: '', notes: '' });
+                          setShiftForm({ date: '', startTime: '09:00', endTime: '18:00', breakMinutes: 60, projectName: '', amount: '', notes: '' });
                         }}
                         className="btn-secondary"
                       >
@@ -1584,9 +1670,9 @@ export function StaffPage() {
                         申請額: ¥{Number(adv.amount).toLocaleString()}
                       </p>
                       <div className="flex gap-4 text-sm text-slate-600">
-                        <span>手数料(5%): ¥{Number(adv.feeAmount || (Number(adv.amount) * 0.05)).toLocaleString()}</span>
+                        <span>振込手数料: ¥{Number(adv.feeAmount || 330).toLocaleString()}</span>
                         <span className="font-medium text-green-700">
-                          支払額: ¥{Number(adv.netAmount || (Number(adv.amount) * 0.95)).toLocaleString()}
+                          支払額: ¥{Number(adv.netAmount || (Number(adv.amount) - 330)).toLocaleString()}
                         </span>
                       </div>
                       <p className="text-sm text-slate-500">{adv.reason || '-'}</p>
@@ -2085,6 +2171,38 @@ export function StaffPage() {
                             placeholder="金額"
                           />
                         </div>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            className="input-field text-sm flex-1"
+                            value={systemForm.deduction4Name}
+                            onChange={(e) => setSystemForm({ ...systemForm, deduction4Name: e.target.value })}
+                            placeholder="控除項目名4"
+                          />
+                          <input
+                            type="number"
+                            className="input-field text-sm w-32"
+                            value={systemForm.deduction4Amount}
+                            onChange={(e) => setSystemForm({ ...systemForm, deduction4Amount: e.target.value })}
+                            placeholder="金額"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            className="input-field text-sm flex-1"
+                            value={systemForm.deduction5Name}
+                            onChange={(e) => setSystemForm({ ...systemForm, deduction5Name: e.target.value })}
+                            placeholder="控除項目名5"
+                          />
+                          <input
+                            type="number"
+                            className="input-field text-sm w-32"
+                            value={systemForm.deduction5Amount}
+                            onChange={(e) => setSystemForm({ ...systemForm, deduction5Amount: e.target.value })}
+                            placeholder="金額"
+                          />
+                        </div>
                       </div>
                     </div>
                     
@@ -2098,7 +2216,9 @@ export function StaffPage() {
                         (parseFloat(systemForm.otherDeductions) || 0) +
                         (parseFloat(systemForm.deduction1Amount) || 0) +
                         (parseFloat(systemForm.deduction2Amount) || 0) +
-                        (parseFloat(systemForm.deduction3Amount) || 0)
+                        (parseFloat(systemForm.deduction3Amount) || 0) +
+                        (parseFloat(systemForm.deduction4Amount) || 0) +
+                        (parseFloat(systemForm.deduction5Amount) || 0)
                       ).toLocaleString()}/月
                     </p>
                   </div>
@@ -2194,6 +2314,10 @@ export function StaffPage() {
                               deduction2Amount: systemForm.deduction2Amount ? parseFloat(systemForm.deduction2Amount) : null,
                               deduction3Name: systemForm.deduction3Name || null,
                               deduction3Amount: systemForm.deduction3Amount ? parseFloat(systemForm.deduction3Amount) : null,
+                              deduction4Name: systemForm.deduction4Name || null,
+                              deduction4Amount: systemForm.deduction4Amount ? parseFloat(systemForm.deduction4Amount) : null,
+                              deduction5Name: systemForm.deduction5Name || null,
+                              deduction5Amount: systemForm.deduction5Amount ? parseFloat(systemForm.deduction5Amount) : null,
                             }),
                           });
                           if (res.ok) {
@@ -2323,6 +2447,18 @@ export function StaffPage() {
                           <p className="font-medium text-orange-900">¥{Number((employeeData as any)?.deduction3Amount || 0).toLocaleString()}</p>
                         </div>
                       )}
+                      {(employeeData as any)?.deduction4Name && (
+                        <div>
+                          <span className="text-orange-600">{(employeeData as any)?.deduction4Name}</span>
+                          <p className="font-medium text-orange-900">¥{Number((employeeData as any)?.deduction4Amount || 0).toLocaleString()}</p>
+                        </div>
+                      )}
+                      {(employeeData as any)?.deduction5Name && (
+                        <div>
+                          <span className="text-orange-600">{(employeeData as any)?.deduction5Name}</span>
+                          <p className="font-medium text-orange-900">¥{Number((employeeData as any)?.deduction5Amount || 0).toLocaleString()}</p>
+                        </div>
+                      )}
                     </div>
                     <div className="mt-3 pt-3 border-t border-orange-200">
                       <div className="flex justify-between text-sm">
@@ -2336,7 +2472,9 @@ export function StaffPage() {
                           Number((employeeData as any)?.otherDeductions || 0) +
                           Number((employeeData as any)?.deduction1Amount || 0) +
                           Number((employeeData as any)?.deduction2Amount || 0) +
-                          Number((employeeData as any)?.deduction3Amount || 0)
+                          Number((employeeData as any)?.deduction3Amount || 0) +
+                          Number((employeeData as any)?.deduction4Amount || 0) +
+                          Number((employeeData as any)?.deduction5Amount || 0)
                         ).toLocaleString()}/月</span>
                       </div>
                     </div>
