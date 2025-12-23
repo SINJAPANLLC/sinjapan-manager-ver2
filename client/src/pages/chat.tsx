@@ -32,17 +32,30 @@ export function ChatPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [unreadBySender, setUnreadBySender] = useState<Record<number, number>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchUsers();
+    fetchUnreadBySender();
   }, []);
+
+  const fetchUnreadBySender = async () => {
+    const res = await fetch('/api/chat/unread-by-sender', { credentials: 'include' });
+    if (res.ok) {
+      setUnreadBySender(await res.json());
+    }
+  };
 
   useEffect(() => {
     if (selectedUser) {
       fetchMessages();
-      const interval = setInterval(fetchMessages, 3000);
+      fetchUnreadBySender();
+      const interval = setInterval(() => {
+        fetchMessages();
+        fetchUnreadBySender();
+      }, 3000);
       return () => clearInterval(interval);
     }
   }, [selectedUser]);
@@ -197,6 +210,11 @@ export function ChatPage() {
                 )}>{u.name}</p>
                 <p className="text-xs text-slate-500">{getRoleLabel(u.role)}</p>
               </div>
+              {unreadBySender[u.id] > 0 && (
+                <span className="min-w-[20px] h-5 px-1.5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                  {unreadBySender[u.id]}
+                </span>
+              )}
             </button>
           ))}
         </div>

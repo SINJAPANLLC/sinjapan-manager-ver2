@@ -208,6 +208,18 @@ export const storage = {
     return messages.length;
   },
 
+  async getUnreadMessagesBySender(userId: number): Promise<Record<number, number>> {
+    const messages = await db.select().from(chatMessages)
+      .where(and(eq(chatMessages.receiverId, userId), eq(chatMessages.isRead, false)));
+    const countBySender: Record<number, number> = {};
+    for (const msg of messages) {
+      if (msg.senderId) {
+        countBySender[msg.senderId] = (countBySender[msg.senderId] || 0) + 1;
+      }
+    }
+    return countBySender;
+  },
+
   async getEmployee(userId: number): Promise<Employee | undefined> {
     const [employee] = await db.select().from(employees).where(eq(employees.userId, userId));
     return employee;

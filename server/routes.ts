@@ -528,6 +528,15 @@ export function registerRoutes(app: Express) {
     }
   });
 
+  app.get('/api/chat/unread-by-sender', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const unreadBySender = await storage.getUnreadMessagesBySender(req.session.userId!);
+      res.json(unreadBySender);
+    } catch (err) {
+      res.json({});
+    }
+  });
+
   app.get('/api/tasks/pending-count', requireAuth, async (req: Request, res: Response) => {
     try {
       const currentUser = (req as any).currentUser;
