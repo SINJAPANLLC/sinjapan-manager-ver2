@@ -173,6 +173,7 @@ export function StaffPage() {
     return `SJ-${random}`;
   };
   const [memoForm, setMemoForm] = useState({ content: '', category: 'general' });
+  const [pendingAdvanceCounts, setPendingAdvanceCounts] = useState<Record<number, number>>({});
   const [editingSystem, setEditingSystem] = useState(false);
   const [systemForm, setSystemForm] = useState({
     salary: '',
@@ -234,6 +235,22 @@ export function StaffPage() {
     bankAccountHolder: '',
   });
 
+  const fetchPendingAdvanceCounts = async () => {
+    try {
+      const res = await fetch('/api/pending-advance-payments', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        const counts: Record<number, number> = {};
+        data.forEach((item: { userId: number; count: number }) => {
+          counts[item.userId] = item.count;
+        });
+        setPendingAdvanceCounts(counts);
+      }
+    } catch (err) {
+      console.error('Failed to fetch pending advance counts:', err);
+    }
+  };
+
   const fetchStaff = async () => {
     setIsLoading(true);
     const res = await fetch('/api/users');
@@ -241,6 +258,7 @@ export function StaffPage() {
       const users = await res.json();
       setStaff(users.filter((u: Staff) => u.role === 'staff'));
     }
+    fetchPendingAdvanceCounts();
     setIsLoading(false);
   };
 
@@ -2495,7 +2513,12 @@ export function StaffPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredStaff.map((s) => (
-            <div key={s.id} className="card p-4 hover:shadow-lg transition-shadow">
+            <div key={s.id} className="card p-4 hover:shadow-lg transition-shadow relative">
+              {pendingAdvanceCounts[s.id] > 0 && (
+                <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg animate-pulse">
+                  {pendingAdvanceCounts[s.id]}
+                </div>
+              )}
               <div className="flex justify-between items-start mb-3">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-bold text-lg">
@@ -2506,12 +2529,20 @@ export function StaffPage() {
                     <p className="text-sm text-slate-500">{s.position || 'スタッフ'}</p>
                   </div>
                 </div>
-                <span className={cn(
-                  "px-2 py-1 text-xs rounded-full",
-                  s.isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                )}>
-                  {s.isActive ? '有効' : '無効'}
-                </span>
+                <div className="flex flex-col items-end gap-1">
+                  <span className={cn(
+                    "px-2 py-1 text-xs rounded-full",
+                    s.isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                  )}>
+                    {s.isActive ? '有効' : '無効'}
+                  </span>
+                  {pendingAdvanceCounts[s.id] > 0 && (
+                    <span className="px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-700 flex items-center gap-1">
+                      <CreditCard size={10} />
+                      前払い申請中
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2 text-sm">

@@ -4030,6 +4030,32 @@ URL/名前: ${url || '未指定'}
     }
   });
 
+  app.get('/api/pending-advance-payments', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const payments = await tenantStorage.getAdvancePayments();
+      const pendingPayments = payments.filter((p: any) => p.status === 'pending');
+      
+      const countsByUser: Record<number, number> = {};
+      for (const payment of pendingPayments) {
+        const employee = await tenantStorage.getEmployeeById(payment.employeeId);
+        if (employee && employee.userId) {
+          countsByUser[employee.userId] = (countsByUser[employee.userId] || 0) + 1;
+        }
+      }
+      
+      const result = Object.entries(countsByUser).map(([userId, count]) => ({
+        userId: parseInt(userId),
+        count
+      }));
+      
+      res.json(result);
+    } catch (error) {
+      console.error('Get pending advance payments error:', error);
+      res.status(500).json({ error: '保留中の前払い申請の取得に失敗しました' });
+    }
+  });
+
   app.post('/api/employees/:employeeId/advance-payments', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     try {
       const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
