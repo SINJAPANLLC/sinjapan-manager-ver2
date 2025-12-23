@@ -95,6 +95,8 @@ export const tasks = pgTable("tasks", {
   recurringFrequency: text("recurring_frequency"),
   parentTaskId: integer("parent_task_id"),
   lastGeneratedAt: timestamp("last_generated_at"),
+  rewardAmount: decimal("reward_amount", { precision: 12, scale: 2 }),
+  rewardPaidAt: timestamp("reward_paid_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
