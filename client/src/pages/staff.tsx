@@ -1652,7 +1652,21 @@ export function StaffPage() {
                   <div key={task.id} className="p-4">
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">
-                        <h3 className="font-medium text-slate-800">{task.title}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium text-slate-800">{task.title}</h3>
+                          {task.rewardAmount && parseFloat(task.rewardAmount) > 0 && (
+                            <span className={cn(
+                              "px-2 py-0.5 rounded-full text-xs font-medium",
+                              task.rewardApprovedAt ? "bg-green-100 text-green-700" : 
+                              task.status === 'completed' ? "bg-yellow-100 text-yellow-700" : 
+                              "bg-amber-100 text-amber-700"
+                            )}>
+                              ¥{parseInt(task.rewardAmount).toLocaleString()}
+                              {task.rewardApprovedAt && " ✓承認済"}
+                              {!task.rewardApprovedAt && task.status === 'completed' && " (承認待ち)"}
+                            </span>
+                          )}
+                        </div>
                         {task.description && (
                           <p className="text-sm text-slate-500 mt-1">{task.description}</p>
                         )}

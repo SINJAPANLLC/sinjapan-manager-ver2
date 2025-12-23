@@ -36,6 +36,8 @@ interface Task {
   isRecurring?: boolean;
   recurringFrequency?: string;
   rewardAmount?: string;
+  rewardApprovedAt?: string;
+  rewardApprovedBy?: number;
   rewardPaidAt?: string;
 }
 
@@ -100,6 +102,7 @@ export function TasksPage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const diagramRef = useRef<HTMLDivElement>(null);
+  const [pendingApprovalCount, setPendingApprovalCount] = useState(0);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -304,12 +307,45 @@ export function TasksPage() {
     fetchUsers();
     fetchBusinesses();
     fetchEmployees();
-  }, []);
+    if (user?.role === 'admin' || user?.role === 'ceo') {
+      fetchPendingApprovalCount();
+    }
+  }, [user?.role]);
 
   const fetchTasks = async () => {
     const res = await fetch('/api/tasks');
     if (res.ok) {
       setTasks(await res.json());
+    }
+  };
+
+  const fetchPendingApprovalCount = async () => {
+    try {
+      const res = await fetch('/api/tasks/pending-approvals');
+      if (res.ok) {
+        const data = await res.json();
+        setPendingApprovalCount(data.length);
+      }
+    } catch (err) {
+      console.error('承認待ち件数取得エラー:', err);
+    }
+  };
+
+  const approveReward = async (taskId: number) => {
+    if (!confirm('この報酬を承認しますか？承認すると担当者の給料に反映されます。')) return;
+    try {
+      const res = await fetch(`/api/tasks/${taskId}/approve-reward`, { method: 'POST' });
+      if (res.ok) {
+        fetchTasks();
+        fetchPendingApprovalCount();
+        alert('報酬を承認しました');
+      } else {
+        const error = await res.json();
+        alert(error.message || '承認に失敗しました');
+      }
+    } catch (err) {
+      console.error('承認エラー:', err);
+      alert('承認中にエラーが発生しました');
     }
   };
 
@@ -661,9 +697,17 @@ export function TasksPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">タスク管理</h1>
-          <p className="text-slate-500 text-sm mt-1">カテゴリ別タスクの管理とAI生成</p>
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800">タスク管理</h1>
+            <p className="text-slate-500 text-sm mt-1">カテゴリ別タスクの管理とAI生成</p>
+          </div>
+          {(user?.role === 'admin' || user?.role === 'ceo') && pendingApprovalCount > 0 && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-orange-100 text-orange-700 rounded-full text-sm font-medium animate-pulse">
+              <AlertCircle size={16} />
+              未承認: {pendingApprovalCount}件
+            </div>
+          )}
         </div>
         <div className="flex gap-2">
           <button
@@ -766,8 +810,13 @@ export function TasksPage() {
                                   </span>
                                 )}
                                 {task.rewardAmount && parseFloat(task.rewardAmount) > 0 && (
-                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-yellow-50 text-yellow-700 rounded text-xs font-medium">
+                                  <span className={cn(
+                                    "inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium",
+                                    task.rewardApprovedAt ? "bg-green-100 text-green-700" : "bg-yellow-50 text-yellow-700"
+                                  )}>
                                     ¥{parseFloat(task.rewardAmount).toLocaleString()}
+                                    {task.rewardApprovedAt && " ✓"}
+                                    {!task.rewardApprovedAt && task.status === 'completed' && " (承認待ち)"}
                                   </span>
                                 )}
                               </div>
@@ -787,6 +836,18 @@ export function TasksPage() {
                               <option value="completed">完了</option>
                             </select>
                             <div className="flex gap-1">
+                              {(user?.role === 'admin' || user?.role === 'ceo') && 
+                               task.status === 'completed' && 
+                               task.rewardAmount && 
+                               parseFloat(task.rewardAmount) > 0 && 
+                               !task.rewardApprovedAt && (
+                                <button 
+                                  onClick={() => approveReward(task.id)} 
+                                  className="px-2 py-0.5 text-xs bg-green-500 text-white hover:bg-green-600 rounded transition-colors font-medium"
+                                >
+                                  承認
+                                </button>
+                              )}
                               <button onClick={() => openModal(task)} className="p-1 text-primary-600 hover:bg-primary-50 rounded transition-colors">
                                 <Edit2 size={12} />
                               </button>
@@ -1013,8 +1074,13 @@ export function TasksPage() {
                           </p>
                         )}
                         {task.rewardAmount && parseFloat(task.rewardAmount) > 0 && (
-                          <p className="text-xs text-yellow-700 mb-2 flex items-center gap-1 font-medium">
+                          <p className={cn(
+                            "text-xs mb-2 flex items-center gap-1 font-medium",
+                            task.rewardApprovedAt ? "text-green-700" : "text-yellow-700"
+                          )}>
                             報酬: ¥{parseFloat(task.rewardAmount).toLocaleString()}
+                            {task.rewardApprovedAt && " ✓承認済"}
+                            {!task.rewardApprovedAt && task.status === 'completed' && " (承認待ち)"}
                           </p>
                         )}
                         <div className="flex justify-between items-center pt-2 border-t border-slate-100">
@@ -1028,6 +1094,18 @@ export function TasksPage() {
                             <option value="completed">完了</option>
                           </select>
                           <div className="flex gap-1">
+                            {(user?.role === 'admin' || user?.role === 'ceo') && 
+                             task.status === 'completed' && 
+                             task.rewardAmount && 
+                             parseFloat(task.rewardAmount) > 0 && 
+                             !task.rewardApprovedAt && (
+                              <button 
+                                onClick={() => approveReward(task.id)} 
+                                className="px-2 py-0.5 text-xs bg-green-500 text-white hover:bg-green-600 rounded transition-colors font-medium"
+                              >
+                                承認
+                              </button>
+                            )}
                             <button
                               onClick={() => openModal(task)}
                               className="p-1 text-primary-600 hover:bg-primary-50 rounded transition-colors"

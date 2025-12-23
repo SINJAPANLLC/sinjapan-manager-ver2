@@ -472,65 +472,107 @@ export function registerRoutes(app: Express) {
     }
     
     const updated = await storage.updateTask(parseInt(req.params.id), req.body);
-    
-    const freshTask = await storage.getTask(parseInt(req.params.id));
-    const isNowCompleted = freshTask?.status === 'completed';
-    const wasNotCompleted = task.status !== 'completed';
-    const hasReward = freshTask?.rewardAmount && parseFloat(String(freshTask.rewardAmount)) > 0;
-    const notPaidYet = !freshTask?.rewardPaidAt;
-    
-    if (isNowCompleted && wasNotCompleted && hasReward && notPaidYet && freshTask?.assignedTo) {
-      try {
-        const allEmployees = await storage.getEmployees();
-        const employee = allEmployees.find(e => e.userId === freshTask.assignedTo);
-        
-        if (employee) {
-          const now = new Date();
-          const currentYear = now.getFullYear();
-          const currentMonth = now.getMonth() + 1;
-          
-          const salaries = await storage.getStaffSalaries(employee.id);
-          let currentSalary = salaries.find(s => s.year === currentYear && s.month === currentMonth);
-          
-          if (!currentSalary) {
-            const employeeBaseSalary = employee.salary ? String(employee.salary) : "0";
-            currentSalary = await storage.createStaffSalary({
-              employeeId: employee.id,
-              year: currentYear,
-              month: currentMonth,
-              baseSalary: employeeBaseSalary,
-              overtime: "0",
-              bonus: "0",
-              deductions: "0",
-              netSalary: employeeBaseSalary,
-              status: "pending",
-              createdBy: req.session.userId,
-            });
-          }
-          
-          const rewardAmount = parseFloat(String(freshTask.rewardAmount) || "0");
-          const currentBonus = parseFloat(String(currentSalary.bonus) || "0");
-          const newBonus = (currentBonus + rewardAmount).toFixed(2);
-          
-          const baseSalaryValue = parseFloat(String(currentSalary.baseSalary) || "0");
-          const overtimeValue = parseFloat(String(currentSalary.overtime) || "0");
-          const deductionsValue = parseFloat(String(currentSalary.deductions) || "0");
-          const newNetSalary = (baseSalaryValue + overtimeValue + parseFloat(newBonus) - deductionsValue).toFixed(2);
-          
-          await storage.updateStaffSalary(currentSalary.id, {
-            bonus: newBonus,
-            netSalary: newNetSalary,
-          });
-          
-          await storage.updateTask(parseInt(req.params.id), { rewardPaidAt: new Date() });
-        }
-      } catch (err) {
-        console.error('報酬の給料反映エラー:', err);
-      }
-    }
-    
     const finalTask = await storage.getTask(parseInt(req.params.id));
     res.json(finalTask);
+  });
+
+  app.post('/api/tasks/:id/approve-reward', requireRole('admin', 'ceo'), async (req: Request, res: Response) => {
+    const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+    const task = await tenantStorage.getTask(parseInt(req.params.id));
+    if (!task) {
+      return res.status(404).json({ message: 'タスクが見つかりません' });
+    }
+    
+    if (task.status !== 'completed') {
+      return res.status(400).json({ message: '完了済みタスクのみ承認できます' });
+    }
+    
+    if (task.rewardApprovedAt) {
+      return res.status(400).json({ message: '既に承認済みです' });
+    }
+    
+    if (task.rewardPaidAt) {
+      return res.status(400).json({ message: '既に給料に反映済みです' });
+    }
+    
+    const hasReward = task.rewardAmount && parseFloat(String(task.rewardAmount)) > 0;
+    if (!hasReward) {
+      return res.status(400).json({ message: '報酬金額が設定されていません' });
+    }
+    
+    if (!task.assignedTo) {
+      return res.status(400).json({ message: '担当者が設定されていません' });
+    }
+    
+    try {
+      const allEmployees = await tenantStorage.getEmployees();
+      const employee = allEmployees.find(e => e.userId === task.assignedTo);
+      
+      if (!employee) {
+        return res.status(400).json({ message: '担当者のスタッフ情報が見つかりません' });
+      }
+      
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth() + 1;
+      
+      const salaries = await tenantStorage.getStaffSalaries(employee.id);
+      let currentSalary = salaries.find(s => s.year === currentYear && s.month === currentMonth);
+      
+      if (!currentSalary) {
+        const employeeBaseSalary = employee.salary ? String(employee.salary) : "0";
+        currentSalary = await tenantStorage.createStaffSalary({
+          employeeId: employee.id,
+          year: currentYear,
+          month: currentMonth,
+          baseSalary: employeeBaseSalary,
+          overtime: "0",
+          bonus: "0",
+          deductions: "0",
+          netSalary: employeeBaseSalary,
+          status: "pending",
+          createdBy: req.session.userId,
+        });
+      }
+      
+      const rewardAmount = parseFloat(String(task.rewardAmount) || "0");
+      const currentBonus = parseFloat(String(currentSalary.bonus) || "0");
+      const newBonus = (currentBonus + rewardAmount).toFixed(2);
+      
+      const baseSalaryValue = parseFloat(String(currentSalary.baseSalary) || "0");
+      const overtimeValue = parseFloat(String(currentSalary.overtime) || "0");
+      const deductionsValue = parseFloat(String(currentSalary.deductions) || "0");
+      const newNetSalary = (baseSalaryValue + overtimeValue + parseFloat(newBonus) - deductionsValue).toFixed(2);
+      
+      await tenantStorage.updateStaffSalary(currentSalary.id, {
+        bonus: newBonus,
+        netSalary: newNetSalary,
+      });
+      
+      await tenantStorage.updateTask(parseInt(req.params.id), { 
+        rewardApprovedAt: now,
+        rewardApprovedBy: req.session.userId,
+        rewardPaidAt: now 
+      });
+      
+      const updatedTask = await tenantStorage.getTask(parseInt(req.params.id));
+      res.json({ message: '報酬を承認し、給料に反映しました', task: updatedTask });
+    } catch (err) {
+      console.error('報酬承認エラー:', err);
+      res.status(500).json({ message: '報酬承認に失敗しました' });
+    }
+  });
+
+  app.get('/api/tasks/pending-approvals', requireRole('admin', 'ceo'), async (req: Request, res: Response) => {
+    const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+    const allTasks = await tenantStorage.getTasks();
+    const pendingApprovals = allTasks.filter(t => 
+      t.status === 'completed' && 
+      t.rewardAmount && 
+      parseFloat(String(t.rewardAmount)) > 0 && 
+      !t.rewardApprovedAt
+    );
+    res.json(pendingApprovals);
   });
 
   app.delete('/api/tasks/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {

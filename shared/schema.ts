@@ -96,6 +96,8 @@ export const tasks = pgTable("tasks", {
   parentTaskId: integer("parent_task_id"),
   lastGeneratedAt: timestamp("last_generated_at"),
   rewardAmount: decimal("reward_amount", { precision: 12, scale: 2 }),
+  rewardApprovedAt: timestamp("reward_approved_at"),
+  rewardApprovedBy: integer("reward_approved_by").references(() => users.id, { onDelete: "set null" }),
   rewardPaidAt: timestamp("reward_paid_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
