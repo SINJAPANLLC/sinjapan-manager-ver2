@@ -501,8 +501,11 @@ export function registerRoutes(app: Express) {
   app.post('/api/agency/incentives', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     try {
       const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const { startDate, endDate, ...rest } = req.body;
       const incentive = await tenantStorage.createAgencyIncentive({
-        ...req.body,
+        ...rest,
+        startDate: startDate ? new Date(startDate) : null,
+        endDate: endDate ? new Date(endDate) : null,
         createdBy: req.session.userId,
       });
       res.json(incentive);
