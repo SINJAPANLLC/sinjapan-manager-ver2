@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from '../hooks/use-auth';
-import { Plus, Edit2, Trash2, CheckCircle, Clock, AlertCircle, X, Sparkles, Loader2, Target, Users2, Expand, ShieldAlert, Workflow, Briefcase, Network, Download, Save, RotateCcw, Maximize2, Minimize2, Building2, Repeat } from 'lucide-react';
+import { Plus, Edit2, Trash2, CheckCircle, Clock, AlertCircle, X, Sparkles, Loader2, Target, Users2, Expand, ShieldAlert, Workflow, Briefcase, Network, Download, Save, RotateCcw, Maximize2, Minimize2, Building2, Repeat, User } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 import {
@@ -643,6 +643,11 @@ export function TasksPage() {
     return businesses.find(b => b.id === businessId)?.name;
   };
 
+  const getUserName = (userId?: number) => {
+    if (!userId) return null;
+    return users.find(u => u.id === userId)?.name;
+  };
+
   const currentCategory = categories.find(c => c.id === selectedCategory);
   const filteredTasks = tasks.filter(t => (t.category || 'direct') === selectedCategory);
   const isWorkflowCategory = selectedCategory === 'workflow';
@@ -740,6 +745,18 @@ export function TasksPage() {
                                   <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-cyan-50 text-cyan-600 rounded text-xs">
                                     <Users2 size={10} />
                                     {task.assignmentType === 'all_staff' ? '全スタッフ' : task.assignmentType === 'all_agency' ? '全代理店' : '全クライアント'}
+                                  </span>
+                                )}
+                                {getBusinessName(task.businessId) && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-xs">
+                                    <Briefcase size={10} />
+                                    {getBusinessName(task.businessId)}
+                                  </span>
+                                )}
+                                {getUserName(task.assignedTo) && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-green-50 text-green-600 rounded text-xs">
+                                    <User size={10} />
+                                    {getUserName(task.assignedTo)}
                                   </span>
                                 )}
                               </div>
@@ -970,6 +987,12 @@ export function TasksPage() {
                           <p className="text-xs text-primary-600 mb-2 flex items-center gap-1">
                             <Briefcase size={10} />
                             {getBusinessName(task.businessId)}
+                          </p>
+                        )}
+                        {getUserName(task.assignedTo) && (
+                          <p className="text-xs text-green-600 mb-2 flex items-center gap-1">
+                            <User size={10} />
+                            {getUserName(task.assignedTo)}
                           </p>
                         )}
                         {task.dueDate && (

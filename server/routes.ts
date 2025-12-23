@@ -4213,3 +4213,17 @@ URL/名前: ${url || '未指定'}
     }
   });
 }
+
+export async function runRecurringTaskGeneration(): Promise<number> {
+  try {
+    const tenantStorage = createTenantStorage(null, { allowGlobal: true });
+    const count = await generateRecurringTasks(tenantStorage);
+    if (count > 0) {
+      console.log(`繰り返しタスク 件を自動生成しました`);
+    }
+    return count;
+  } catch (error) {
+    console.error('繰り返しタスク自動生成エラー:', error);
+    return 0;
+  }
+}
