@@ -436,8 +436,12 @@ export function registerRoutes(app: Express) {
       else if (assignmentType === 'all_client') targetRole = 'client';
       
       const targetUsers = allUsers.filter(u => u.role === targetRole);
-      const createdTasks = [];
       
+      if (targetUsers.length === 0) {
+        return res.status(400).json({ message: `対象の${targetRole === 'staff' ? 'スタッフ' : targetRole === 'agency' ? '代理店' : 'クライアント'}がいません。先にユーザーを登録してください。` });
+      }
+      
+      const createdTasks = [];
       for (const targetUser of targetUsers) {
         const task = await tenantStorage.createTask({
           ...taskData,
@@ -448,7 +452,7 @@ export function registerRoutes(app: Express) {
         createdTasks.push(task);
       }
       
-      return res.json(createdTasks.length > 0 ? createdTasks[0] : { message: '対象ユーザーがいません' });
+      return res.json(createdTasks[0]);
     }
     
     const task = await tenantStorage.createTask({ ...taskData, assignmentType, createdBy: req.session.userId });
