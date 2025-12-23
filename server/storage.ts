@@ -202,6 +202,12 @@ export const storage = {
       .where(and(eq(chatMessages.senderId, senderId), eq(chatMessages.receiverId, receiverId)));
   },
 
+  async getUnreadMessageCount(userId: number): Promise<number> {
+    const messages = await db.select().from(chatMessages)
+      .where(and(eq(chatMessages.receiverId, userId), eq(chatMessages.isRead, false)));
+    return messages.length;
+  },
+
   async getEmployee(userId: number): Promise<Employee | undefined> {
     const [employee] = await db.select().from(employees).where(eq(employees.userId, userId));
     return employee;

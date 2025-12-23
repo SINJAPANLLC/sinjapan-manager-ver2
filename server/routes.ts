@@ -382,6 +382,40 @@ export function registerRoutes(app: Express) {
     res.json(sentNotifications);
   });
 
+  app.get('/api/notifications/unread-count', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const notifications = await storage.getNotifications(req.session.userId!);
+      const unreadCount = notifications.filter((n: any) => !n.isRead).length;
+      res.json({ count: unreadCount });
+    } catch (err) {
+      res.json({ count: 0 });
+    }
+  });
+
+  app.get('/api/chat/unread-count', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const count = await storage.getUnreadMessageCount(req.session.userId!);
+      res.json({ count });
+    } catch (err) {
+      res.json({ count: 0 });
+    }
+  });
+
+  app.get('/api/tasks/pending-count', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const currentUser = (req as any).currentUser;
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      let tasks = await tenantStorage.getTasks();
+      if (currentUser.role === 'staff') {
+        tasks = tasks.filter((t: any) => t.assignedTo === req.session.userId || t.createdBy === req.session.userId);
+      }
+      const pendingCount = tasks.filter((t: any) => t.status === '未着手' || t.status === '進行中').length;
+      res.json({ count: pendingCount });
+    } catch (err) {
+      res.json({ count: 0 });
+    }
+  });
+
   app.get('/api/chat/partners', requireAuth, async (req: Request, res: Response) => {
     const partners = await storage.getChatPartners(req.session.userId!);
     res.json(partners.map(p => ({ ...p, password: undefined })));
