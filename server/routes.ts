@@ -535,13 +535,13 @@ export function registerRoutes(app: Express) {
         });
       }
       
-      const rewardAmount = parseFloat(String(task.rewardAmount) || "0");
-      const currentBonus = parseFloat(String(currentSalary.bonus) || "0");
+      const rewardAmount = parseFloat(String(task.rewardAmount || 0));
+      const currentBonus = parseFloat(String(currentSalary.bonus || 0)) || 0;
       const newBonus = (currentBonus + rewardAmount).toFixed(2);
       
-      const baseSalaryValue = parseFloat(String(currentSalary.baseSalary) || "0");
-      const overtimeValue = parseFloat(String(currentSalary.overtime) || "0");
-      const deductionsValue = parseFloat(String(currentSalary.deductions) || "0");
+      const baseSalaryValue = parseFloat(String(currentSalary.baseSalary || 0)) || 0;
+      const overtimeValue = parseFloat(String(currentSalary.overtime || 0)) || 0;
+      const deductionsValue = parseFloat(String(currentSalary.deductions || 0)) || 0;
       const newNetSalary = (baseSalaryValue + overtimeValue + parseFloat(newBonus) - deductionsValue).toFixed(2);
       
       await tenantStorage.updateStaffSalary(currentSalary.id, {
@@ -4172,9 +4172,15 @@ URL/名前: ${url || '未指定'}
   app.post('/api/employees/:employeeId/advance-payments', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     try {
       const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const amount = parseFloat(req.body.amount || 0);
+      const feeAmount = (amount * 0.05).toFixed(2);
+      const netAmount = (amount - parseFloat(feeAmount)).toFixed(2);
+      
       const payment = await tenantStorage.createAdvancePayment({
         ...req.body,
         employeeId: parseInt(req.params.employeeId),
+        feeAmount,
+        netAmount,
       });
       res.json(payment);
     } catch (error) {

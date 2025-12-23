@@ -96,6 +96,8 @@ interface Shift {
 interface AdvancePayment {
   id: number;
   amount: string;
+  feeAmount?: string;
+  netAmount?: string;
   reason?: string;
   status: string;
   requestedAt: string;
@@ -1572,8 +1574,14 @@ export function StaffPage() {
                   <div key={adv.id} className="p-4 flex justify-between items-center gap-4">
                     <div className="flex-1">
                       <p className="font-medium text-slate-800">
-                        ¥{Number(adv.amount).toLocaleString()}
+                        申請額: ¥{Number(adv.amount).toLocaleString()}
                       </p>
+                      <div className="flex gap-4 text-sm text-slate-600">
+                        <span>手数料(5%): ¥{Number(adv.feeAmount || (Number(adv.amount) * 0.05)).toLocaleString()}</span>
+                        <span className="font-medium text-green-700">
+                          支払額: ¥{Number(adv.netAmount || (Number(adv.amount) * 0.95)).toLocaleString()}
+                        </span>
+                      </div>
                       <p className="text-sm text-slate-500">{adv.reason || '-'}</p>
                       <p className="text-xs text-slate-400">
                         申請日: {format(new Date(adv.requestedAt), 'yyyy/MM/dd HH:mm')}
@@ -1895,6 +1903,7 @@ export function StaffPage() {
                             onChange={(e) => setSystemForm({ ...systemForm, paymentDay: e.target.value })}
                           >
                             <option value="翌翌月5日">翌翌月5日</option>
+                            <option value="翌翌月末日">翌翌月末日</option>
                             <option value="翌月25日">翌月25日</option>
                             <option value="翌月15日">翌月15日</option>
                             <option value="翌月末日">翌月末日</option>

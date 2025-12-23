@@ -552,6 +552,8 @@ export const advancePayments = pgTable("advance_payments", {
   companyId: varchar("company_id", { length: 255 }),
   employeeId: integer("employee_id").references(() => employees.id, { onDelete: "cascade" }).notNull(),
   amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  feeAmount: decimal("fee_amount", { precision: 12, scale: 2 }),
+  netAmount: decimal("net_amount", { precision: 12, scale: 2 }),
   requestedAt: timestamp("requested_at").defaultNow().notNull(),
   reason: text("reason"),
   status: varchar("status", { length: 50 }).default("pending"),
