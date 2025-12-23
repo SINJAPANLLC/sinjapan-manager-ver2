@@ -183,6 +183,15 @@ export function StaffPage() {
     bankAccountType: '普通',
     bankAccountNumber: '',
     bankAccountHolder: '',
+    closingDay: '末日',
+    paymentDay: '翌月25日',
+    paymentMethod: '銀行振込',
+    healthInsurance: '',
+    pensionInsurance: '',
+    employmentInsurance: '',
+    incomeTax: '',
+    residentTax: '',
+    otherDeductions: '',
   });
   const [selectedTask, setSelectedTask] = useState<StaffTask | null>(null);
   const [showEvidenceForm, setShowEvidenceForm] = useState(false);
@@ -1898,6 +1907,15 @@ export function StaffPage() {
                       bankAccountType: employeeData.bankAccountType || selectedStaff?.bankAccountType || '普通',
                       bankAccountNumber: employeeData.bankAccountNumber || selectedStaff?.bankAccountNumber || '',
                       bankAccountHolder: employeeData.bankAccountHolder || selectedStaff?.bankAccountHolder || '',
+                      closingDay: (employeeData as any).closingDay || '末日',
+                      paymentDay: (employeeData as any).paymentDay || '翌月25日',
+                      paymentMethod: (employeeData as any).paymentMethod || '銀行振込',
+                      healthInsurance: (employeeData as any).healthInsurance?.toString() || '',
+                      pensionInsurance: (employeeData as any).pensionInsurance?.toString() || '',
+                      employmentInsurance: (employeeData as any).employmentInsurance?.toString() || '',
+                      incomeTax: (employeeData as any).incomeTax?.toString() || '',
+                      residentTax: (employeeData as any).residentTax?.toString() || '',
+                      otherDeductions: (employeeData as any).otherDeductions?.toString() || '',
                     });
                   }}
                   className="btn-secondary text-sm flex items-center gap-2"
@@ -1953,21 +1971,126 @@ export function StaffPage() {
                         <Building2 size={18} className="text-primary-500" />
                         支払い情報
                       </h3>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-slate-500">締め日</span>
-                          <span className="font-medium text-slate-800">毎月末日</span>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-xs text-slate-500">締め日</label>
+                          <select
+                            className="input-field text-sm"
+                            value={systemForm.closingDay}
+                            onChange={(e) => setSystemForm({ ...systemForm, closingDay: e.target.value })}
+                          >
+                            <option value="末日">末日</option>
+                            <option value="15日">15日</option>
+                            <option value="20日">20日</option>
+                            <option value="25日">25日</option>
+                          </select>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-500">支払日</span>
-                          <span className="font-medium text-slate-800">翌月25日</span>
+                        <div>
+                          <label className="text-xs text-slate-500">支払日</label>
+                          <select
+                            className="input-field text-sm"
+                            value={systemForm.paymentDay}
+                            onChange={(e) => setSystemForm({ ...systemForm, paymentDay: e.target.value })}
+                          >
+                            <option value="翌月25日">翌月25日</option>
+                            <option value="翌月15日">翌月15日</option>
+                            <option value="翌月末日">翌月末日</option>
+                            <option value="当月25日">当月25日</option>
+                            <option value="当月末日">当月末日</option>
+                          </select>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-500">支払方法</span>
-                          <span className="font-medium text-slate-800">銀行振込</span>
+                        <div>
+                          <label className="text-xs text-slate-500">支払方法</label>
+                          <select
+                            className="input-field text-sm"
+                            value={systemForm.paymentMethod}
+                            onChange={(e) => setSystemForm({ ...systemForm, paymentMethod: e.target.value })}
+                          >
+                            <option value="銀行振込">銀行振込</option>
+                            <option value="現金">現金</option>
+                            <option value="小切手">小切手</option>
+                          </select>
                         </div>
                       </div>
                     </div>
+                  </div>
+                  <div className="bg-orange-50 rounded-xl p-4">
+                    <h3 className="font-medium text-orange-800 mb-3 flex items-center gap-2">
+                      <DollarSign size={18} />
+                      控除設定（月額）
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="text-xs text-orange-600">健康保険</label>
+                        <input
+                          type="number"
+                          className="input-field text-sm"
+                          value={systemForm.healthInsurance}
+                          onChange={(e) => setSystemForm({ ...systemForm, healthInsurance: e.target.value })}
+                          placeholder="0"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-orange-600">厚生年金</label>
+                        <input
+                          type="number"
+                          className="input-field text-sm"
+                          value={systemForm.pensionInsurance}
+                          onChange={(e) => setSystemForm({ ...systemForm, pensionInsurance: e.target.value })}
+                          placeholder="0"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-orange-600">雇用保険</label>
+                        <input
+                          type="number"
+                          className="input-field text-sm"
+                          value={systemForm.employmentInsurance}
+                          onChange={(e) => setSystemForm({ ...systemForm, employmentInsurance: e.target.value })}
+                          placeholder="0"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-orange-600">所得税</label>
+                        <input
+                          type="number"
+                          className="input-field text-sm"
+                          value={systemForm.incomeTax}
+                          onChange={(e) => setSystemForm({ ...systemForm, incomeTax: e.target.value })}
+                          placeholder="0"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-orange-600">住民税</label>
+                        <input
+                          type="number"
+                          className="input-field text-sm"
+                          value={systemForm.residentTax}
+                          onChange={(e) => setSystemForm({ ...systemForm, residentTax: e.target.value })}
+                          placeholder="0"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-orange-600">その他控除</label>
+                        <input
+                          type="number"
+                          className="input-field text-sm"
+                          value={systemForm.otherDeductions}
+                          onChange={(e) => setSystemForm({ ...systemForm, otherDeductions: e.target.value })}
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-xs text-orange-500 mt-2">
+                      合計控除額: ¥{(
+                        (parseFloat(systemForm.healthInsurance) || 0) +
+                        (parseFloat(systemForm.pensionInsurance) || 0) +
+                        (parseFloat(systemForm.employmentInsurance) || 0) +
+                        (parseFloat(systemForm.incomeTax) || 0) +
+                        (parseFloat(systemForm.residentTax) || 0) +
+                        (parseFloat(systemForm.otherDeductions) || 0)
+                      ).toLocaleString()}/月
+                    </p>
                   </div>
                   <div className="bg-blue-50 rounded-xl p-4">
                     <h3 className="font-medium text-blue-800 mb-3 flex items-center gap-2">
@@ -2045,6 +2168,15 @@ export function StaffPage() {
                               bankAccountType: systemForm.bankAccountType || null,
                               bankAccountNumber: systemForm.bankAccountNumber || null,
                               bankAccountHolder: systemForm.bankAccountHolder || null,
+                              closingDay: systemForm.closingDay || null,
+                              paymentDay: systemForm.paymentDay || null,
+                              paymentMethod: systemForm.paymentMethod || null,
+                              healthInsurance: systemForm.healthInsurance ? parseFloat(systemForm.healthInsurance) : null,
+                              pensionInsurance: systemForm.pensionInsurance ? parseFloat(systemForm.pensionInsurance) : null,
+                              employmentInsurance: systemForm.employmentInsurance ? parseFloat(systemForm.employmentInsurance) : null,
+                              incomeTax: systemForm.incomeTax ? parseFloat(systemForm.incomeTax) : null,
+                              residentTax: systemForm.residentTax ? parseFloat(systemForm.residentTax) : null,
+                              otherDeductions: systemForm.otherDeductions ? parseFloat(systemForm.otherDeductions) : null,
                             }),
                           });
                           if (res.ok) {
@@ -2099,16 +2231,61 @@ export function StaffPage() {
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span className="text-slate-500">締め日</span>
-                          <span className="font-medium text-slate-800">毎月末日</span>
+                          <span className="font-medium text-slate-800">毎月{(employeeData as any)?.closingDay || '末日'}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-slate-500">支払日</span>
-                          <span className="font-medium text-slate-800">翌月25日</span>
+                          <span className="font-medium text-slate-800">{(employeeData as any)?.paymentDay || '翌月25日'}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-slate-500">支払方法</span>
-                          <span className="font-medium text-slate-800">銀行振込</span>
+                          <span className="font-medium text-slate-800">{(employeeData as any)?.paymentMethod || '銀行振込'}</span>
                         </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-orange-50 rounded-xl p-4">
+                    <h3 className="font-medium text-orange-800 mb-3 flex items-center gap-2">
+                      <DollarSign size={18} />
+                      控除設定（月額）
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <span className="text-orange-600">健康保険</span>
+                        <p className="font-medium text-orange-900">¥{Number((employeeData as any)?.healthInsurance || 0).toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <span className="text-orange-600">厚生年金</span>
+                        <p className="font-medium text-orange-900">¥{Number((employeeData as any)?.pensionInsurance || 0).toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <span className="text-orange-600">雇用保険</span>
+                        <p className="font-medium text-orange-900">¥{Number((employeeData as any)?.employmentInsurance || 0).toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <span className="text-orange-600">所得税</span>
+                        <p className="font-medium text-orange-900">¥{Number((employeeData as any)?.incomeTax || 0).toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <span className="text-orange-600">住民税</span>
+                        <p className="font-medium text-orange-900">¥{Number((employeeData as any)?.residentTax || 0).toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <span className="text-orange-600">その他控除</span>
+                        <p className="font-medium text-orange-900">¥{Number((employeeData as any)?.otherDeductions || 0).toLocaleString()}</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-orange-200">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-orange-600 font-medium">合計控除額</span>
+                        <span className="font-bold text-orange-800">¥{(
+                          Number((employeeData as any)?.healthInsurance || 0) +
+                          Number((employeeData as any)?.pensionInsurance || 0) +
+                          Number((employeeData as any)?.employmentInsurance || 0) +
+                          Number((employeeData as any)?.incomeTax || 0) +
+                          Number((employeeData as any)?.residentTax || 0) +
+                          Number((employeeData as any)?.otherDeductions || 0)
+                        ).toLocaleString()}/月</span>
                       </div>
                     </div>
                   </div>
