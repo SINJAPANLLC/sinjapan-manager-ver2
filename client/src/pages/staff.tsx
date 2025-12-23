@@ -190,12 +190,19 @@ export function StaffPage() {
     paymentDay: '翌翌月5日',
     paymentMethod: '銀行振込',
     transferFee: '330',
+    contractType: 'employee',
     healthInsurance: '',
     pensionInsurance: '',
     employmentInsurance: '',
     incomeTax: '',
     residentTax: '',
     otherDeductions: '',
+    deduction1Name: '',
+    deduction1Amount: '',
+    deduction2Name: '',
+    deduction2Amount: '',
+    deduction3Name: '',
+    deduction3Amount: '',
   });
   const [selectedTask, setSelectedTask] = useState<StaffTask | null>(null);
   const [showEvidenceForm, setShowEvidenceForm] = useState(false);
@@ -1820,12 +1827,19 @@ export function StaffPage() {
                       paymentDay: (employeeData as any).paymentDay || '翌翌月5日',
                       paymentMethod: (employeeData as any).paymentMethod || '銀行振込',
                       transferFee: (employeeData as any).transferFee?.toString() || '330',
+                      contractType: (employeeData as any).contractType || 'employee',
                       healthInsurance: (employeeData as any).healthInsurance?.toString() || '',
                       pensionInsurance: (employeeData as any).pensionInsurance?.toString() || '',
                       employmentInsurance: (employeeData as any).employmentInsurance?.toString() || '',
                       incomeTax: (employeeData as any).incomeTax?.toString() || '',
                       residentTax: (employeeData as any).residentTax?.toString() || '',
                       otherDeductions: (employeeData as any).otherDeductions?.toString() || '',
+                      deduction1Name: (employeeData as any).deduction1Name || '',
+                      deduction1Amount: (employeeData as any).deduction1Amount?.toString() || '',
+                      deduction2Name: (employeeData as any).deduction2Name || '',
+                      deduction2Amount: (employeeData as any).deduction2Amount?.toString() || '',
+                      deduction3Name: (employeeData as any).deduction3Name || '',
+                      deduction3Amount: (employeeData as any).deduction3Amount?.toString() || '',
                     });
                   }}
                   className="btn-secondary text-sm flex items-center gap-2"
@@ -1879,9 +1893,23 @@ export function StaffPage() {
                     <div className="bg-slate-50 rounded-xl p-4">
                       <h3 className="font-medium text-slate-800 mb-3 flex items-center gap-2">
                         <Building2 size={18} className="text-primary-500" />
-                        支払い情報
+                        契約・支払い情報
                       </h3>
                       <div className="space-y-3">
+                        <div>
+                          <label className="text-xs text-slate-500">契約タイプ</label>
+                          <select
+                            className="input-field text-sm"
+                            value={systemForm.contractType}
+                            onChange={(e) => setSystemForm({ ...systemForm, contractType: e.target.value })}
+                          >
+                            <option value="employee">正社員</option>
+                            <option value="part_time">パート・アルバイト</option>
+                            <option value="contractor">業務委託</option>
+                            <option value="light_freight">軽貨物ドライバー</option>
+                            <option value="freelance">フリーランス</option>
+                          </select>
+                        </div>
                         <div>
                           <label className="text-xs text-slate-500">締め日</label>
                           <select
@@ -2005,6 +2033,61 @@ export function StaffPage() {
                         />
                       </div>
                     </div>
+                    
+                    <div className="mt-4 pt-4 border-t border-orange-200">
+                      <h4 className="text-sm font-medium text-orange-700 mb-3">カスタム控除（名目編集可）</h4>
+                      <div className="space-y-3">
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            className="input-field text-sm flex-1"
+                            value={systemForm.deduction1Name}
+                            onChange={(e) => setSystemForm({ ...systemForm, deduction1Name: e.target.value })}
+                            placeholder="控除項目名1"
+                          />
+                          <input
+                            type="number"
+                            className="input-field text-sm w-32"
+                            value={systemForm.deduction1Amount}
+                            onChange={(e) => setSystemForm({ ...systemForm, deduction1Amount: e.target.value })}
+                            placeholder="金額"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            className="input-field text-sm flex-1"
+                            value={systemForm.deduction2Name}
+                            onChange={(e) => setSystemForm({ ...systemForm, deduction2Name: e.target.value })}
+                            placeholder="控除項目名2"
+                          />
+                          <input
+                            type="number"
+                            className="input-field text-sm w-32"
+                            value={systemForm.deduction2Amount}
+                            onChange={(e) => setSystemForm({ ...systemForm, deduction2Amount: e.target.value })}
+                            placeholder="金額"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            className="input-field text-sm flex-1"
+                            value={systemForm.deduction3Name}
+                            onChange={(e) => setSystemForm({ ...systemForm, deduction3Name: e.target.value })}
+                            placeholder="控除項目名3"
+                          />
+                          <input
+                            type="number"
+                            className="input-field text-sm w-32"
+                            value={systemForm.deduction3Amount}
+                            onChange={(e) => setSystemForm({ ...systemForm, deduction3Amount: e.target.value })}
+                            placeholder="金額"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
                     <p className="text-xs text-orange-500 mt-2">
                       合計控除額: ¥{(
                         (parseFloat(systemForm.healthInsurance) || 0) +
@@ -2012,7 +2095,10 @@ export function StaffPage() {
                         (parseFloat(systemForm.employmentInsurance) || 0) +
                         (parseFloat(systemForm.incomeTax) || 0) +
                         (parseFloat(systemForm.residentTax) || 0) +
-                        (parseFloat(systemForm.otherDeductions) || 0)
+                        (parseFloat(systemForm.otherDeductions) || 0) +
+                        (parseFloat(systemForm.deduction1Amount) || 0) +
+                        (parseFloat(systemForm.deduction2Amount) || 0) +
+                        (parseFloat(systemForm.deduction3Amount) || 0)
                       ).toLocaleString()}/月
                     </p>
                   </div>
@@ -2101,6 +2187,13 @@ export function StaffPage() {
                               incomeTax: systemForm.incomeTax ? parseFloat(systemForm.incomeTax) : null,
                               residentTax: systemForm.residentTax ? parseFloat(systemForm.residentTax) : null,
                               otherDeductions: systemForm.otherDeductions ? parseFloat(systemForm.otherDeductions) : null,
+                              contractType: systemForm.contractType || 'employee',
+                              deduction1Name: systemForm.deduction1Name || null,
+                              deduction1Amount: systemForm.deduction1Amount ? parseFloat(systemForm.deduction1Amount) : null,
+                              deduction2Name: systemForm.deduction2Name || null,
+                              deduction2Amount: systemForm.deduction2Amount ? parseFloat(systemForm.deduction2Amount) : null,
+                              deduction3Name: systemForm.deduction3Name || null,
+                              deduction3Amount: systemForm.deduction3Amount ? parseFloat(systemForm.deduction3Amount) : null,
                             }),
                           });
                           if (res.ok) {
@@ -2154,6 +2247,16 @@ export function StaffPage() {
                       </h3>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
+                          <span className="text-slate-500">契約タイプ</span>
+                          <span className="font-medium text-slate-800">
+                            {(employeeData as any)?.contractType === 'employee' ? '正社員' :
+                             (employeeData as any)?.contractType === 'part_time' ? 'パート・アルバイト' :
+                             (employeeData as any)?.contractType === 'contractor' ? '業務委託' :
+                             (employeeData as any)?.contractType === 'light_freight' ? '軽貨物ドライバー' :
+                             (employeeData as any)?.contractType === 'freelance' ? 'フリーランス' : '正社員'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
                           <span className="text-slate-500">締め日</span>
                           <span className="font-medium text-slate-800">毎月{(employeeData as any)?.closingDay || '末日'}</span>
                         </div>
@@ -2202,6 +2305,24 @@ export function StaffPage() {
                         <span className="text-orange-600">その他控除</span>
                         <p className="font-medium text-orange-900">¥{Number((employeeData as any)?.otherDeductions || 0).toLocaleString()}</p>
                       </div>
+                      {(employeeData as any)?.deduction1Name && (
+                        <div>
+                          <span className="text-orange-600">{(employeeData as any)?.deduction1Name}</span>
+                          <p className="font-medium text-orange-900">¥{Number((employeeData as any)?.deduction1Amount || 0).toLocaleString()}</p>
+                        </div>
+                      )}
+                      {(employeeData as any)?.deduction2Name && (
+                        <div>
+                          <span className="text-orange-600">{(employeeData as any)?.deduction2Name}</span>
+                          <p className="font-medium text-orange-900">¥{Number((employeeData as any)?.deduction2Amount || 0).toLocaleString()}</p>
+                        </div>
+                      )}
+                      {(employeeData as any)?.deduction3Name && (
+                        <div>
+                          <span className="text-orange-600">{(employeeData as any)?.deduction3Name}</span>
+                          <p className="font-medium text-orange-900">¥{Number((employeeData as any)?.deduction3Amount || 0).toLocaleString()}</p>
+                        </div>
+                      )}
                     </div>
                     <div className="mt-3 pt-3 border-t border-orange-200">
                       <div className="flex justify-between text-sm">
@@ -2212,7 +2333,10 @@ export function StaffPage() {
                           Number((employeeData as any)?.employmentInsurance || 0) +
                           Number((employeeData as any)?.incomeTax || 0) +
                           Number((employeeData as any)?.residentTax || 0) +
-                          Number((employeeData as any)?.otherDeductions || 0)
+                          Number((employeeData as any)?.otherDeductions || 0) +
+                          Number((employeeData as any)?.deduction1Amount || 0) +
+                          Number((employeeData as any)?.deduction2Amount || 0) +
+                          Number((employeeData as any)?.deduction3Amount || 0)
                         ).toLocaleString()}/月</span>
                       </div>
                     </div>
