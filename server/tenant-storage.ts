@@ -143,7 +143,12 @@ export function createTenantStorage(companyId: string | null, options?: { allowG
     },
 
     async createEmployee(data: InsertEmployee): Promise<Employee> {
-      const employeeData = companyId ? { ...data, companyId } : data;
+      const employeeNumber = data.employeeNumber && data.employeeNumber.trim() !== '' 
+        ? data.employeeNumber 
+        : `EMP-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+      const employeeData = companyId 
+        ? { ...data, employeeNumber, companyId } 
+        : { ...data, employeeNumber };
       const [employee] = await db.insert(employees).values(employeeData).returning();
       return employee;
     },
