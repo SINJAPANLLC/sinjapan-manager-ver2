@@ -236,6 +236,22 @@ export function StaffPage() {
     }
   };
 
+  const updateTaskStatus = async (taskId: number, status: string) => {
+    try {
+      const res = await fetch(`/api/tasks/${taskId}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      if (res.ok) {
+        setStaffTasks(prev => prev.map(t => t.id === taskId ? { ...t, status } : t));
+      }
+    } catch (err) {
+      console.error('Failed to update task status:', err);
+    }
+  };
+
   const fetchTaskEvidence = async (taskId: number) => {
     try {
       const res = await fetch(`/api/tasks/${taskId}/evidence`, { credentials: 'include' });
@@ -1576,14 +1592,20 @@ export function StaffPage() {
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className={cn(
-                          "px-2 py-1 rounded-full text-xs font-medium",
-                          task.status === 'completed' && "bg-green-100 text-green-700",
-                          task.status === 'in_progress' && "bg-blue-100 text-blue-700",
-                          task.status === 'pending' && "bg-yellow-100 text-yellow-700"
-                        )}>
-                          {task.status === 'completed' ? '完了' : task.status === 'in_progress' ? '進行中' : '未着手'}
-                        </span>
+                        <select
+                          value={task.status}
+                          onChange={(e) => updateTaskStatus(task.id, e.target.value)}
+                          className={cn(
+                            "px-2 py-1 rounded-full text-xs font-medium border-0 cursor-pointer",
+                            task.status === 'completed' && "bg-green-100 text-green-700",
+                            task.status === 'in_progress' && "bg-blue-100 text-blue-700",
+                            task.status === 'pending' && "bg-yellow-100 text-yellow-700"
+                          )}
+                        >
+                          <option value="pending">未着手</option>
+                          <option value="in_progress">進行中</option>
+                          <option value="completed">完了</option>
+                        </select>
                         <span className={cn(
                           "px-2 py-1 rounded-full text-xs font-medium",
                           task.priority === 'high' && "bg-red-100 text-red-700",
