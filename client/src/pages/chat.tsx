@@ -171,14 +171,25 @@ export function ChatPage() {
                   : 'hover:bg-slate-50'
               )}
             >
-              <div className={cn(
-                "w-11 h-11 rounded-xl flex items-center justify-center text-white font-semibold transition-transform duration-200",
-                selectedUser?.id === u.id 
-                  ? "bg-gradient-to-br from-primary-500 to-primary-600 scale-105" 
-                  : "bg-gradient-to-br from-slate-400 to-slate-500"
-              )}>
-                {u.name.charAt(0)}
-              </div>
+              {u.avatarUrl ? (
+                <img 
+                  src={u.avatarUrl} 
+                  alt={u.name}
+                  className={cn(
+                    "w-11 h-11 rounded-xl object-cover transition-transform duration-200",
+                    selectedUser?.id === u.id && "scale-105 ring-2 ring-primary-500"
+                  )}
+                />
+              ) : (
+                <div className={cn(
+                  "w-11 h-11 rounded-xl flex items-center justify-center text-white font-semibold transition-transform duration-200",
+                  selectedUser?.id === u.id 
+                    ? "bg-gradient-to-br from-primary-500 to-primary-600 scale-105" 
+                    : "bg-gradient-to-br from-slate-400 to-slate-500"
+                )}>
+                  {u.name.charAt(0)}
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <p className={cn(
                   "font-medium truncate",
@@ -196,9 +207,17 @@ export function ChatPage() {
           <>
             <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center text-white font-semibold shadow-button">
-                  {selectedUser.name.charAt(0)}
-                </div>
+                {selectedUser.avatarUrl ? (
+                  <img 
+                    src={selectedUser.avatarUrl} 
+                    alt={selectedUser.name}
+                    className="w-12 h-12 rounded-xl object-cover shadow-button"
+                  />
+                ) : (
+                  <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center text-white font-semibold shadow-button">
+                    {selectedUser.name.charAt(0)}
+                  </div>
+                )}
                 <div>
                   <p className="font-semibold text-slate-800">{selectedUser.name}</p>
                   <p className="text-sm text-primary-600">{getRoleLabel(selectedUser.role)}</p>
