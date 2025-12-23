@@ -611,3 +611,23 @@ export const staffMemos = pgTable("staff_memos", {
 
 export type StaffMemo = typeof staffMemos.$inferSelect;
 export type InsertStaffMemo = typeof staffMemos.$inferInsert;
+
+export const businessDesigns = pgTable("business_designs", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  businessId: varchar("business_id", { length: 255 }).notNull(),
+  purpose: text("purpose"),
+  customerProblem: text("customer_problem"),
+  solution: text("solution"),
+  alternatives: text("alternatives"),
+  numbers: text("numbers"),
+  responsibility: text("responsibility"),
+  successCriteria: text("success_criteria"),
+  operationLoop: text("operation_loop"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type BusinessDesign = typeof businessDesigns.$inferSelect;
+export type InsertBusinessDesign = typeof businessDesigns.$inferInsert;

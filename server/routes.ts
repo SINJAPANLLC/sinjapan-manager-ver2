@@ -809,6 +809,46 @@ export function registerRoutes(app: Express) {
     res.json(totals);
   });
 
+  app.get('/api/business-designs', requireAuth, async (req: Request, res: Response) => {
+    const { businessId } = req.query;
+    const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+    const designs = await tenantStorage.getBusinessDesigns(businessId as string | undefined);
+    res.json(designs);
+  });
+
+  app.get('/api/business-designs/:id', requireAuth, async (req: Request, res: Response) => {
+    const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+    const design = await tenantStorage.getBusinessDesign(parseInt(req.params.id));
+    if (!design) {
+      return res.status(404).json({ message: '設計が見つかりません' });
+    }
+    res.json(design);
+  });
+
+  app.post('/api/business-designs', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+    const design = await tenantStorage.createBusinessDesign({
+      ...req.body,
+      createdBy: req.session.userId,
+    });
+    res.json(design);
+  });
+
+  app.patch('/api/business-designs/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+    const design = await tenantStorage.updateBusinessDesign(parseInt(req.params.id), req.body);
+    if (!design) {
+      return res.status(404).json({ message: '設計が見つかりません' });
+    }
+    res.json(design);
+  });
+
+  app.delete('/api/business-designs/:id', requireRole('admin', 'ceo'), async (req: Request, res: Response) => {
+    const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+    await tenantStorage.deleteBusinessDesign(parseInt(req.params.id));
+    res.json({ message: '削除しました' });
+  });
+
   app.get('/api/memos', requireAuth, async (req: Request, res: Response) => {
     const { start, end } = req.query;
     const startDate = start ? new Date(start as string) : undefined;
