@@ -549,7 +549,7 @@ export function registerRoutes(app: Express) {
         netSalary: newNetSalary,
       });
       
-      await tenantStorage.updateTask(parseInt(req.params.id), { 
+      await storage.updateTask(parseInt(req.params.id), { 
         rewardApprovedAt: now,
         rewardApprovedBy: req.session.userId,
         rewardPaidAt: now 
