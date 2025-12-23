@@ -35,6 +35,8 @@ interface Task {
   customerId?: number;
   isRecurring?: boolean;
   recurringFrequency?: string;
+  rewardAmount?: string;
+  rewardPaidAt?: string;
 }
 
 interface User {
@@ -111,6 +113,7 @@ export function TasksPage() {
     assignmentType: 'individual',
     isRecurring: false,
     recurringFrequency: '',
+    rewardAmount: '',
   });
 
   const defaultWorkflowNodes: Node[] = useMemo(() => {
@@ -479,6 +482,7 @@ export function TasksPage() {
           businessId: formData.businessId || null,
           assignedTo: formData.assignedTo ? parseInt(formData.assignedTo) : null,
           dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : null,
+          rewardAmount: formData.rewardAmount ? parseFloat(formData.rewardAmount) : null,
         }),
       });
       
@@ -573,6 +577,7 @@ export function TasksPage() {
         assignmentType: task.assignmentType || 'individual',
         isRecurring: task.isRecurring || false,
         recurringFrequency: task.recurringFrequency || '',
+        rewardAmount: task.rewardAmount || '',
       });
     } else {
       setEditingTask(null);
@@ -588,6 +593,7 @@ export function TasksPage() {
         assignmentType: 'individual',
         isRecurring: false,
         recurringFrequency: '',
+        rewardAmount: '',
       });
     }
     setIsModalOpen(true);
@@ -757,6 +763,11 @@ export function TasksPage() {
                                   <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-green-50 text-green-600 rounded text-xs">
                                     <User size={10} />
                                     {getUserName(task.assignedTo)}
+                                  </span>
+                                )}
+                                {task.rewardAmount && parseFloat(task.rewardAmount) > 0 && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-yellow-50 text-yellow-700 rounded text-xs font-medium">
+                                    ¥{parseFloat(task.rewardAmount).toLocaleString()}
                                   </span>
                                 )}
                               </div>
@@ -1001,6 +1012,11 @@ export function TasksPage() {
                             {format(new Date(task.dueDate), 'yyyy/MM/dd')}
                           </p>
                         )}
+                        {task.rewardAmount && parseFloat(task.rewardAmount) > 0 && (
+                          <p className="text-xs text-yellow-700 mb-2 flex items-center gap-1 font-medium">
+                            報酬: ¥{parseFloat(task.rewardAmount).toLocaleString()}
+                          </p>
+                        )}
                         <div className="flex justify-between items-center pt-2 border-t border-slate-100">
                           <select
                             value={task.status}
@@ -1190,6 +1206,17 @@ export function TasksPage() {
                   </select>
                 </div>
               )}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">報酬金額（円）</label>
+                <input
+                  type="number"
+                  value={formData.rewardAmount}
+                  onChange={(e) => setFormData({ ...formData, rewardAmount: e.target.value })}
+                  className="input-field"
+                  placeholder="例: 5000"
+                  min="0"
+                />
+              </div>
               <div className="p-3 bg-slate-50 rounded-xl">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input

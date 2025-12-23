@@ -470,8 +470,67 @@ export function registerRoutes(app: Express) {
         return res.status(403).json({ message: '担当タスクのみ編集できます' });
       }
     }
+    
     const updated = await storage.updateTask(parseInt(req.params.id), req.body);
-    res.json(updated);
+    
+    const freshTask = await storage.getTask(parseInt(req.params.id));
+    const isNowCompleted = freshTask?.status === 'completed';
+    const wasNotCompleted = task.status !== 'completed';
+    const hasReward = freshTask?.rewardAmount && parseFloat(String(freshTask.rewardAmount)) > 0;
+    const notPaidYet = !freshTask?.rewardPaidAt;
+    
+    if (isNowCompleted && wasNotCompleted && hasReward && notPaidYet && freshTask?.assignedTo) {
+      try {
+        const allEmployees = await storage.getEmployees();
+        const employee = allEmployees.find(e => e.userId === freshTask.assignedTo);
+        
+        if (employee) {
+          const now = new Date();
+          const currentYear = now.getFullYear();
+          const currentMonth = now.getMonth() + 1;
+          
+          const salaries = await storage.getStaffSalaries(employee.id);
+          let currentSalary = salaries.find(s => s.year === currentYear && s.month === currentMonth);
+          
+          if (!currentSalary) {
+            const employeeBaseSalary = employee.salary ? String(employee.salary) : "0";
+            currentSalary = await storage.createStaffSalary({
+              employeeId: employee.id,
+              year: currentYear,
+              month: currentMonth,
+              baseSalary: employeeBaseSalary,
+              overtime: "0",
+              bonus: "0",
+              deductions: "0",
+              netSalary: employeeBaseSalary,
+              status: "pending",
+              createdBy: req.session.userId,
+            });
+          }
+          
+          const rewardAmount = parseFloat(String(freshTask.rewardAmount) || "0");
+          const currentBonus = parseFloat(String(currentSalary.bonus) || "0");
+          const newBonus = (currentBonus + rewardAmount).toFixed(2);
+          
+          const baseSalaryValue = parseFloat(String(currentSalary.baseSalary) || "0");
+          const overtimeValue = parseFloat(String(currentSalary.overtime) || "0");
+          const deductionsValue = parseFloat(String(currentSalary.deductions) || "0");
+          const newNetSalary = (baseSalaryValue + overtimeValue + parseFloat(newBonus) - deductionsValue).toFixed(2);
+          
+          await storage.updateStaffSalary(currentSalary.id, {
+            bonus: newBonus,
+            netSalary: newNetSalary,
+          });
+          
+          await storage.updateTask(parseInt(req.params.id), { rewardPaidAt: new Date() });
+        }
+      } catch (err) {
+        console.error('報酬の給料反映エラー:', err);
+      }
+    }
+    
+    const finalTask = await storage.getTask(parseInt(req.params.id));
+    res.json(finalTask);
   });
 
   app.delete('/api/tasks/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
