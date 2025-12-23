@@ -173,6 +173,17 @@ export function StaffPage() {
     return `SJ-${random}`;
   };
   const [memoForm, setMemoForm] = useState({ content: '', category: 'general' });
+  const [editingSystem, setEditingSystem] = useState(false);
+  const [systemForm, setSystemForm] = useState({
+    salary: '',
+    hireDate: '',
+    employeeNumber: '',
+    bankName: '',
+    bankBranch: '',
+    bankAccountType: '普通',
+    bankAccountNumber: '',
+    bankAccountHolder: '',
+  });
   const [selectedTask, setSelectedTask] = useState<StaffTask | null>(null);
   const [showEvidenceForm, setShowEvidenceForm] = useState(false);
   const [evidenceForm, setEvidenceForm] = useState({ description: '' });
@@ -1872,80 +1883,265 @@ export function StaffPage() {
 
         {detailTab === 'system' && (
           <div className="card overflow-hidden">
-            <div className="p-5 border-b border-slate-100">
+            <div className="p-5 border-b border-slate-100 flex justify-between items-center">
               <h2 className="text-lg font-bold text-slate-800">給与システム設定</h2>
+              {employeeData && !editingSystem && (
+                <button
+                  onClick={() => {
+                    setEditingSystem(true);
+                    setSystemForm({
+                      salary: employeeData.salary?.toString() || '',
+                      hireDate: employeeData.hireDate || '',
+                      employeeNumber: employeeData.employeeNumber || '',
+                      bankName: employeeData.bankName || selectedStaff?.bankName || '',
+                      bankBranch: employeeData.bankBranch || selectedStaff?.bankBranch || '',
+                      bankAccountType: employeeData.bankAccountType || selectedStaff?.bankAccountType || '普通',
+                      bankAccountNumber: employeeData.bankAccountNumber || selectedStaff?.bankAccountNumber || '',
+                      bankAccountHolder: employeeData.bankAccountHolder || selectedStaff?.bankAccountHolder || '',
+                    });
+                  }}
+                  className="btn-secondary text-sm flex items-center gap-2"
+                >
+                  <Edit size={16} />
+                  編集
+                </button>
+              )}
             </div>
             <div className="p-5 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-slate-50 rounded-xl p-4">
-                  <h3 className="font-medium text-slate-800 mb-3 flex items-center gap-2">
-                    <DollarSign size={18} className="text-primary-500" />
-                    基本給与情報
-                  </h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">基本給</span>
-                      <span className="font-medium text-slate-800">¥{Number(employeeData?.salary || 0).toLocaleString()}/月</span>
+              {editingSystem ? (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-slate-50 rounded-xl p-4">
+                      <h3 className="font-medium text-slate-800 mb-3 flex items-center gap-2">
+                        <DollarSign size={18} className="text-primary-500" />
+                        基本給与情報
+                      </h3>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-xs text-slate-500">基本給（月）</label>
+                          <input
+                            type="number"
+                            className="input-field text-sm"
+                            value={systemForm.salary}
+                            onChange={(e) => setSystemForm({ ...systemForm, salary: e.target.value })}
+                            placeholder="例: 300000"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-slate-500">入社日</label>
+                          <input
+                            type="date"
+                            className="input-field text-sm"
+                            value={systemForm.hireDate}
+                            onChange={(e) => setSystemForm({ ...systemForm, hireDate: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-slate-500">社員番号</label>
+                          <input
+                            type="text"
+                            className="input-field text-sm"
+                            value={systemForm.employeeNumber}
+                            onChange={(e) => setSystemForm({ ...systemForm, employeeNumber: e.target.value })}
+                            placeholder="例: EMP001"
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">入社日</span>
-                      <span className="font-medium text-slate-800">{employeeData?.hireDate ? format(new Date(employeeData.hireDate), 'yyyy/MM/dd') : '-'}</span>
+                    <div className="bg-slate-50 rounded-xl p-4">
+                      <h3 className="font-medium text-slate-800 mb-3 flex items-center gap-2">
+                        <Building2 size={18} className="text-primary-500" />
+                        支払い情報
+                      </h3>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">締め日</span>
+                          <span className="font-medium text-slate-800">毎月末日</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">支払日</span>
+                          <span className="font-medium text-slate-800">翌月25日</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">支払方法</span>
+                          <span className="font-medium text-slate-800">銀行振込</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">社員番号</span>
-                      <span className="font-medium text-slate-800">{employeeData?.employeeNumber || '-'}</span>
+                  </div>
+                  <div className="bg-blue-50 rounded-xl p-4">
+                    <h3 className="font-medium text-blue-800 mb-3 flex items-center gap-2">
+                      <CreditCard size={18} />
+                      銀行口座情報
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs text-blue-600">銀行名</label>
+                        <input
+                          type="text"
+                          className="input-field text-sm"
+                          value={systemForm.bankName}
+                          onChange={(e) => setSystemForm({ ...systemForm, bankName: e.target.value })}
+                          placeholder="例: 三菱UFJ銀行"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-blue-600">支店名</label>
+                        <input
+                          type="text"
+                          className="input-field text-sm"
+                          value={systemForm.bankBranch}
+                          onChange={(e) => setSystemForm({ ...systemForm, bankBranch: e.target.value })}
+                          placeholder="例: 渋谷支店"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-blue-600">口座種別</label>
+                        <select
+                          className="input-field text-sm"
+                          value={systemForm.bankAccountType}
+                          onChange={(e) => setSystemForm({ ...systemForm, bankAccountType: e.target.value })}
+                        >
+                          <option value="普通">普通</option>
+                          <option value="当座">当座</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs text-blue-600">口座番号</label>
+                        <input
+                          type="text"
+                          className="input-field text-sm"
+                          value={systemForm.bankAccountNumber}
+                          onChange={(e) => setSystemForm({ ...systemForm, bankAccountNumber: e.target.value })}
+                          placeholder="例: 1234567"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="text-xs text-blue-600">口座名義</label>
+                        <input
+                          type="text"
+                          className="input-field text-sm"
+                          value={systemForm.bankAccountHolder}
+                          onChange={(e) => setSystemForm({ ...systemForm, bankAccountHolder: e.target.value })}
+                          placeholder="例: ヤマダ タロウ"
+                        />
+                      </div>
                     </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={async () => {
+                        try {
+                          const res = await fetch(`/api/employees/${employeeData.id}`, {
+                            method: 'PATCH',
+                            credentials: 'include',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              salary: systemForm.salary ? parseFloat(systemForm.salary) : null,
+                              hireDate: systemForm.hireDate || null,
+                              employeeNumber: systemForm.employeeNumber || null,
+                              bankName: systemForm.bankName || null,
+                              bankBranch: systemForm.bankBranch || null,
+                              bankAccountType: systemForm.bankAccountType || null,
+                              bankAccountNumber: systemForm.bankAccountNumber || null,
+                              bankAccountHolder: systemForm.bankAccountHolder || null,
+                            }),
+                          });
+                          if (res.ok) {
+                            const updated = await res.json();
+                            setEmployeeData(updated);
+                            setEditingSystem(false);
+                          }
+                        } catch (err) {
+                          console.error('Failed to update system settings:', err);
+                        }
+                      }}
+                      className="btn-primary text-sm"
+                    >
+                      保存
+                    </button>
+                    <button
+                      onClick={() => setEditingSystem(false)}
+                      className="btn-secondary text-sm"
+                    >
+                      キャンセル
+                    </button>
                   </div>
                 </div>
-                <div className="bg-slate-50 rounded-xl p-4">
-                  <h3 className="font-medium text-slate-800 mb-3 flex items-center gap-2">
-                    <Building2 size={18} className="text-primary-500" />
-                    支払い情報
-                  </h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">締め日</span>
-                      <span className="font-medium text-slate-800">毎月末日</span>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-slate-50 rounded-xl p-4">
+                      <h3 className="font-medium text-slate-800 mb-3 flex items-center gap-2">
+                        <DollarSign size={18} className="text-primary-500" />
+                        基本給与情報
+                      </h3>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">基本給</span>
+                          <span className="font-medium text-slate-800">¥{Number(employeeData?.salary || 0).toLocaleString()}/月</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">入社日</span>
+                          <span className="font-medium text-slate-800">{employeeData?.hireDate ? format(new Date(employeeData.hireDate), 'yyyy/MM/dd') : '-'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">社員番号</span>
+                          <span className="font-medium text-slate-800">{employeeData?.employeeNumber || '-'}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">支払日</span>
-                      <span className="font-medium text-slate-800">翌月25日</span>
+                    <div className="bg-slate-50 rounded-xl p-4">
+                      <h3 className="font-medium text-slate-800 mb-3 flex items-center gap-2">
+                        <Building2 size={18} className="text-primary-500" />
+                        支払い情報
+                      </h3>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">締め日</span>
+                          <span className="font-medium text-slate-800">毎月末日</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">支払日</span>
+                          <span className="font-medium text-slate-800">翌月25日</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">支払方法</span>
+                          <span className="font-medium text-slate-800">銀行振込</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">支払方法</span>
-                      <span className="font-medium text-slate-800">銀行振込</span>
+                  </div>
+                  <div className="bg-blue-50 rounded-xl p-4">
+                    <h3 className="font-medium text-blue-800 mb-3 flex items-center gap-2">
+                      <CreditCard size={18} />
+                      銀行口座情報
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-blue-600">銀行名</span>
+                        <p className="font-medium text-blue-900">{employeeData?.bankName || selectedStaff?.bankName || '-'}</p>
+                      </div>
+                      <div>
+                        <span className="text-blue-600">支店名</span>
+                        <p className="font-medium text-blue-900">{employeeData?.bankBranch || selectedStaff?.bankBranch || '-'}</p>
+                      </div>
+                      <div>
+                        <span className="text-blue-600">口座種別</span>
+                        <p className="font-medium text-blue-900">{employeeData?.bankAccountType || selectedStaff?.bankAccountType || '-'}</p>
+                      </div>
+                      <div>
+                        <span className="text-blue-600">口座番号</span>
+                        <p className="font-medium text-blue-900">{employeeData?.bankAccountNumber || selectedStaff?.bankAccountNumber || '-'}</p>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-blue-600">口座名義</span>
+                        <p className="font-medium text-blue-900">{employeeData?.bankAccountHolder || selectedStaff?.bankAccountHolder || '-'}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-              <div className="bg-blue-50 rounded-xl p-4">
-                <h3 className="font-medium text-blue-800 mb-3 flex items-center gap-2">
-                  <CreditCard size={18} />
-                  銀行口座情報
-                </h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-blue-600">銀行名</span>
-                    <p className="font-medium text-blue-900">{employeeData?.bankName || selectedStaff?.bankName || '-'}</p>
-                  </div>
-                  <div>
-                    <span className="text-blue-600">支店名</span>
-                    <p className="font-medium text-blue-900">{employeeData?.bankBranch || selectedStaff?.bankBranch || '-'}</p>
-                  </div>
-                  <div>
-                    <span className="text-blue-600">口座種別</span>
-                    <p className="font-medium text-blue-900">{employeeData?.bankAccountType || selectedStaff?.bankAccountType || '-'}</p>
-                  </div>
-                  <div>
-                    <span className="text-blue-600">口座番号</span>
-                    <p className="font-medium text-blue-900">{employeeData?.bankAccountNumber || selectedStaff?.bankAccountNumber || '-'}</p>
-                  </div>
-                  <div className="col-span-2">
-                    <span className="text-blue-600">口座名義</span>
-                    <p className="font-medium text-blue-900">{employeeData?.bankAccountHolder || selectedStaff?.bankAccountHolder || '-'}</p>
-                  </div>
-                </div>
-              </div>
+                </>
+              )}
               <div className="bg-slate-50 rounded-xl p-4">
                 <h3 className="font-medium text-slate-800 mb-3">給与履歴サマリー</h3>
                 <div className="grid grid-cols-3 gap-4 text-center">
