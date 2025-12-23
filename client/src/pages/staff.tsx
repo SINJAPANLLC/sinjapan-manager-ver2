@@ -239,7 +239,7 @@ export function StaffPage() {
   const updateTaskStatus = async (taskId: number, status: string) => {
     try {
       const res = await fetch(`/api/tasks/${taskId}`, {
-        method: 'PUT',
+        method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
