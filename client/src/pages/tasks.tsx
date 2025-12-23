@@ -476,7 +476,7 @@ export function TasksPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
-          businessId: formData.businessId ? parseInt(formData.businessId) : null,
+          businessId: formData.businessId || null,
           assignedTo: formData.assignedTo ? parseInt(formData.assignedTo) : null,
           dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : null,
         }),
@@ -547,7 +547,7 @@ export function TasksPage() {
         description: task.description,
         priority: task.priority,
         category: selectedCategory,
-        businessId: aiBusinessId ? parseInt(aiBusinessId) : null,
+        businessId: aiBusinessId || null,
         status: 'pending',
       }),
     });

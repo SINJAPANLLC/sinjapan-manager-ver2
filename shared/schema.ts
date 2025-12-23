@@ -85,7 +85,7 @@ export const tasks = pgTable("tasks", {
   status: text("status").notNull().default("pending"),
   priority: text("priority").notNull().default("medium"),
   category: text("category").notNull().default("direct"),
-  businessId: integer("business_id").references(() => businesses.id, { onDelete: "set null" }),
+  businessId: varchar("business_id", { length: 255 }),
   dueDate: timestamp("due_date"),
   assignedTo: integer("assigned_to").references(() => users.id, { onDelete: "set null" }),
   assignmentType: text("assignment_type").default("individual"),
