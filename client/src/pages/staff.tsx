@@ -90,6 +90,10 @@ interface Shift {
   breakMinutes?: number;
   workMinutes?: number;
   projectName?: string;
+  amount?: string | number;
+  approvalStatus?: 'pending' | 'approved' | 'rejected';
+  approvedBy?: number | null;
+  approvedAt?: string | null;
   notes?: string;
 }
 
@@ -112,6 +116,9 @@ interface StaffTask {
   status: string;
   priority: string;
   dueDate?: string;
+  rewardAmount?: string;
+  rewardApprovedAt?: string | null;
+  rewardApprovedBy?: number | null;
   createdAt: string;
 }
 
@@ -1180,26 +1187,77 @@ export function StaffPage() {
             {salaries.length > 0 && (
               <>
                 <div className="divide-y divide-slate-100">
-                  {salaries.map((sal) => (
-                    <div
-                      key={sal.id}
-                      className="p-4 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition-colors"
-                      onClick={() => openEditSalary(sal)}
-                    >
-                      <div>
-                        <p className="font-medium text-slate-800">
-                          {sal.year}年{sal.month}月
-                          {sal.paidAt && <span className="text-sm text-slate-500 ml-2">({format(new Date(sal.paidAt), 'yyyy/MM/dd')})</span>}
-                        </p>
-                        <p className="text-sm text-slate-500">
-                          報酬: ¥{Number(sal.baseSalary).toLocaleString()}
-                                                  </p>
+                  {salaries.map((sal) => {
+                    const monthTasks = staffTasks.filter((t) => {
+                      if (!t.rewardApprovedAt) return false;
+                      const approvalDate = new Date(t.rewardApprovedAt);
+                      return approvalDate.getFullYear() === sal.year && approvalDate.getMonth() + 1 === sal.month;
+                    });
+                    const approvedTaskRewards = monthTasks.reduce((sum, t) => sum + (parseFloat(t.rewardAmount || '0') || 0), 0);
+                    
+                    const monthShifts = shifts.filter((s) => {
+                      if (s.approvalStatus !== 'approved') return false;
+                      const approvedAt = s.approvedAt;
+                      if (approvedAt) {
+                        const approvalDate = new Date(approvedAt);
+                        return approvalDate.getFullYear() === sal.year && approvalDate.getMonth() + 1 === sal.month;
+                      }
+                      const shiftDate = new Date(s.date);
+                      return shiftDate.getFullYear() === sal.year && shiftDate.getMonth() + 1 === sal.month;
+                    });
+                    const approvedShiftAmount = monthShifts.reduce((sum, s) => sum + (Number(s.amount || 0)), 0);
+                    
+                    return (
+                      <div
+                        key={sal.id}
+                        className="p-4 cursor-pointer hover:bg-slate-50 transition-colors"
+                        onClick={() => openEditSalary(sal)}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <p className="font-medium text-slate-800 mb-2">
+                              {sal.year}年{sal.month}月
+                              {sal.paidAt && <span className="text-sm text-slate-500 ml-2">({format(new Date(sal.paidAt), 'yyyy/MM/dd')})</span>}
+                            </p>
+                            <div className="space-y-1 text-sm text-slate-600">
+                              <div className="flex justify-between items-center">
+                                <span>基本報酬:</span>
+                                <span>¥{Number(sal.baseSalary || 0).toLocaleString()}</span>
+                              </div>
+                              {approvedTaskRewards > 0 && (
+                                <div className="flex justify-between items-center text-green-600">
+                                  <span>承認済タスク報酬 ({monthTasks.length}件):</span>
+                                  <span>+¥{approvedTaskRewards.toLocaleString()}</span>
+                                </div>
+                              )}
+                              {approvedShiftAmount > 0 && (
+                                <div className="flex justify-between items-center text-blue-600">
+                                  <span>承認済シフト ({monthShifts.length}件):</span>
+                                  <span>+¥{approvedShiftAmount.toLocaleString()}</span>
+                                </div>
+                              )}
+                              {Number(sal.deductions || 0) > 0 && (
+                                <div className="flex justify-between items-center text-red-600">
+                                  <span>控除:</span>
+                                  <span>-¥{Number(sal.deductions || 0).toLocaleString()}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-lg text-primary-600">
+                              ¥{Number(sal.netSalary).toLocaleString()}
+                            </p>
+                            {(approvedTaskRewards > 0 || approvedShiftAmount > 0) && (
+                              <p className="text-xs text-slate-500">
+                                (+ タスク/シフト: ¥{(approvedTaskRewards + approvedShiftAmount).toLocaleString()})
+                              </p>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <p className="font-bold text-lg text-primary-600">
-                        ¥{Number(sal.netSalary).toLocaleString()}
-                      </p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
                   <p className="font-bold text-slate-700">合計</p>
@@ -1440,8 +1498,8 @@ export function StaffPage() {
                             {day}
                           </div>
                           {dayShifts.map((shift) => {
-                            const approvalStatus = (shift as any).approvalStatus || 'pending';
-                            const amount = Number((shift as any).amount || 0);
+                            const approvalStatus = shift.approvalStatus || 'pending';
+                            const amount = Number(shift.amount || 0);
                             return (
                               <div
                                 key={shift.id}
@@ -1551,17 +1609,17 @@ export function StaffPage() {
                         <div className="flex items-center gap-2 mt-1">
                           <span className={cn(
                             "px-3 py-1 rounded-full text-xs font-medium",
-                            (editingShift as any)?.approvalStatus === 'approved' && "bg-green-100 text-green-700",
-                            (editingShift as any)?.approvalStatus === 'rejected' && "bg-red-100 text-red-700",
-                            (!(editingShift as any)?.approvalStatus || (editingShift as any)?.approvalStatus === 'pending') && "bg-yellow-100 text-yellow-700"
+                            editingShift?.approvalStatus === 'approved' && "bg-green-100 text-green-700",
+                            editingShift?.approvalStatus === 'rejected' && "bg-red-100 text-red-700",
+                            (!editingShift?.approvalStatus || editingShift?.approvalStatus === 'pending') && "bg-yellow-100 text-yellow-700"
                           )}>
-                            {(editingShift as any)?.approvalStatus === 'approved' ? '承認済' :
-                             (editingShift as any)?.approvalStatus === 'rejected' ? '却下' : '未承認'}
+                            {editingShift?.approvalStatus === 'approved' ? '承認済' :
+                             editingShift?.approvalStatus === 'rejected' ? '却下' : '未承認'}
                           </span>
                         </div>
                       </div>
                     </div>
-                    {canApprove && (editingShift as any)?.approvalStatus !== 'approved' && (
+                    {canApprove && editingShift?.approvalStatus !== 'approved' && (
                       <div className="flex gap-2 pt-2">
                         <button
                           onClick={() => {
@@ -1574,7 +1632,7 @@ export function StaffPage() {
                           <CheckCircle size={16} />
                           承認する
                         </button>
-                        {(editingShift as any)?.approvalStatus !== 'rejected' && (
+                        {editingShift?.approvalStatus !== 'rejected' && (
                           <button
                             onClick={() => {
                               handleApproveShift(editingShift.id, false);
