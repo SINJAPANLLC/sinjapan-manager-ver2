@@ -88,8 +88,13 @@ export const tasks = pgTable("tasks", {
   businessId: integer("business_id").references(() => businesses.id, { onDelete: "set null" }),
   dueDate: timestamp("due_date"),
   assignedTo: integer("assigned_to").references(() => users.id, { onDelete: "set null" }),
+  assignmentType: text("assignment_type").default("individual"),
   createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
   customerId: integer("customer_id").references(() => customers.id, { onDelete: "set null" }),
+  isRecurring: boolean("is_recurring").default(false),
+  recurringFrequency: text("recurring_frequency"),
+  parentTaskId: integer("parent_task_id"),
+  lastGeneratedAt: timestamp("last_generated_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

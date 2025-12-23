@@ -88,6 +88,59 @@ const requireRole = (...roles: string[]) => {
   };
 };
 
+async function generateRecurringTasks(tenantStorage: any): Promise<number> {
+  const allTasks = await tenantStorage.getTasks(null, 'admin');
+  const recurringTasks = allTasks.filter((t: any) => t.isRecurring && t.recurringFrequency);
+  
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let generatedCount = 0;
+  
+  for (const task of recurringTasks) {
+    const lastGenerated = task.lastGeneratedAt ? new Date(task.lastGeneratedAt) : null;
+    const lastGeneratedDate = lastGenerated 
+      ? new Date(lastGenerated.getFullYear(), lastGenerated.getMonth(), lastGenerated.getDate())
+      : null;
+    
+    let shouldGenerate = false;
+    
+    if (!lastGeneratedDate) {
+      shouldGenerate = true;
+    } else {
+      const diffDays = Math.floor((today.getTime() - lastGeneratedDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (task.recurringFrequency === 'daily' && diffDays >= 1) {
+        shouldGenerate = true;
+      } else if (task.recurringFrequency === 'weekly' && diffDays >= 7) {
+        shouldGenerate = true;
+      } else if (task.recurringFrequency === 'monthly' && diffDays >= 30) {
+        shouldGenerate = true;
+      }
+    }
+    
+    if (shouldGenerate) {
+      await tenantStorage.createTask({
+        title: task.title,
+        description: task.description,
+        status: 'pending',
+        priority: task.priority,
+        category: task.category,
+        businessId: task.businessId,
+        dueDate: new Date(today.getTime() + 24 * 60 * 60 * 1000),
+        assignedTo: task.assignedTo,
+        assignmentType: task.assignmentType,
+        createdBy: task.createdBy,
+        parentTaskId: task.id,
+      });
+      
+      await storage.updateTask(task.id, { lastGeneratedAt: now });
+      generatedCount++;
+    }
+  }
+  
+  return generatedCount;
+}
+
 export function registerRoutes(app: Express) {
   app.get('/api/tenant', async (req: Request, res: Response) => {
     try {
@@ -323,7 +376,32 @@ export function registerRoutes(app: Express) {
 
   app.post('/api/tasks', requireRole('admin', 'ceo', 'manager', 'staff'), async (req: Request, res: Response) => {
     const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
-    const task = await tenantStorage.createTask({ ...req.body, createdBy: req.session.userId });
+    const { assignmentType, ...taskData } = req.body;
+    
+    if (assignmentType && assignmentType !== 'individual') {
+      const allUsers = await storage.getUsers();
+      let targetRole = '';
+      if (assignmentType === 'all_staff') targetRole = 'staff';
+      else if (assignmentType === 'all_agency') targetRole = 'agency';
+      else if (assignmentType === 'all_client') targetRole = 'client';
+      
+      const targetUsers = allUsers.filter(u => u.role === targetRole);
+      const createdTasks = [];
+      
+      for (const targetUser of targetUsers) {
+        const task = await tenantStorage.createTask({
+          ...taskData,
+          assignedTo: targetUser.id,
+          assignmentType,
+          createdBy: req.session.userId,
+        });
+        createdTasks.push(task);
+      }
+      
+      return res.json(createdTasks.length > 0 ? createdTasks[0] : { message: '対象ユーザーがいません' });
+    }
+    
+    const task = await tenantStorage.createTask({ ...taskData, assignmentType, createdBy: req.session.userId });
     res.json(task);
   });
 
@@ -345,6 +423,17 @@ export function registerRoutes(app: Express) {
   app.delete('/api/tasks/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     await storage.deleteTask(parseInt(req.params.id));
     res.json({ message: '削除しました' });
+  });
+
+  app.post('/api/tasks/generate-recurring', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const count = await generateRecurringTasks(tenantStorage);
+      res.json({ message: `${count}件の繰り返しタスクを生成しました`, count });
+    } catch (err) {
+      console.error('繰り返しタスク生成エラー:', err);
+      res.status(500).json({ message: '繰り返しタスク生成に失敗しました' });
+    }
   });
 
   app.get('/api/notifications', requireAuth, async (req: Request, res: Response) => {

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from '../hooks/use-auth';
-import { Plus, Edit2, Trash2, CheckCircle, Clock, AlertCircle, X, Sparkles, Loader2, Target, Users2, Expand, ShieldAlert, Workflow, Briefcase, Network, Download, Save, RotateCcw, Maximize2, Minimize2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, CheckCircle, Clock, AlertCircle, X, Sparkles, Loader2, Target, Users2, Expand, ShieldAlert, Workflow, Briefcase, Network, Download, Save, RotateCcw, Maximize2, Minimize2, Building2, Repeat } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 import {
@@ -30,8 +30,11 @@ interface Task {
   businessId?: number;
   dueDate?: string;
   assignedTo?: number;
+  assignmentType?: string;
   createdBy?: number;
   customerId?: number;
+  isRecurring?: boolean;
+  recurringFrequency?: string;
 }
 
 interface User {
@@ -69,6 +72,9 @@ const categories = [
   { id: 'expansion', label: '拡張', icon: Expand, color: 'from-green-500 to-green-600', bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-700' },
   { id: 'risk', label: 'リスク', icon: ShieldAlert, color: 'from-amber-500 to-amber-600', bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700' },
   { id: 'workflow', label: 'ワークフロー', icon: Workflow, color: 'from-purple-500 to-purple-600', bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-700' },
+  { id: 'staff', label: 'スタッフ', icon: Users2, color: 'from-cyan-500 to-cyan-600', bg: 'bg-cyan-50', border: 'border-cyan-200', text: 'text-cyan-700' },
+  { id: 'agency', label: '代理店', icon: Building2, color: 'from-indigo-500 to-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-200', text: 'text-indigo-700' },
+  { id: 'client', label: 'クライアント', icon: Briefcase, color: 'from-pink-500 to-pink-600', bg: 'bg-pink-50', border: 'border-pink-200', text: 'text-pink-700' },
 ];
 
 export function TasksPage() {
@@ -102,6 +108,9 @@ export function TasksPage() {
     businessId: '',
     dueDate: '',
     assignedTo: '',
+    assignmentType: 'individual',
+    isRecurring: false,
+    recurringFrequency: '',
   });
 
   const defaultWorkflowNodes: Node[] = useMemo(() => {
@@ -553,6 +562,9 @@ export function TasksPage() {
         businessId: task.businessId?.toString() || '',
         dueDate: task.dueDate ? format(new Date(task.dueDate), 'yyyy-MM-dd') : '',
         assignedTo: task.assignedTo?.toString() || '',
+        assignmentType: task.assignmentType || 'individual',
+        isRecurring: task.isRecurring || false,
+        recurringFrequency: task.recurringFrequency || '',
       });
     } else {
       setEditingTask(null);
@@ -565,6 +577,9 @@ export function TasksPage() {
         businessId: '',
         dueDate: '',
         assignedTo: '',
+        assignmentType: 'individual',
+        isRecurring: false,
+        recurringFrequency: '',
       });
     }
     setIsModalOpen(true);
@@ -704,7 +719,23 @@ export function TasksPage() {
                           className="p-3 bg-white rounded-lg border border-slate-100 shadow-soft hover:shadow-card transition-all duration-200"
                         >
                           <div className="flex justify-between items-start mb-1.5">
-                            <h3 className="font-medium text-slate-800 text-sm">{task.title}</h3>
+                            <div className="flex-1">
+                              <h3 className="font-medium text-slate-800 text-sm">{task.title}</h3>
+                              <div className="flex gap-1 mt-1 flex-wrap">
+                                {task.isRecurring && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-violet-50 text-violet-600 rounded text-xs">
+                                    <Repeat size={10} />
+                                    {task.recurringFrequency === 'daily' ? '毎日' : task.recurringFrequency === 'weekly' ? '毎週' : '毎月'}
+                                  </span>
+                                )}
+                                {task.assignmentType && task.assignmentType !== 'individual' && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-cyan-50 text-cyan-600 rounded text-xs">
+                                    <Users2 size={10} />
+                                    {task.assignmentType === 'all_staff' ? '全スタッフ' : task.assignmentType === 'all_agency' ? '全代理店' : '全クライアント'}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                             <span className={cn('px-1.5 py-0.5 rounded text-xs font-medium', getPriorityBadge(task.priority))}>
                               {getPriorityLabel(task.priority)}
                             </span>
@@ -903,7 +934,23 @@ export function TasksPage() {
                         className="p-3 bg-white rounded-lg border border-slate-100 shadow-soft hover:shadow-card transition-all duration-200"
                       >
                         <div className="flex justify-between items-start mb-1.5">
-                          <h3 className="font-medium text-slate-800 text-sm">{task.title}</h3>
+                          <div className="flex-1">
+                            <h3 className="font-medium text-slate-800 text-sm">{task.title}</h3>
+                            <div className="flex gap-1 mt-1 flex-wrap">
+                              {task.isRecurring && (
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-violet-50 text-violet-600 rounded text-xs">
+                                  <Repeat size={10} />
+                                  {task.recurringFrequency === 'daily' ? '毎日' : task.recurringFrequency === 'weekly' ? '毎週' : '毎月'}
+                                </span>
+                              )}
+                              {task.assignmentType && task.assignmentType !== 'individual' && (
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-cyan-50 text-cyan-600 rounded text-xs">
+                                  <Users2 size={10} />
+                                  {task.assignmentType === 'all_staff' ? '全スタッフ' : task.assignmentType === 'all_agency' ? '全代理店' : '全クライアント'}
+                                </span>
+                              )}
+                            </div>
+                          </div>
                           <span className={cn('px-1.5 py-0.5 rounded text-xs font-medium', getPriorityBadge(task.priority))}>
                             {getPriorityLabel(task.priority)}
                           </span>
@@ -1072,16 +1119,32 @@ export function TasksPage() {
                   </select>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">期限</label>
-                  <input
-                    type="date"
-                    value={formData.dueDate}
-                    onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                    className="input-field"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">期限</label>
+                <input
+                  type="date"
+                  value={formData.dueDate}
+                  onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <Users2 size={14} className="inline mr-1" />
+                  割り当て方法
+                </label>
+                <select
+                  value={formData.assignmentType}
+                  onChange={(e) => setFormData({ ...formData, assignmentType: e.target.value, assignedTo: '' })}
+                  className="input-field"
+                >
+                  <option value="individual">個別ユーザー</option>
+                  <option value="all_staff">全てのスタッフ</option>
+                  <option value="all_agency">全ての代理店</option>
+                  <option value="all_client">全てのクライアント</option>
+                </select>
+              </div>
+              {formData.assignmentType === 'individual' && (
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">担当者</label>
                   <select
@@ -1095,6 +1158,31 @@ export function TasksPage() {
                     ))}
                   </select>
                 </div>
+              )}
+              <div className="p-3 bg-slate-50 rounded-xl">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.isRecurring}
+                    onChange={(e) => setFormData({ ...formData, isRecurring: e.target.checked, recurringFrequency: e.target.checked ? 'daily' : '' })}
+                    className="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+                  />
+                  <Repeat size={16} className="text-slate-600" />
+                  <span className="text-sm font-medium text-slate-700">繰り返しタスク</span>
+                </label>
+                {formData.isRecurring && (
+                  <div className="mt-3">
+                    <select
+                      value={formData.recurringFrequency}
+                      onChange={(e) => setFormData({ ...formData, recurringFrequency: e.target.value })}
+                      className="input-field"
+                    >
+                      <option value="daily">毎日</option>
+                      <option value="weekly">毎週</option>
+                      <option value="monthly">毎月</option>
+                    </select>
+                  </div>
+                )}
               </div>
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
                 <button type="button" onClick={closeModal} className="btn-secondary">
