@@ -435,7 +435,12 @@ export const storage = {
     return true;
   },
 
-  async getBusinessSales(businessId: string): Promise<BusinessSale[]> {
+  async getBusinessSales(businessId: string, userId?: number): Promise<BusinessSale[]> {
+    if (userId) {
+      return db.select().from(businessSales)
+        .where(and(eq(businessSales.businessId, businessId), eq(businessSales.createdBy, userId)))
+        .orderBy(desc(businessSales.saleDate));
+    }
     return db.select().from(businessSales)
       .where(eq(businessSales.businessId, businessId))
       .orderBy(desc(businessSales.saleDate));
@@ -807,10 +812,17 @@ export const storage = {
   },
 
   // Investments
-  async getInvestments(businessId?: string): Promise<Investment[]> {
+  async getInvestments(businessId?: string, userId?: number): Promise<Investment[]> {
+    const conditions = [];
     if (businessId) {
+      conditions.push(eq(investments.businessId, businessId));
+    }
+    if (userId) {
+      conditions.push(eq(investments.createdBy, userId));
+    }
+    if (conditions.length > 0) {
       return db.select().from(investments)
-        .where(eq(investments.businessId, businessId))
+        .where(and(...conditions))
         .orderBy(desc(investments.investmentDate));
     }
     return db.select().from(investments).orderBy(desc(investments.investmentDate));

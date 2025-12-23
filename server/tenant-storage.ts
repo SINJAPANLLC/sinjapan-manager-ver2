@@ -94,8 +94,15 @@ export function createTenantStorage(companyId: string | null, options?: { allowG
       return business;
     },
 
-    async getBusinessSales(businessId: string): Promise<BusinessSale[]> {
-      return db.select().from(businessSales).where(eq(businessSales.businessId, businessId)).orderBy(desc(businessSales.saleDate));
+    async getBusinessSales(businessId: string, userId?: number): Promise<BusinessSale[]> {
+      const conditions = [eq(businessSales.businessId, businessId)];
+      if (companyId) {
+        conditions.push(eq(businessSales.companyId, companyId));
+      }
+      if (userId) {
+        conditions.push(eq(businessSales.createdBy, userId));
+      }
+      return db.select().from(businessSales).where(and(...conditions)).orderBy(desc(businessSales.saleDate));
     },
 
     async createBusinessSale(data: InsertBusinessSale): Promise<BusinessSale> {
@@ -209,9 +216,19 @@ export function createTenantStorage(companyId: string | null, options?: { allowG
       ).orderBy(chatMessages.createdAt);
     },
 
-    async getInvestments(): Promise<Investment[]> {
+    async getInvestments(businessId?: string, userId?: number): Promise<Investment[]> {
+      const conditions = [];
       if (companyId) {
-        return db.select().from(investments).where(eq(investments.companyId, companyId)).orderBy(desc(investments.investmentDate));
+        conditions.push(eq(investments.companyId, companyId));
+      }
+      if (businessId) {
+        conditions.push(eq(investments.businessId, businessId));
+      }
+      if (userId) {
+        conditions.push(eq(investments.createdBy, userId));
+      }
+      if (conditions.length > 0) {
+        return db.select().from(investments).where(and(...conditions)).orderBy(desc(investments.investmentDate));
       }
       return db.select().from(investments).orderBy(desc(investments.investmentDate));
     },
@@ -281,8 +298,18 @@ export function createTenantStorage(companyId: string | null, options?: { allowG
       return invoice;
     },
 
-    async getAiLogs(userId: number): Promise<AiLog[]> {
-      return db.select().from(aiLogs).where(eq(aiLogs.userId, userId)).orderBy(desc(aiLogs.createdAt));
+    async getAiLogs(userId?: number): Promise<AiLog[]> {
+      const conditions = [];
+      if (companyId) {
+        conditions.push(eq(aiLogs.companyId, companyId));
+      }
+      if (userId) {
+        conditions.push(eq(aiLogs.userId, userId));
+      }
+      if (conditions.length > 0) {
+        return db.select().from(aiLogs).where(and(...conditions)).orderBy(desc(aiLogs.createdAt)).limit(100);
+      }
+      return db.select().from(aiLogs).orderBy(desc(aiLogs.createdAt)).limit(100);
     },
 
     async createAiLog(data: InsertAiLog): Promise<AiLog> {
@@ -316,16 +343,19 @@ export function createTenantStorage(companyId: string | null, options?: { allowG
       return true;
     },
 
-    async getAiKnowledge(activeOnly: boolean = true): Promise<AiKnowledge[]> {
-      const companyFilter = companyId ? eq(aiKnowledge.companyId, companyId) : undefined;
-      if (activeOnly) {
-        if (companyFilter) {
-          return db.select().from(aiKnowledge).where(and(companyFilter, eq(aiKnowledge.isActive, true))).orderBy(aiKnowledge.category, aiKnowledge.title);
-        }
-        return db.select().from(aiKnowledge).where(eq(aiKnowledge.isActive, true)).orderBy(aiKnowledge.category, aiKnowledge.title);
+    async getAiKnowledge(activeOnly: boolean = true, userId?: number): Promise<AiKnowledge[]> {
+      const conditions = [];
+      if (companyId) {
+        conditions.push(eq(aiKnowledge.companyId, companyId));
       }
-      if (companyFilter) {
-        return db.select().from(aiKnowledge).where(companyFilter).orderBy(aiKnowledge.category, aiKnowledge.title);
+      if (activeOnly) {
+        conditions.push(eq(aiKnowledge.isActive, true));
+      }
+      if (userId) {
+        conditions.push(eq(aiKnowledge.createdBy, userId));
+      }
+      if (conditions.length > 0) {
+        return db.select().from(aiKnowledge).where(and(...conditions)).orderBy(aiKnowledge.category, aiKnowledge.title);
       }
       return db.select().from(aiKnowledge).orderBy(aiKnowledge.category, aiKnowledge.title);
     },

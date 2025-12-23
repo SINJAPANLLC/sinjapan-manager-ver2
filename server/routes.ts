@@ -412,7 +412,7 @@ export function registerRoutes(app: Express) {
     const { assignmentType, ...taskData } = req.body;
     
     if (assignmentType && assignmentType !== 'individual') {
-      const allUsers = await storage.getUsers();
+      const allUsers = await tenantStorage.getAllUsers();
       let targetRole = '';
       if (assignmentType === 'all_staff') targetRole = 'staff';
       else if (assignmentType === 'all_agency') targetRole = 'agency';
@@ -735,7 +735,13 @@ export function registerRoutes(app: Express) {
   });
 
   app.get('/api/businesses/:id/sales', requireAuth, async (req: Request, res: Response) => {
-    const sales = await storage.getBusinessSales(req.params.id);
+    const user = await storage.getUser(req.session.userId!);
+    if (!user) {
+      return res.status(401).json({ message: 'ユーザーが見つかりません' });
+    }
+    const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+    const isAdminOrCeo = ['admin', 'ceo'].includes(user.role);
+    const sales = await tenantStorage.getBusinessSales(req.params.id, isAdminOrCeo ? undefined : req.session.userId);
     res.json(sales);
   });
 
@@ -1774,8 +1780,13 @@ ${articleList}`
 
   app.get('/api/ai/logs', requireAuth, async (req: Request, res: Response) => {
     try {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user) {
+        return res.status(401).json({ message: 'ユーザーが見つかりません' });
+      }
       const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
-      const logs = await tenantStorage.getAiLogs(req.session.userId!);
+      const isAdminOrCeo = ['admin', 'ceo'].includes(user.role);
+      const logs = await tenantStorage.getAiLogs(isAdminOrCeo ? undefined : req.session.userId!);
       res.json(logs);
     } catch (error) {
       console.error('Get AI logs error:', error);
@@ -1825,9 +1836,14 @@ ${articleList}`
   // AI Knowledge Base
   app.get('/api/ai/knowledge', requireAuth, async (req: Request, res: Response) => {
     try {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user) {
+        return res.status(401).json({ message: 'ユーザーが見つかりません' });
+      }
       const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
       const activeOnly = req.query.activeOnly !== 'false';
-      const knowledge = await tenantStorage.getAiKnowledge(activeOnly);
+      const isAdminOrCeo = ['admin', 'ceo'].includes(user.role);
+      const knowledge = await tenantStorage.getAiKnowledge(activeOnly, isAdminOrCeo ? undefined : req.session.userId);
       res.json(knowledge);
     } catch (error) {
       console.error('Get AI knowledge error:', error);
@@ -2172,8 +2188,14 @@ ${articleList}`
   // Investments API
   app.get('/api/investments', requireAuth, async (req: Request, res: Response) => {
     try {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user) {
+        return res.status(401).json({ message: 'ユーザーが見つかりません' });
+      }
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
       const { businessId } = req.query;
-      const invests = await storage.getInvestments(businessId as string | undefined);
+      const isAdminOrCeo = ['admin', 'ceo'].includes(user.role);
+      const invests = await tenantStorage.getInvestments(businessId as string | undefined, isAdminOrCeo ? undefined : req.session.userId);
       res.json(invests);
     } catch (error) {
       console.error('Get investments error:', error);
