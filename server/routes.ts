@@ -3880,9 +3880,19 @@ URL/名前: ${url || '未指定'}
     try {
       const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
       const userId = (req.session as any).user?.id;
+      const { year, month, baseSalary, overtime, bonus, deductions, netSalary, paidAt, notes } = req.body;
+      
       const salary = await tenantStorage.createStaffSalary({
-        ...req.body,
         employeeId: parseInt(req.params.employeeId),
+        year: parseInt(year),
+        month: parseInt(month),
+        baseSalary: baseSalary ? String(baseSalary) : '0',
+        overtime: overtime ? String(overtime) : null,
+        bonus: bonus ? String(bonus) : null,
+        deductions: deductions ? String(deductions) : null,
+        netSalary: netSalary ? String(netSalary) : '0',
+        paidAt: paidAt ? new Date(paidAt) : null,
+        notes: notes || null,
         createdBy: userId,
       });
       res.json(salary);
@@ -3895,7 +3905,21 @@ URL/名前: ${url || '未指定'}
   app.put('/api/salaries/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     try {
       const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
-      const salary = await tenantStorage.updateStaffSalary(parseInt(req.params.id), req.body);
+      const { year, month, baseSalary, overtime, bonus, deductions, netSalary, paidAt, notes, status } = req.body;
+      
+      const updateData: any = {};
+      if (year !== undefined) updateData.year = parseInt(year);
+      if (month !== undefined) updateData.month = parseInt(month);
+      if (baseSalary !== undefined) updateData.baseSalary = baseSalary ? String(baseSalary) : '0';
+      if (overtime !== undefined) updateData.overtime = overtime ? String(overtime) : null;
+      if (bonus !== undefined) updateData.bonus = bonus ? String(bonus) : null;
+      if (deductions !== undefined) updateData.deductions = deductions ? String(deductions) : null;
+      if (netSalary !== undefined) updateData.netSalary = netSalary ? String(netSalary) : '0';
+      if (paidAt !== undefined) updateData.paidAt = paidAt ? new Date(paidAt) : null;
+      if (notes !== undefined) updateData.notes = notes || null;
+      if (status !== undefined) updateData.status = status;
+      
+      const salary = await tenantStorage.updateStaffSalary(parseInt(req.params.id), updateData);
       if (!salary) {
         return res.status(404).json({ error: '給料情報が見つかりません' });
       }
