@@ -245,17 +245,30 @@ export function StaffPage() {
   };
 
   useEffect(() => {
-    fetchStaff();
-  }, []);
-
-  useEffect(() => {
-    if (user?.role === 'staff' && staff.length > 0) {
-      const currentStaff = staff.find((s: Staff) => s.id === user.id);
-      if (currentStaff && !selectedStaff) {
-        openDetail(currentStaff);
-      }
+    if (user?.role === 'staff') {
+      const userData = user as any;
+      const currentStaff: Staff = {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        phone: user.phone,
+        department: user.department,
+        position: user.position,
+        bankName: userData.bankName || '',
+        bankBranch: userData.bankBranch || '',
+        bankAccountType: userData.bankAccountType || '普通',
+        bankAccountNumber: userData.bankAccountNumber || '',
+        bankAccountHolder: userData.bankAccountHolder || '',
+        isActive: user.isActive ?? true,
+        createdAt: userData.createdAt || new Date().toISOString(),
+      };
+      setStaff([currentStaff]);
+      openDetail(currentStaff);
+    } else {
+      fetchStaff();
     }
-  }, [user, staff]);
+  }, [user]);
 
   const fetchStaffTasks = async (userId: number) => {
     try {
@@ -2447,17 +2460,19 @@ export function StaffPage() {
           </h1>
           <p className="text-slate-500 mt-1">スタッフの登録・管理</p>
         </div>
-        <button
-          onClick={() => {
-            setEditingStaff(null);
-            setForm({ email: '', name: '', password: '', phone: '', department: '', position: '', bankName: '', bankBranch: '', bankAccountType: '普通', bankAccountNumber: '', bankAccountHolder: '' });
-            setShowModal(true);
-          }}
-          className="btn-primary flex items-center gap-2"
-        >
-          <Plus size={18} />
-          新規登録
-        </button>
+        {user?.role !== 'staff' && (
+          <button
+            onClick={() => {
+              setEditingStaff(null);
+              setForm({ email: '', name: '', password: '', phone: '', department: '', position: '', bankName: '', bankBranch: '', bankAccountType: '普通', bankAccountNumber: '', bankAccountHolder: '' });
+              setShowModal(true);
+            }}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Plus size={18} />
+            新規登録
+          </button>
+        )}
       </div>
 
       <div className="card p-4">
