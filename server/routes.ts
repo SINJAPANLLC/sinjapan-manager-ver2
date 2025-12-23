@@ -412,7 +412,12 @@ export function registerRoutes(app: Express) {
     const { assignmentType, ...taskData } = req.body;
     
     if (assignmentType && assignmentType !== 'individual') {
-      const allUsers = await tenantStorage.getAllUsers();
+      const companyIdForTask = getCompanyId(req);
+      if (!companyIdForTask) {
+        return res.status(400).json({ message: 'グループ割り当てにはテナントコンテキストが必要です' });
+      }
+      const tenantScopedStorage = createTenantStorage(companyIdForTask, { allowGlobal: false });
+      const allUsers = await tenantScopedStorage.getAllUsers();
       let targetRole = '';
       if (assignmentType === 'all_staff') targetRole = 'staff';
       else if (assignmentType === 'all_agency') targetRole = 'agency';
