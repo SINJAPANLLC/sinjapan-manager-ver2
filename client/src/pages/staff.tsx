@@ -166,6 +166,12 @@ export function StaffPage() {
   const [showAffiliateForm, setShowAffiliateForm] = useState(false);
   const [showMemoForm, setShowMemoForm] = useState(false);
   const [affiliateForm, setAffiliateForm] = useState({ affiliateName: '', affiliateUrl: '', affiliateCode: '', platform: '', commissionRate: '', notes: '' });
+  
+  const generateAffiliateCode = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const random = Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    return `SJ-${random}`;
+  };
   const [memoForm, setMemoForm] = useState({ content: '', category: 'general' });
   const [selectedTask, setSelectedTask] = useState<StaffTask | null>(null);
   const [showEvidenceForm, setShowEvidenceForm] = useState(false);
@@ -1716,7 +1722,10 @@ export function StaffPage() {
             <div className="p-5 border-b border-slate-100 flex justify-between items-center">
               <h2 className="text-lg font-bold text-slate-800">アフィリエイト</h2>
               {employeeData && (
-                <button onClick={() => setShowAffiliateForm(true)} className="btn-primary text-sm flex items-center gap-2">
+                <button onClick={() => {
+                    setAffiliateForm({ affiliateName: '', affiliateUrl: '', affiliateCode: generateAffiliateCode(), platform: '', commissionRate: '', notes: '' });
+                    setShowAffiliateForm(true);
+                  }} className="btn-primary text-sm flex items-center gap-2">
                   <Plus size={16} />
                   追加
                 </button>
@@ -1738,8 +1747,11 @@ export function StaffPage() {
                     <input type="url" className="input-field text-sm" placeholder="https://..." value={affiliateForm.affiliateUrl} onChange={(e) => setAffiliateForm({ ...affiliateForm, affiliateUrl: e.target.value })} />
                   </div>
                   <div>
-                    <label className="text-xs text-slate-500">アフィリエイトコード</label>
-                    <input type="text" className="input-field text-sm" placeholder="abc-123" value={affiliateForm.affiliateCode} onChange={(e) => setAffiliateForm({ ...affiliateForm, affiliateCode: e.target.value })} />
+                    <label className="text-xs text-slate-500">アフィリエイトコード（自動発行）</label>
+                    <div className="flex gap-2">
+                      <input type="text" className="input-field text-sm bg-slate-100 font-mono" value={affiliateForm.affiliateCode} readOnly />
+                      <button type="button" onClick={() => setAffiliateForm({ ...affiliateForm, affiliateCode: generateAffiliateCode() })} className="btn-secondary text-xs px-3">再発行</button>
+                    </div>
                   </div>
                   <div>
                     <label className="text-xs text-slate-500">コミッション率 (%)</label>
