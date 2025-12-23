@@ -25,7 +25,7 @@ The application features a refined white-based theme with blue gradient accents,
 ### Feature Specifications
 -   **CRM**: Comprehensive customer management including banking information.
 -   **Chat & Notifications**: Real-time chat with file attachments and a robust notification system supporting bulk messages.
--   **HR Hub**: Employee management, including payroll, shift management, advance payment requests, and detailed staff profiles with task tracking, affiliate management, and personal notes.
+-   **HR Hub**: Employee management, including payroll with 5 custom deductions, shift management with amount and approval workflow (pending/approved/rejected), advance payment requests with fixed ¥330 transfer fee, and detailed staff profiles with task tracking, affiliate management, and personal notes. Salary breakdown displays approved task rewards and shift amounts grouped by approval date.
 -   **Sales Tracking**: Agency sales tracking with incentive management (per project, percentage/fixed, specific/all agencies, time-bound).
 -   **Task Management**: Creation, assignment, and evidence submission for tasks, with AI-generated task support.
 -   **Financial Management**: Business sales/expense tracking, investment recording, and cash flow calculation.
