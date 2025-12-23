@@ -29,8 +29,10 @@ import {
   FileText,
   ExternalLink,
   MousePointerClick,
-  TrendingUp
+  TrendingUp,
+  Download
 } from 'lucide-react';
+import jsPDF from 'jspdf';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 import { useAuth } from '../hooks/use-auth';
@@ -601,6 +603,115 @@ export function StaffPage() {
     setEmployeeData(null);
   };
 
+  const exportStaffToPDF = () => {
+    if (!selectedStaff || !employeeData) return;
+    
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+    });
+    
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    let y = 20;
+    const leftMargin = 20;
+    const lineHeight = 7;
+    
+    pdf.setFontSize(18);
+    pdf.text('スタッフ情報', pageWidth / 2, y, { align: 'center' });
+    y += 15;
+    
+    pdf.setFontSize(12);
+    pdf.text(`出力日: ${format(new Date(), 'yyyy年MM月dd日')}`, pageWidth - 20, y, { align: 'right' });
+    y += 10;
+    
+    pdf.setFontSize(14);
+    pdf.text('基本情報', leftMargin, y);
+    y += 8;
+    pdf.setFontSize(10);
+    
+    const basicInfo = [
+      ['氏名', selectedStaff.name],
+      ['メールアドレス', selectedStaff.email],
+      ['電話番号', selectedStaff.phone || '-'],
+      ['部署', selectedStaff.department || '-'],
+      ['役職', selectedStaff.position || '-'],
+      ['社員番号', employeeData.employeeNumber || '-'],
+      ['入社日', employeeData.hireDate ? format(new Date(employeeData.hireDate), 'yyyy年MM月dd日') : '-'],
+      ['基本給', employeeData.salary ? `¥${Number(employeeData.salary).toLocaleString()}` : '-'],
+    ];
+    
+    basicInfo.forEach(([label, value]) => {
+      pdf.text(`${label}: ${value}`, leftMargin, y);
+      y += lineHeight;
+    });
+    
+    y += 5;
+    pdf.setFontSize(14);
+    pdf.text('銀行口座情報', leftMargin, y);
+    y += 8;
+    pdf.setFontSize(10);
+    
+    const bankInfo = [
+      ['銀行名', employeeData.bankName || '-'],
+      ['支店名', employeeData.bankBranch || '-'],
+      ['口座種別', employeeData.bankAccountType || '-'],
+      ['口座番号', employeeData.bankAccountNumber || '-'],
+      ['口座名義', employeeData.bankAccountHolder || '-'],
+    ];
+    
+    bankInfo.forEach(([label, value]) => {
+      pdf.text(`${label}: ${value}`, leftMargin, y);
+      y += lineHeight;
+    });
+    
+    y += 5;
+    pdf.setFontSize(14);
+    pdf.text('緊急連絡先', leftMargin, y);
+    y += 8;
+    pdf.setFontSize(10);
+    
+    pdf.text(`連絡先名: ${employeeData.emergencyContact || '-'}`, leftMargin, y);
+    y += lineHeight;
+    pdf.text(`電話番号: ${employeeData.emergencyPhone || '-'}`, leftMargin, y);
+    y += lineHeight;
+    
+    if (salaries.length > 0) {
+      y += 10;
+      pdf.setFontSize(14);
+      pdf.text('給料履歴', leftMargin, y);
+      y += 8;
+      pdf.setFontSize(10);
+      
+      const recentSalaries = salaries.slice(0, 6);
+      recentSalaries.forEach((sal) => {
+        const line = `${sal.year}年${sal.month}月: 報酬 ¥${Number(sal.baseSalary).toLocaleString()} / 控除 ¥${Number(sal.deductions || 0).toLocaleString()} / 手取り ¥${Number(sal.netSalary).toLocaleString()}`;
+        pdf.text(line, leftMargin, y);
+        y += lineHeight;
+      });
+    }
+    
+    if (employeeData.notes) {
+      y += 10;
+      pdf.setFontSize(14);
+      pdf.text('備考', leftMargin, y);
+      y += 8;
+      pdf.setFontSize(10);
+      const notesLines = pdf.splitTextToSize(employeeData.notes, pageWidth - 40);
+      notesLines.forEach((line: string) => {
+        if (y > 270) {
+          pdf.addPage();
+          y = 20;
+        }
+        pdf.text(line, leftMargin, y);
+        y += lineHeight;
+      });
+    }
+    
+    const filename = `staff_${selectedStaff.name.replace(/\s/g, '_')}_${format(new Date(), 'yyyyMMdd')}.pdf`;
+    pdf.save(filename);
+  };
+
   const handleAddSalary = async () => {
     if (!employeeData || !salaryForm.baseSalary) return;
     const netSalary = Number(salaryForm.baseSalary) - Number(salaryForm.deductions || 0);
@@ -898,17 +1009,26 @@ export function StaffPage() {
   if (selectedStaff) {
     return (
       <div className="space-y-6 animate-fade-in">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={closeDetail}
-            className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
-          >
-            <ArrowLeft size={20} className="text-slate-600" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800">{selectedStaff.name}</h1>
-            <p className="text-slate-500 text-sm">{selectedStaff.position || 'スタッフ'} · {selectedStaff.department || '-'}</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={closeDetail}
+              className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
+            >
+              <ArrowLeft size={20} className="text-slate-600" />
+            </button>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-800">{selectedStaff.name}</h1>
+              <p className="text-slate-500 text-sm">{selectedStaff.position || 'スタッフ'} · {selectedStaff.department || '-'}</p>
+            </div>
           </div>
+          <button
+            onClick={exportStaffToPDF}
+            className="btn-secondary flex items-center gap-2"
+          >
+            <Download size={16} />
+            PDF出力
+          </button>
         </div>
 
         <div className="flex gap-2 bg-white rounded-xl p-1 border border-slate-200 w-fit">
