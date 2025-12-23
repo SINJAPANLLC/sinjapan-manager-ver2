@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useTenant } from '../hooks/use-tenant';
-import { Loader2, ArrowRight, ArrowLeft, User, Building2, Users, Mail, Lock, Phone, UserCircle } from 'lucide-react';
+import { Loader2, ArrowRight, ArrowLeft, User, Building2, Users, Mail, Lock, Phone, UserCircle, CheckSquare, Square } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 const roleOptions = [
@@ -26,6 +26,7 @@ export function RegisterPage() {
     confirmPassword: '',
     phone: '',
   });
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,6 +35,11 @@ export function RegisterPage() {
 
     if (!selectedRole) {
       setError('ロールを選択してください');
+      return;
+    }
+
+    if (!agreedToTerms) {
+      setError('利用規約とプライバシーポリシーに同意してください');
       return;
     }
 
@@ -252,6 +258,47 @@ export function RegisterPage() {
                 />
               </div>
 
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => setAgreedToTerms(!agreedToTerms)}
+                  className={cn(
+                    'w-full p-4 rounded-xl border-2 transition-all duration-200 flex items-start gap-3 text-left',
+                    agreedToTerms
+                      ? 'border-primary-500 bg-primary-50'
+                      : 'border-slate-200 bg-white hover:border-slate-300'
+                  )}
+                >
+                  {agreedToTerms ? (
+                    <CheckSquare size={20} className="text-primary-600 mt-0.5 flex-shrink-0" />
+                  ) : (
+                    <Square size={20} className="text-slate-400 mt-0.5 flex-shrink-0" />
+                  )}
+                  <span className="text-sm text-slate-700">
+                    <a
+                      href="/terms"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-primary-600 hover:text-primary-700 underline font-medium"
+                    >
+                      利用規約
+                    </a>
+                    {' '}および{' '}
+                    <a
+                      href="/privacy"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-primary-600 hover:text-primary-700 underline font-medium"
+                    >
+                      プライバシーポリシー
+                    </a>
+                    {' '}に同意します
+                  </span>
+                </button>
+              </div>
+
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
@@ -263,8 +310,8 @@ export function RegisterPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isLoading}
-                  className="flex-1 btn-primary flex items-center justify-center gap-2"
+                  disabled={isLoading || !agreedToTerms}
+                  className="flex-1 btn-primary flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? (
                     <>

@@ -23,6 +23,8 @@ import { AgencyPage } from './pages/agency';
 import { ClientsPage } from './pages/clients';
 import { MarketingPage } from './pages/marketing';
 import { RegisterPage } from './pages/register';
+import { TermsPage } from './pages/terms';
+import { PrivacyPage } from './pages/privacy';
 import { Loader2 } from 'lucide-react';
 import { useLocation } from 'wouter';
 
@@ -44,6 +46,12 @@ function AppRoutes() {
   if (!user) {
     if (location === '/register') {
       return <RegisterPage />;
+    }
+    if (location === '/terms') {
+      return <TermsPage />;
+    }
+    if (location === '/privacy') {
+      return <PrivacyPage />;
     }
     return <LoginPage />;
   }
