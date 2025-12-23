@@ -401,8 +401,12 @@ export function registerRoutes(app: Express) {
   });
 
   app.get('/api/tasks', requireAuth, async (req: Request, res: Response) => {
-    const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
     const user = await storage.getUser(req.session.userId!);
+    let companyIdForTask = getCompanyId(req);
+    if (!companyIdForTask && user?.companyId) {
+      companyIdForTask = user.companyId;
+    }
+    const tenantStorage = createTenantStorage(companyIdForTask, { allowGlobal: true });
     const tasks = await tenantStorage.getTasks(req.session.userId!, user?.role);
     res.json(tasks);
   });
