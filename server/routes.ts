@@ -418,7 +418,11 @@ export function registerRoutes(app: Express) {
       companyIdForTask = currentUser.companyId;
     }
     const tenantStorage = createTenantStorage(companyIdForTask, { allowGlobal: true });
-    const { assignmentType, ...taskData } = req.body;
+    const { assignmentType, dueDate, ...restTaskData } = req.body;
+    const taskData = {
+      ...restTaskData,
+      dueDate: dueDate ? new Date(dueDate) : null,
+    };
     
     if (assignmentType && assignmentType !== 'individual') {
       if (!companyIdForTask) {
