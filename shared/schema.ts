@@ -142,6 +142,7 @@ export const employees = pgTable("employees", {
   closingDay: text("closing_day"),
   paymentDay: text("payment_day"),
   paymentMethod: text("payment_method"),
+  transferFee: decimal("transfer_fee", { precision: 10, scale: 2 }),
   healthInsurance: decimal("health_insurance", { precision: 12, scale: 2 }),
   pensionInsurance: decimal("pension_insurance", { precision: 12, scale: 2 }),
   employmentInsurance: decimal("employment_insurance", { precision: 12, scale: 2 }),

@@ -185,8 +185,9 @@ export function StaffPage() {
     bankAccountNumber: '',
     bankAccountHolder: '',
     closingDay: '末日',
-    paymentDay: '翌月25日',
+    paymentDay: '翌翌月5日',
     paymentMethod: '銀行振込',
+    transferFee: '330',
     healthInsurance: '',
     pensionInsurance: '',
     employmentInsurance: '',
@@ -1808,8 +1809,9 @@ export function StaffPage() {
                       bankAccountNumber: employeeData.bankAccountNumber || selectedStaff?.bankAccountNumber || '',
                       bankAccountHolder: employeeData.bankAccountHolder || selectedStaff?.bankAccountHolder || '',
                       closingDay: (employeeData as any).closingDay || '末日',
-                      paymentDay: (employeeData as any).paymentDay || '翌月25日',
+                      paymentDay: (employeeData as any).paymentDay || '翌翌月5日',
                       paymentMethod: (employeeData as any).paymentMethod || '銀行振込',
+                      transferFee: (employeeData as any).transferFee?.toString() || '330',
                       healthInsurance: (employeeData as any).healthInsurance?.toString() || '',
                       pensionInsurance: (employeeData as any).pensionInsurance?.toString() || '',
                       employmentInsurance: (employeeData as any).employmentInsurance?.toString() || '',
@@ -1892,12 +1894,25 @@ export function StaffPage() {
                             value={systemForm.paymentDay}
                             onChange={(e) => setSystemForm({ ...systemForm, paymentDay: e.target.value })}
                           >
+                            <option value="翌翌月5日">翌翌月5日</option>
                             <option value="翌月25日">翌月25日</option>
                             <option value="翌月15日">翌月15日</option>
                             <option value="翌月末日">翌月末日</option>
                             <option value="当月25日">当月25日</option>
                             <option value="当月末日">当月末日</option>
                           </select>
+                        </div>
+                        <div>
+                          <label className="text-xs text-slate-500">振込手数料</label>
+                          <div className="flex gap-2 items-center">
+                            <span className="text-slate-500">¥</span>
+                            <input
+                              type="number"
+                              className="input-field text-sm"
+                              value={systemForm.transferFee}
+                              onChange={(e) => setSystemForm({ ...systemForm, transferFee: e.target.value })}
+                            />
+                          </div>
                         </div>
                         <div>
                           <label className="text-xs text-slate-500">支払方法</label>
@@ -2135,7 +2150,11 @@ export function StaffPage() {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-slate-500">支払日</span>
-                          <span className="font-medium text-slate-800">{(employeeData as any)?.paymentDay || '翌月25日'}</span>
+                          <span className="font-medium text-slate-800">{(employeeData as any)?.paymentDay || '翌翌月5日'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">振込手数料</span>
+                          <span className="font-medium text-slate-800">¥{(employeeData as any)?.transferFee || '330'}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-slate-500">支払方法</span>
