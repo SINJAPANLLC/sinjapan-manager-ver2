@@ -470,20 +470,28 @@ export function TasksPage() {
     const url = editingTask ? `/api/tasks/${editingTask.id}` : '/api/tasks';
     const method = editingTask ? 'PATCH' : 'POST';
     
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...formData,
-        businessId: formData.businessId ? parseInt(formData.businessId) : null,
-        assignedTo: formData.assignedTo ? parseInt(formData.assignedTo) : null,
-        dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : null,
-      }),
-    });
-    
-    if (res.ok) {
-      fetchTasks();
-      closeModal();
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          businessId: formData.businessId ? parseInt(formData.businessId) : null,
+          assignedTo: formData.assignedTo ? parseInt(formData.assignedTo) : null,
+          dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : null,
+        }),
+      });
+      
+      if (res.ok) {
+        fetchTasks();
+        closeModal();
+      } else {
+        const error = await res.json();
+        alert(error.message || 'タスクの作成に失敗しました');
+      }
+    } catch (error) {
+      console.error('Task creation error:', error);
+      alert('タスクの作成中にエラーが発生しました');
     }
   };
 
