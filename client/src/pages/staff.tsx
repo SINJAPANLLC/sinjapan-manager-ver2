@@ -248,6 +248,15 @@ export function StaffPage() {
     fetchStaff();
   }, []);
 
+  useEffect(() => {
+    if (user?.role === 'staff' && staff.length > 0) {
+      const currentStaff = staff.find((s: Staff) => s.id === user.id);
+      if (currentStaff && !selectedStaff) {
+        openDetail(currentStaff);
+      }
+    }
+  }, [user, staff]);
+
   const fetchStaffTasks = async (userId: number) => {
     try {
       const res = await fetch('/api/tasks', { credentials: 'include' });
