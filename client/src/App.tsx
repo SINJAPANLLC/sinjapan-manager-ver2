@@ -9,6 +9,7 @@ import { TasksPage } from './pages/tasks';
 import { CalendarPage } from './pages/calendar';
 import { ChatPage } from './pages/chat';
 import { BusinessPage } from './pages/business';
+import { DesignsPage } from './pages/designs';
 import { FinancialsPage } from './pages/financials';
 import { AiPage } from './pages/ai';
 import { NotificationsPage } from './pages/notifications';
@@ -57,6 +58,7 @@ function AppRoutes() {
         <Route path="/chat" component={ChatPage} />
         <Route path="/communication" component={ChatPage} />
         <Route path="/business" component={BusinessPage} />
+        <Route path="/designs" component={DesignsPage} />
         <Route path="/marketing" component={MarketingPage} />
         <Route path="/financials" component={FinancialsPage} />
         <Route path="/ai" component={AiPage} />

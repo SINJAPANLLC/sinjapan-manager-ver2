@@ -17,7 +17,8 @@ import {
   UserCheck,
   Target,
   FileSpreadsheet,
-  TrendingUp
+  TrendingUp,
+  Compass
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -80,6 +81,7 @@ export function Layout({ children }: LayoutProps) {
     { href: '/calendar', label: 'カレンダー', icon: Calendar, roles: ['admin', 'ceo', 'manager', 'agency', 'client'] },
     { href: '/communication', label: 'コミュニケーション', icon: MessageSquare, roles: ['admin', 'ceo', 'manager', 'staff', 'agency', 'client'] },
     { href: '/business', label: '事業', icon: Briefcase, roles: ['admin', 'ceo', 'manager', 'agency', 'client'] },
+    { href: '/designs', label: '設計', icon: Compass, roles: ['admin', 'ceo', 'manager', 'agency', 'client'] },
     { href: '/marketing', label: 'マーケティング', icon: TrendingUp, roles: ['admin', 'ceo', 'manager', 'agency', 'client'] },
     { href: '/financials', label: 'PL BS CF', icon: FileSpreadsheet, roles: ['admin', 'ceo', 'manager', 'agency', 'client'] },
     { href: '/ai', label: 'AI', icon: Bot, roles: ['admin', 'ceo', 'manager', 'agency', 'client'] },
