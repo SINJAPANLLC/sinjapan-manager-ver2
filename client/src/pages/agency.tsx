@@ -449,48 +449,8 @@ export function AgencyPage() {
           )}
         </div>
       ) : viewMode === 'incentive' ? (
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-          <div className="card p-4 lg:col-span-1">
-            <h3 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
-              <Building2 size={18} className="text-orange-500" />
-              代理店一覧
-            </h3>
-            <div className="space-y-2 max-h-[500px] overflow-y-auto">
-              {agencies.map((a) => {
-                const agencyIncentives = incentives.filter(i => i.targetAgencyId === a.id || !i.targetAgencyId);
-                return (
-                  <div 
-                    key={a.id} 
-                    className="p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-                    onClick={() => setSelectedAgency(a)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white font-bold text-sm">
-                        {a.name.charAt(0)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-slate-800 text-sm truncate">{a.name}</p>
-                        <p className="text-xs text-slate-500 truncate">{a.email}</p>
-                      </div>
-                    </div>
-                    <div className="mt-2 flex items-center justify-between text-xs">
-                      <span className="text-slate-500">適用中: {agencyIncentives.filter(i => i.status === 'active').length}件</span>
-                      <span className="text-green-600 font-medium">
-                        ¥{getAgencyTotalSales(a.id).toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-              {agencies.length === 0 && (
-                <div className="text-center py-6 text-slate-400">
-                  <Building2 size={32} className="mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">代理店がありません</p>
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="card overflow-hidden lg:col-span-3">
+        <div>
+          <div className="card overflow-hidden">
             <div className="p-5 border-b border-slate-100 flex justify-between items-center">
               <div>
                 <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
