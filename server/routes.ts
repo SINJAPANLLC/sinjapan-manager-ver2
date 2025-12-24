@@ -731,7 +731,7 @@ export function registerRoutes(app: Express) {
       
       const companyId = getCompanyId(req);
       const globalStorage = createTenantStorage(null, { allowGlobal: true });
-      let tasks = await globalStorage.getTasks();
+      let tasks = await globalStorage.getTasks(req.session.userId, currentUser.role);
       
       if (companyId) {
         tasks = tasks.filter((t: any) => t.companyId === companyId);
