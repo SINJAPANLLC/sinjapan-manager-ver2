@@ -730,10 +730,13 @@ export function registerRoutes(app: Express) {
       
       if (currentUser.role === 'staff') {
         tasks = tasks.filter((t: any) => t.assignedTo === req.session.userId || t.createdBy === req.session.userId);
+        res.json({ count: 0 });
+      } else {
+        const pendingApprovalCount = tasks.filter((t: any) => 
+          t.status === 'completed' && t.rewardAmount && !t.rewardApprovedAt
+        ).length;
+        res.json({ count: pendingApprovalCount });
       }
-      
-      const pendingCount = tasks.filter((t: any) => t.status === 'pending' || t.status === 'in_progress').length;
-      res.json({ count: pendingCount });
     } catch (err) {
       res.json({ count: 0 });
     }
