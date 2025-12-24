@@ -658,27 +658,30 @@ export function registerRoutes(app: Express) {
     try {
       const currentUser = await storage.getUser(req.session.userId!);
       if (!currentUser || !['admin', 'ceo', 'manager'].includes(currentUser.role)) {
-        return res.json({ count: 0, advances: 0, shifts: 0 });
+        return res.json({ count: 0, advances: 0, shifts: 0, salaries: 0 });
       }
       
       const globalStorage = createTenantStorage(null, { allowGlobal: true });
       
-      const [advances, pendingShifts] = await Promise.all([
+      const [advances, pendingShifts, pendingSalaries] = await Promise.all([
         globalStorage.getAdvancePayments(),
         globalStorage.getAllPendingShifts(),
+        globalStorage.getAllPendingSalaries(),
       ]);
       
       const pendingAdvancesCount = advances.filter((a: any) => a.status === 'pending').length;
       const pendingShiftsCount = pendingShifts.length;
+      const pendingSalariesCount = pendingSalaries.length;
       
       res.json({ 
-        count: pendingAdvancesCount + pendingShiftsCount,
+        count: pendingAdvancesCount + pendingShiftsCount + pendingSalariesCount,
         advances: pendingAdvancesCount,
         shifts: pendingShiftsCount,
+        salaries: pendingSalariesCount,
       });
     } catch (err) {
       console.error('Staff pending approvals count error:', err);
-      res.json({ count: 0, advances: 0, shifts: 0 });
+      res.json({ count: 0, advances: 0, shifts: 0, salaries: 0 });
     }
   });
 
