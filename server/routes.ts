@@ -692,22 +692,12 @@ export function registerRoutes(app: Express) {
       const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
       let tasks = await tenantStorage.getTasks();
       
-      if (currentUser.role === 'admin' || currentUser.role === 'ceo') {
-        const pendingApprovals = tasks.filter((t: any) => 
-          t.status === 'completed' && 
-          t.rewardAmount && 
-          parseFloat(String(t.rewardAmount)) > 0 && 
-          !t.rewardApprovedAt
-        );
-        res.json({ count: pendingApprovals.length });
-      } else if (currentUser.role === 'staff') {
+      if (currentUser.role === 'staff') {
         tasks = tasks.filter((t: any) => t.assignedTo === req.session.userId || t.createdBy === req.session.userId);
-        const pendingCount = tasks.filter((t: any) => t.status === 'pending' || t.status === 'in_progress').length;
-        res.json({ count: pendingCount });
-      } else {
-        const pendingCount = tasks.filter((t: any) => t.status === 'pending' || t.status === 'in_progress').length;
-        res.json({ count: pendingCount });
       }
+      
+      const pendingCount = tasks.filter((t: any) => t.status === 'pending' || t.status === 'in_progress').length;
+      res.json({ count: pendingCount });
     } catch (err) {
       res.json({ count: 0 });
     }
