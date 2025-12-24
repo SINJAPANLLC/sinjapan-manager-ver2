@@ -655,3 +655,20 @@ export const businessDesigns = pgTable("business_designs", {
 
 export type BusinessDesign = typeof businessDesigns.$inferSelect;
 export type InsertBusinessDesign = typeof businessDesigns.$inferInsert;
+
+export const financialEntries = pgTable("financial_entries", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  statementType: varchar("statement_type", { length: 10 }).notNull(),
+  category: varchar("category", { length: 100 }).notNull(),
+  subCategory: varchar("sub_category", { length: 100 }),
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+  description: text("description"),
+  entryDate: timestamp("entry_date").defaultNow().notNull(),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type FinancialEntry = typeof financialEntries.$inferSelect;
+export type InsertFinancialEntry = typeof financialEntries.$inferInsert;
