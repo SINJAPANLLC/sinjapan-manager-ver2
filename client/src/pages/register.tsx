@@ -72,10 +72,10 @@ export function RegisterPage() {
         throw new Error(data.message || '登録に失敗しました');
       }
 
-      setSuccess('登録が完了しました。ログインページへ移動します...');
+      setSuccess('登録が完了しました。管理者の承認をお待ちください。承認後にログインできるようになります。');
       setTimeout(() => {
         setLocation('/login');
-      }, 2000);
+      }, 3000);
     } catch (err: any) {
       setError(err.message || '登録に失敗しました');
     } finally {

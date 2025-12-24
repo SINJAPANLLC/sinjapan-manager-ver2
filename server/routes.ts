@@ -181,7 +181,7 @@ export function registerRoutes(app: Express) {
         return res.status(401).json({ message: 'メールアドレスまたはパスワードが正しくありません' });
       }
       if (!user.isActive) {
-        return res.status(401).json({ message: 'このアカウントは無効です' });
+        return res.status(401).json({ message: 'アカウントは現在承認待ちです。管理者の承認をお待ちください。' });
       }
       const tenant = (req as any).tenant;
       if (tenant && user.companyId && user.companyId !== tenant.id) {
@@ -218,11 +218,14 @@ export function registerRoutes(app: Express) {
         phone,
         role,
         companyId: tenant?.id,
-        isActive: true,
+        isActive: false, // Requires admin approval
       });
       
       const { password: _, ...userWithoutPassword } = user;
-      res.status(201).json(userWithoutPassword);
+      res.status(201).json({ 
+        ...userWithoutPassword, 
+        message: '登録が完了しました。管理者の承認をお待ちください。' 
+      });
     } catch (error) {
       console.error('Registration error:', error);
       res.status(500).json({ message: '登録に失敗しました' });
@@ -353,6 +356,36 @@ export function registerRoutes(app: Express) {
     }
     await storage.deleteUser(targetId);
     res.json({ message: '削除しました' });
+  });
+
+  // User approval endpoint
+  app.put('/api/users/:id/approve', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const targetId = parseInt(req.params.id);
+      const { isActive } = req.body;
+      
+      const user = await storage.updateUser(targetId, { isActive });
+      if (!user) {
+        return res.status(404).json({ message: 'ユーザーが見つかりません' });
+      }
+      const { password: _, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error('User approval error:', error);
+      res.status(500).json({ message: '承認処理に失敗しました' });
+    }
+  });
+
+  // Pending users count endpoint
+  app.get('/api/users/pending-count', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const users = await tenantStorage.getUsers();
+      const pendingCount = users.filter((u: any) => !u.isActive).length;
+      res.json({ count: pendingCount });
+    } catch (error) {
+      res.json({ count: 0 });
+    }
   });
 
   app.get('/api/customers', requireAuth, async (req: Request, res: Response) => {

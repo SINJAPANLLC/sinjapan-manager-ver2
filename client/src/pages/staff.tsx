@@ -508,6 +508,18 @@ export function StaffPage() {
     }
   };
 
+  const handleApproveUser = async (id: number, isActive: boolean) => {
+    const res = await fetch(`/api/users/${id}/approve`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ isActive }),
+    });
+    if (res.ok) {
+      fetchStaff();
+    }
+  };
+
   const openEditModal = (s: Staff) => {
     setEditingStaff(s);
     setForm({
@@ -2961,15 +2973,24 @@ export function StaffPage() {
                 <div className="flex flex-col items-end gap-1">
                   <span className={cn(
                     "px-2 py-1 text-xs rounded-full",
-                    s.isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                    s.isActive ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
                   )}>
-                    {s.isActive ? '有効' : '無効'}
+                    {s.isActive ? '有効' : '承認待ち'}
                   </span>
                   {pendingAdvanceCounts[s.id] > 0 && (
                     <span className="px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-700 flex items-center gap-1">
                       <CreditCard size={10} />
                       前払い申請中
                     </span>
+                  )}
+                  {!s.isActive && canApprove && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleApproveUser(s.id, true); }}
+                      className="px-2 py-1 text-xs bg-green-500 text-white rounded-full hover:bg-green-600 flex items-center gap-1"
+                    >
+                      <Check size={10} />
+                      承認
+                    </button>
                   )}
                 </div>
               </div>
