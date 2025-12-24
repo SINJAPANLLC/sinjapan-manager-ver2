@@ -725,19 +725,28 @@ export function registerRoutes(app: Express) {
         return res.json({ count: 0 });
       }
       
-      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
-      let tasks = await tenantStorage.getTasks();
-      
       if (currentUser.role === 'staff') {
-        tasks = tasks.filter((t: any) => t.assignedTo === req.session.userId || t.createdBy === req.session.userId);
-        res.json({ count: 0 });
-      } else {
-        const pendingApprovalCount = tasks.filter((t: any) => 
-          t.status === 'completed' && t.rewardAmount && !t.rewardApprovedAt
-        ).length;
-        res.json({ count: pendingApprovalCount });
+        return res.json({ count: 0 });
       }
+      
+      const companyId = getCompanyId(req);
+      const globalStorage = createTenantStorage(null, { allowGlobal: true });
+      let tasks = await globalStorage.getTasks();
+      
+      if (companyId) {
+        tasks = tasks.filter((t: any) => t.companyId === companyId);
+      }
+      
+      const pendingApprovalCount = tasks.filter((t: any) => 
+        t.status === 'completed' && 
+        t.rewardAmount && 
+        parseFloat(t.rewardAmount) > 0 && 
+        !t.rewardApprovedAt
+      ).length;
+      
+      res.json({ count: pendingApprovalCount });
     } catch (err) {
+      console.error('Tasks pending count error:', err);
       res.json({ count: 0 });
     }
   });
