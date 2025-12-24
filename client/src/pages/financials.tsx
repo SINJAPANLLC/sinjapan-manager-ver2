@@ -28,6 +28,14 @@ interface Investment {
   investmentDate: string;
 }
 
+interface FinancialSummary {
+  staffSalaryTotal: number;
+  agencyRevenueTotal: number;
+  agencyCommissionTotal: number;
+  staffCount: number;
+  agencySalesCount: number;
+}
+
 type TabType = 'pl' | 'bs' | 'cf';
 
 export function FinancialsPage() {
@@ -36,6 +44,13 @@ export function FinancialsPage() {
   const [selectedBusiness, setSelectedBusiness] = useState<string>('all');
   const [sales, setSales] = useState<Sale[]>([]);
   const [investments, setInvestments] = useState<Investment[]>([]);
+  const [financialSummary, setFinancialSummary] = useState<FinancialSummary>({
+    staffSalaryTotal: 0,
+    agencyRevenueTotal: 0,
+    agencyCommissionTotal: 0,
+    staffCount: 0,
+    agencySalesCount: 0,
+  });
   const [isInvestModalOpen, setIsInvestModalOpen] = useState(false);
   const [investFormData, setInvestFormData] = useState({
     businessId: '',
@@ -53,6 +68,7 @@ export function FinancialsPage() {
   useEffect(() => {
     fetchBusinesses();
     fetchInvestments();
+    fetchFinancialSummary();
   }, []);
 
   useEffect(() => {
@@ -62,6 +78,17 @@ export function FinancialsPage() {
       setSales([]);
     }
   }, [selectedBusiness]);
+
+  useEffect(() => {
+    fetchFinancialSummary();
+  }, [dateRange]);
+
+  const fetchFinancialSummary = async () => {
+    const res = await fetch(`/api/financials/summary?start=${dateRange.start}&end=${dateRange.end}`, { credentials: 'include' });
+    if (res.ok) {
+      setFinancialSummary(await res.json());
+    }
+  };
 
   const fetchInvestments = async () => {
     const res = await fetch('/api/investments');
@@ -120,8 +147,10 @@ export function FinancialsPage() {
     }
   };
 
-  const totalRevenue = businesses.reduce((sum, b) => sum + b.revenue, 0);
-  const totalExpenses = businesses.reduce((sum, b) => sum + b.expenses, 0);
+  const businessRevenue = businesses.reduce((sum, b) => sum + b.revenue, 0);
+  const businessExpenses = businesses.reduce((sum, b) => sum + b.expenses, 0);
+  const totalRevenue = businessRevenue + financialSummary.agencyRevenueTotal;
+  const totalExpenses = businessExpenses + financialSummary.staffSalaryTotal + financialSummary.agencyCommissionTotal;
   const totalProfit = totalRevenue - totalExpenses;
 
   const formatCurrency = (amount: number) => {
@@ -262,6 +291,18 @@ export function FinancialsPage() {
                     <td className="py-3 font-medium text-slate-800">売上高</td>
                     <td className="py-3 text-right font-semibold text-emerald-600">{formatCurrency(selectedBusiness === 'all' ? totalRevenue : periodRevenue)}</td>
                   </tr>
+                  {selectedBusiness === 'all' && (
+                    <>
+                      <tr className="border-b border-slate-50 bg-slate-25">
+                        <td className="py-2 pl-6 text-sm text-slate-600">└ 事業売上</td>
+                        <td className="py-2 text-right text-sm text-slate-600">{formatCurrency(businessRevenue)}</td>
+                      </tr>
+                      <tr className="border-b border-slate-50 bg-slate-25">
+                        <td className="py-2 pl-6 text-sm text-slate-600">└ 代理店売上（{financialSummary.agencySalesCount}件）</td>
+                        <td className="py-2 text-right text-sm text-slate-600">{formatCurrency(financialSummary.agencyRevenueTotal)}</td>
+                      </tr>
+                    </>
+                  )}
                   <tr className="border-b border-slate-50">
                     <td className="py-3 font-medium text-slate-800">売上原価</td>
                     <td className="py-3 text-right text-slate-600">¥0</td>
@@ -274,6 +315,22 @@ export function FinancialsPage() {
                     <td className="py-3 font-medium text-slate-800">販売費及び一般管理費</td>
                     <td className="py-3 text-right font-semibold text-red-600">{formatCurrency(selectedBusiness === 'all' ? totalExpenses : periodExpenses)}</td>
                   </tr>
+                  {selectedBusiness === 'all' && (
+                    <>
+                      <tr className="border-b border-slate-50 bg-slate-25">
+                        <td className="py-2 pl-6 text-sm text-slate-600">└ 事業経費</td>
+                        <td className="py-2 text-right text-sm text-slate-600">{formatCurrency(businessExpenses)}</td>
+                      </tr>
+                      <tr className="border-b border-slate-50 bg-slate-25">
+                        <td className="py-2 pl-6 text-sm text-slate-600">└ スタッフ給与（{financialSummary.staffCount}件）</td>
+                        <td className="py-2 text-right text-sm text-slate-600">{formatCurrency(financialSummary.staffSalaryTotal)}</td>
+                      </tr>
+                      <tr className="border-b border-slate-50 bg-slate-25">
+                        <td className="py-2 pl-6 text-sm text-slate-600">└ 代理店コミッション（{financialSummary.agencySalesCount}件）</td>
+                        <td className="py-2 text-right text-sm text-slate-600">{formatCurrency(financialSummary.agencyCommissionTotal)}</td>
+                      </tr>
+                    </>
+                  )}
                   <tr className="bg-primary-50">
                     <td className="py-4 font-bold text-slate-800 text-lg">営業利益</td>
                     <td className={cn("py-4 text-right font-bold text-lg", (selectedBusiness === 'all' ? totalProfit : periodRevenue - periodExpenses) >= 0 ? "text-primary-600" : "text-red-600")}>

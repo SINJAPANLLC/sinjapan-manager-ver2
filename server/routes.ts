@@ -992,6 +992,50 @@ export function registerRoutes(app: Express) {
     res.json(totals);
   });
 
+  app.get('/api/financials/summary', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const companyId = getCompanyId(req);
+      const globalStorage = createTenantStorage(null, { allowGlobal: true });
+      
+      const { start, end } = req.query;
+      const startDate = start ? new Date(start as string) : new Date(new Date().getFullYear(), 0, 1);
+      const endDate = end ? new Date(end as string) : new Date();
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
+      
+      // Get staff salaries (approved only)
+      let salaries = await globalStorage.getAllStaffSalaries();
+      if (companyId) {
+        salaries = salaries.filter((s: any) => s.companyId === companyId);
+      }
+      const approvedSalaries = salaries.filter((s: any) => s.status === 'approved');
+      const staffSalaryTotal = approvedSalaries.reduce((sum: number, s: any) => sum + parseFloat(s.netSalary || '0'), 0);
+      
+      // Get agency sales
+      let agencySalesData = await globalStorage.getAgencySales();
+      if (companyId) {
+        agencySalesData = agencySalesData.filter((s: any) => s.companyId === companyId);
+      }
+      const filteredAgencySales = agencySalesData.filter((s: any) => {
+        const saleDate = new Date(s.saleDate);
+        return saleDate >= startDate && saleDate <= endDate;
+      });
+      const agencyRevenueTotal = filteredAgencySales.reduce((sum: number, s: any) => sum + parseFloat(s.amount || '0'), 0);
+      const agencyCommissionTotal = filteredAgencySales.reduce((sum: number, s: any) => sum + parseFloat(s.commission || '0'), 0);
+      
+      res.json({
+        staffSalaryTotal,
+        agencyRevenueTotal,
+        agencyCommissionTotal,
+        staffCount: approvedSalaries.length,
+        agencySalesCount: filteredAgencySales.length,
+      });
+    } catch (err) {
+      console.error('Financials summary error:', err);
+      res.json({ staffSalaryTotal: 0, agencyRevenueTotal: 0, agencyCommissionTotal: 0 });
+    }
+  });
+
   app.get('/api/business-designs', requireAuth, async (req: Request, res: Response) => {
     const { businessId } = req.query;
     const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });

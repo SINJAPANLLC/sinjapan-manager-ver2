@@ -472,9 +472,13 @@ export function createTenantStorage(companyId: string | null, options?: { allowG
         .where(eq(notifications.userId, userId))
         .orderBy(desc(notifications.createdAt)).limit(5);
 
-      // Revenue and expense (tenant-scoped via business)
+      // Revenue and expense (tenant-scoped via business + staff + agency)
       let totalRevenue = '0';
       let totalExpense = '0';
+      let staffSalaryTotal = '0';
+      let agencyCommissionTotal = '0';
+      let agencyRevenueTotal = '0';
+      
       if (role === 'admin' || role === 'ceo' || role === 'manager') {
         const firstDayOfMonth = new Date();
         firstDayOfMonth.setDate(1);
@@ -503,6 +507,31 @@ export function createTenantStorage(companyId: string | null, options?: { allowG
             totalRevenue = revenueResult[0]?.total || '0';
             totalExpense = expenseResult[0]?.total || '0';
           }
+          
+          // Staff salaries (approved only) - as expense
+          const salaryResult = await db.select({ total: sql<string>`COALESCE(SUM(net_salary), 0)` })
+            .from(staffSalaries)
+            .where(and(
+              eq(staffSalaries.companyId, companyId!),
+              eq(staffSalaries.status, 'approved')
+            ));
+          staffSalaryTotal = salaryResult[0]?.total || '0';
+          
+          // Agency sales - amount as revenue, commission as expense
+          const agencyRevenueResult = await db.select({ total: sql<string>`COALESCE(SUM(amount), 0)` })
+            .from(agencySales)
+            .where(and(
+              eq(agencySales.companyId, companyId!),
+              gte(agencySales.saleDate, firstDayOfMonth)
+            ));
+          const agencyCommissionResult = await db.select({ total: sql<string>`COALESCE(SUM(commission), 0)` })
+            .from(agencySales)
+            .where(and(
+              eq(agencySales.companyId, companyId!),
+              gte(agencySales.saleDate, firstDayOfMonth)
+            ));
+          agencyRevenueTotal = agencyRevenueResult[0]?.total || '0';
+          agencyCommissionTotal = agencyCommissionResult[0]?.total || '0';
         } else {
           const revenueResult = await db.select({ total: sql<string>`COALESCE(SUM(amount), 0)` })
             .from(businessSales).where(and(eq(businessSales.type, 'revenue'), gte(businessSales.saleDate, firstDayOfMonth)));
@@ -510,7 +539,29 @@ export function createTenantStorage(companyId: string | null, options?: { allowG
             .from(businessSales).where(and(eq(businessSales.type, 'expense'), gte(businessSales.saleDate, firstDayOfMonth)));
           totalRevenue = revenueResult[0]?.total || '0';
           totalExpense = expenseResult[0]?.total || '0';
+          
+          // Staff salaries (approved only) - as expense
+          const salaryResult = await db.select({ total: sql<string>`COALESCE(SUM(net_salary), 0)` })
+            .from(staffSalaries)
+            .where(eq(staffSalaries.status, 'approved'));
+          staffSalaryTotal = salaryResult[0]?.total || '0';
+          
+          // Agency sales - amount as revenue, commission as expense
+          const agencyRevenueResult = await db.select({ total: sql<string>`COALESCE(SUM(amount), 0)` })
+            .from(agencySales)
+            .where(gte(agencySales.saleDate, firstDayOfMonth));
+          const agencyCommissionResult = await db.select({ total: sql<string>`COALESCE(SUM(commission), 0)` })
+            .from(agencySales)
+            .where(gte(agencySales.saleDate, firstDayOfMonth));
+          agencyRevenueTotal = agencyRevenueResult[0]?.total || '0';
+          agencyCommissionTotal = agencyCommissionResult[0]?.total || '0';
         }
+        
+        // Combine totals
+        const combinedRevenue = parseFloat(totalRevenue) + parseFloat(agencyRevenueTotal);
+        const combinedExpense = parseFloat(totalExpense) + parseFloat(staffSalaryTotal) + parseFloat(agencyCommissionTotal);
+        totalRevenue = combinedRevenue.toString();
+        totalExpense = combinedExpense.toString();
       }
 
       // AI log count (user-specific)
@@ -756,6 +807,13 @@ export function createTenantStorage(companyId: string | null, options?: { allowG
         conditions.push(eq(staffSalaries.companyId, companyId));
       }
       return db.select().from(staffSalaries).where(and(...conditions)).orderBy(desc(staffSalaries.createdAt));
+    },
+
+    async getAllStaffSalaries(): Promise<StaffSalary[]> {
+      if (companyId) {
+        return db.select().from(staffSalaries).where(eq(staffSalaries.companyId, companyId)).orderBy(desc(staffSalaries.createdAt));
+      }
+      return db.select().from(staffSalaries).orderBy(desc(staffSalaries.createdAt));
     },
 
     async createStaffShift(data: InsertStaffShift): Promise<StaffShift> {
