@@ -656,7 +656,7 @@ export function registerRoutes(app: Express) {
 
   app.get('/api/staff/pending-approvals-count', requireAuth, async (req: Request, res: Response) => {
     try {
-      const currentUser = (req as any).currentUser;
+      const currentUser = await storage.getUser(req.session.userId!);
       if (!currentUser || !['admin', 'ceo', 'manager'].includes(currentUser.role)) {
         return res.json({ count: 0, advances: 0, shifts: 0 });
       }
