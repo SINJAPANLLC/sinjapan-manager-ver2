@@ -1085,7 +1085,7 @@ export function StaffPage() {
           </button>
         </div>
 
-        <div className="flex gap-2 bg-white rounded-xl p-1 border border-slate-200 w-fit">
+        <div className="flex gap-2 bg-white rounded-xl p-1 border border-slate-200 w-fit sticky top-0 z-10 shadow-sm">
           {[
             { id: 'info' as DetailTab, label: '基本情報', icon: UserCheck, badge: 0 },
             { id: 'salary' as DetailTab, label: '給料', icon: DollarSign, badge: 0 },
