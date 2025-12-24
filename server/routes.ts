@@ -654,6 +654,33 @@ export function registerRoutes(app: Express) {
     }
   });
 
+  app.get('/api/staff/pending-approvals-count', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const currentUser = (req as any).currentUser;
+      if (!['admin', 'ceo', 'manager'].includes(currentUser.role)) {
+        return res.json({ count: 0 });
+      }
+      
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      
+      const [advances, pendingShifts] = await Promise.all([
+        tenantStorage.getAdvancePayments(),
+        tenantStorage.getAllPendingShifts(),
+      ]);
+      
+      const pendingAdvancesCount = advances.filter((a: any) => a.status === 'pending').length;
+      const pendingShiftsCount = pendingShifts.length;
+      
+      res.json({ 
+        count: pendingAdvancesCount + pendingShiftsCount,
+        advances: pendingAdvancesCount,
+        shifts: pendingShiftsCount,
+      });
+    } catch (err) {
+      res.json({ count: 0, advances: 0, shifts: 0 });
+    }
+  });
+
   app.get('/api/tasks/pending-count', requireAuth, async (req: Request, res: Response) => {
     try {
       const currentUser = (req as any).currentUser;

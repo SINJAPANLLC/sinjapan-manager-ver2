@@ -30,31 +30,35 @@ interface BadgeCounts {
   notifications: number;
   messages: number;
   tasks: number;
+  staffApprovals: number;
 }
 
 export function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuth();
   const { tenant } = useTenant();
   const [location] = useLocation();
-  const [badgeCounts, setBadgeCounts] = useState<BadgeCounts>({ notifications: 0, messages: 0, tasks: 0 });
+  const [badgeCounts, setBadgeCounts] = useState<BadgeCounts>({ notifications: 0, messages: 0, tasks: 0, staffApprovals: 0 });
 
   useEffect(() => {
     const fetchBadgeCounts = async () => {
       try {
-        const [notifRes, msgRes, taskRes] = await Promise.all([
+        const [notifRes, msgRes, taskRes, staffRes] = await Promise.all([
           fetch('/api/notifications/unread-count', { credentials: 'include' }),
           fetch('/api/chat/unread-count', { credentials: 'include' }),
           fetch('/api/tasks/pending-count', { credentials: 'include' }),
+          fetch('/api/staff/pending-approvals-count', { credentials: 'include' }),
         ]);
         
         const notifications = notifRes.ok ? await notifRes.json().catch(() => ({ count: 0 })) : { count: 0 };
         const messages = msgRes.ok ? await msgRes.json().catch(() => ({ count: 0 })) : { count: 0 };
         const tasks = taskRes.ok ? await taskRes.json().catch(() => ({ count: 0 })) : { count: 0 };
+        const staffApprovals = staffRes.ok ? await staffRes.json().catch(() => ({ count: 0 })) : { count: 0 };
         
         setBadgeCounts({
           notifications: notifications.count || 0,
           messages: messages.count || 0,
           tasks: tasks.count || 0,
+          staffApprovals: staffApprovals.count || 0,
         });
       } catch (err) {
         console.error('Failed to fetch badge counts:', err);
@@ -71,6 +75,7 @@ export function Layout({ children }: LayoutProps) {
       case '/notifications': return badgeCounts.notifications;
       case '/communication': return badgeCounts.messages;
       case '/tasks': return badgeCounts.tasks;
+      case '/staff': return badgeCounts.staffApprovals;
       default: return 0;
     }
   };

@@ -733,6 +733,14 @@ export function createTenantStorage(companyId: string | null, options?: { allowG
       return db.select().from(staffShifts).where(and(...conditions)).orderBy(desc(staffShifts.date));
     },
 
+    async getAllPendingShifts(): Promise<StaffShift[]> {
+      const conditions: any[] = [eq(staffShifts.approvalStatus, 'pending')];
+      if (companyId) {
+        conditions.push(eq(staffShifts.companyId, companyId));
+      }
+      return db.select().from(staffShifts).where(and(...conditions)).orderBy(desc(staffShifts.date));
+    },
+
     async createStaffShift(data: InsertStaffShift): Promise<StaffShift> {
       const shiftData = companyId ? { ...data, companyId } : data;
       const [shift] = await db.insert(staffShifts).values(shiftData).returning();
