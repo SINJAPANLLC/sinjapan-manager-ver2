@@ -1062,13 +1062,13 @@ export function StaffPage() {
 
         <div className="flex gap-2 bg-white rounded-xl p-1 border border-slate-200 w-fit">
           {[
-            { id: 'info' as DetailTab, label: '基本情報', icon: UserCheck },
-            { id: 'salary' as DetailTab, label: '給料', icon: DollarSign },
-            { id: 'shift' as DetailTab, label: 'シフト', icon: Clock },
-            { id: 'advance' as DetailTab, label: '前払い申請', icon: CreditCard },
-            { id: 'tasks' as DetailTab, label: 'タスク', icon: ClipboardList },
-            { id: 'system' as DetailTab, label: 'システム', icon: Settings },
-            { id: 'memo' as DetailTab, label: 'メモ', icon: StickyNote },
+            { id: 'info' as DetailTab, label: '基本情報', icon: UserCheck, badge: 0 },
+            { id: 'salary' as DetailTab, label: '給料', icon: DollarSign, badge: 0 },
+            { id: 'shift' as DetailTab, label: 'シフト', icon: Clock, badge: shifts.filter(s => s.approvalStatus === 'pending').length },
+            { id: 'advance' as DetailTab, label: '前払い申請', icon: CreditCard, badge: advancePayments.filter(a => a.status === 'pending').length },
+            { id: 'tasks' as DetailTab, label: 'タスク', icon: ClipboardList, badge: 0 },
+            { id: 'system' as DetailTab, label: 'システム', icon: Settings, badge: 0 },
+            { id: 'memo' as DetailTab, label: 'メモ', icon: StickyNote, badge: 0 },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -1080,6 +1080,14 @@ export function StaffPage() {
             >
               <tab.icon size={16} />
               {tab.label}
+              {tab.badge > 0 && (
+                <span className={cn(
+                  "ml-1 px-1.5 py-0.5 rounded-full text-xs font-bold",
+                  detailTab === tab.id ? "bg-white text-primary-500" : "bg-red-500 text-white"
+                )}>
+                  {tab.badge}
+                </span>
+              )}
             </button>
           ))}
         </div>
