@@ -1364,6 +1364,10 @@ export function StaffPage() {
                     });
                     const approvedShiftAmount = monthShifts.reduce((sum, s) => sum + (Number(s.amount || 0)), 0);
                     
+                    const baseSalary = Number(sal.baseSalary || 0);
+                    const deductions = Number(sal.deductions || 0);
+                    const totalAmount = baseSalary + approvedTaskRewards + approvedShiftAmount - deductions;
+                    
                     return (
                       <div
                         key={sal.id}
@@ -1372,54 +1376,72 @@ export function StaffPage() {
                       >
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
-                            <p className="font-medium text-slate-800 mb-2">
+                            <p className="font-medium text-slate-800 mb-3">
                               {sal.year}年{sal.month}月
-                              {sal.paidAt && <span className="text-sm text-slate-500 ml-2">({format(new Date(sal.paidAt), 'yyyy/MM/dd')})</span>}
+                              {sal.paidAt && <span className="text-sm text-slate-500 ml-2">({format(new Date(sal.paidAt), 'yyyy/MM/dd')} 支払済)</span>}
                             </p>
-                            <div className="space-y-1 text-sm text-slate-600">
-                              <div className="flex justify-between items-center">
-                                <span>基本報酬:</span>
-                                <span>¥{Number(sal.baseSalary || 0).toLocaleString()}</span>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                                <span className="text-slate-600">基本報酬</span>
+                                <span className="font-medium">¥{baseSalary.toLocaleString()}</span>
                               </div>
-                              {approvedTaskRewards > 0 && (
-                                <div className="flex justify-between items-center text-green-600">
-                                  <span>承認済タスク報酬 ({monthTasks.length}件):</span>
-                                  <span>+¥{approvedTaskRewards.toLocaleString()}</span>
+                              <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                                <span className="text-green-600 flex items-center gap-1">
+                                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                                  タスク報酬 ({monthTasks.length}件)
+                                </span>
+                                <span className="font-medium text-green-600">+¥{approvedTaskRewards.toLocaleString()}</span>
+                              </div>
+                              <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                                <span className="text-blue-600 flex items-center gap-1">
+                                  <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                                  シフト ({monthShifts.length}件)
+                                </span>
+                                <span className="font-medium text-blue-600">+¥{approvedShiftAmount.toLocaleString()}</span>
+                              </div>
+                              {deductions > 0 && (
+                                <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                                  <span className="text-red-600 flex items-center gap-1">
+                                    <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                                    控除
+                                  </span>
+                                  <span className="font-medium text-red-600">-¥{deductions.toLocaleString()}</span>
                                 </div>
                               )}
-                              {approvedShiftAmount > 0 && (
-                                <div className="flex justify-between items-center text-blue-600">
-                                  <span>承認済シフト ({monthShifts.length}件):</span>
-                                  <span>+¥{approvedShiftAmount.toLocaleString()}</span>
-                                </div>
-                              )}
-                              {Number(sal.deductions || 0) > 0 && (
-                                <div className="flex justify-between items-center text-red-600">
-                                  <span>控除:</span>
-                                  <span>-¥{Number(sal.deductions || 0).toLocaleString()}</span>
-                                </div>
-                              )}
+                              <div className="flex justify-between items-center py-2 bg-slate-50 rounded-lg px-2 mt-2">
+                                <span className="font-bold text-slate-700">小計</span>
+                                <span className="font-bold text-lg text-primary-600">¥{totalAmount.toLocaleString()}</span>
+                              </div>
                             </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-bold text-lg text-primary-600">
-                              ¥{Number(sal.netSalary).toLocaleString()}
-                            </p>
-                            {(approvedTaskRewards > 0 || approvedShiftAmount > 0) && (
-                              <p className="text-xs text-slate-500">
-                                (+ タスク/シフト: ¥{(approvedTaskRewards + approvedShiftAmount).toLocaleString()})
-                              </p>
-                            )}
                           </div>
                         </div>
                       </div>
                     );
                   })}
                 </div>
-                <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
-                  <p className="font-bold text-slate-700">合計</p>
+                <div className="p-4 bg-gradient-to-r from-primary-50 to-blue-50 border-t border-slate-200 flex justify-between items-center">
+                  <p className="font-bold text-slate-700">総合計</p>
                   <p className="font-bold text-xl text-primary-700">
-                    ¥{salaries.reduce((sum, sal) => sum + Number(sal.netSalary), 0).toLocaleString()}
+                    ¥{salaries.reduce((sum, sal) => {
+                      const base = Number(sal.baseSalary || 0);
+                      const ded = Number(sal.deductions || 0);
+                      const taskRewards = staffTasks.filter((t) => {
+                        if (!t.rewardApprovedAt) return false;
+                        const approvalDate = new Date(t.rewardApprovedAt);
+                        return approvalDate.getFullYear() === sal.year && approvalDate.getMonth() + 1 === sal.month;
+                      }).reduce((s, t) => s + (parseFloat(t.rewardAmount || '0') || 0), 0);
+                      const shiftAmount = shifts.filter((s) => {
+                        if (s.approvalStatus !== 'approved') return false;
+                        const approvedAt = s.approvedAt;
+                        if (approvedAt) {
+                          const approvalDate = new Date(approvedAt);
+                          return approvalDate.getFullYear() === sal.year && approvalDate.getMonth() + 1 === sal.month;
+                        }
+                        const shiftDate = new Date(s.date);
+                        return shiftDate.getFullYear() === sal.year && shiftDate.getMonth() + 1 === sal.month;
+                      }).reduce((s, sh) => s + (Number(sh.amount || 0)), 0);
+                      return sum + base + taskRewards + shiftAmount - ded;
+                    }, 0).toLocaleString()}
                   </p>
                 </div>
               </>
