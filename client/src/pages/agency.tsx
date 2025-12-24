@@ -14,10 +14,13 @@ import {
   Calendar,
   BarChart3,
   Gift,
-  Users
+  Users,
+  Save,
+  CreditCard
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
+import { useAuth } from '../hooks/use-auth';
 
 interface Agency {
   id: number;
@@ -66,6 +69,10 @@ interface AgencyIncentive {
 }
 
 export function AgencyPage() {
+  const { user } = useAuth();
+  const isAgencyUser = user?.role === 'agency';
+  const canManage = user && ['admin', 'ceo', 'manager'].includes(user.role);
+  
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [sales, setSales] = useState<AgencySale[]>([]);
   const [businesses, setBusinesses] = useState<Business[]>([]);
@@ -78,6 +85,16 @@ export function AgencyPage() {
   const [editingAgency, setEditingAgency] = useState<Agency | null>(null);
   const [selectedAgency, setSelectedAgency] = useState<Agency | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'incentive' | 'sales'>('list');
+  const [selfTab, setSelfTab] = useState<'profile' | 'sales' | 'incentives'>('profile');
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    phone: '',
+    bankName: '',
+    bankBranch: '',
+    bankAccountType: '普通',
+    bankAccountNumber: '',
+    bankAccountHolder: '',
+  });
   
   const [form, setForm] = useState({
     email: '',
@@ -150,6 +167,38 @@ export function AgencyPage() {
     fetchBusinesses();
     fetchIncentives();
   }, []);
+
+  useEffect(() => {
+    if (isAgencyUser && user) {
+      setProfileForm({
+        phone: user.phone || '',
+        bankName: user.bankName || '',
+        bankBranch: user.bankBranch || '',
+        bankAccountType: user.bankAccountType || '普通',
+        bankAccountNumber: user.bankAccountNumber || '',
+        bankAccountHolder: user.bankAccountHolder || '',
+      });
+    }
+  }, [isAgencyUser, user]);
+
+  const handleProfileSave = async () => {
+    if (!user) return;
+    const res = await fetch(`/api/users/${user.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(profileForm),
+    });
+    if (res.ok) {
+      setIsEditingProfile(false);
+      alert('プロフィールを更新しました');
+    } else {
+      alert('更新に失敗しました');
+    }
+  };
+
+  const mySales = isAgencyUser && user ? sales.filter(s => s.agencyId === user.id) : [];
+  const myIncentives = isAgencyUser && user ? incentives.filter(i => !i.targetAgencyId || i.targetAgencyId === user.id) : [];
 
   const handleSubmit = async () => {
     if (!form.name || !form.email) {
@@ -297,6 +346,302 @@ export function AgencyPage() {
     a.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     a.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const myTotalSales = mySales.reduce((sum, s) => sum + parseFloat(s.amount || '0'), 0);
+  const myTotalCommission = mySales.reduce((sum, s) => sum + parseFloat(s.commission || '0'), 0);
+
+  if (isAgencyUser && user) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold gradient-text flex items-center gap-2">
+              <Building2 size={28} />
+              マイページ
+            </h1>
+            <p className="text-slate-500 mt-1">{user.name} さんの代理店情報</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4">
+          <div className="card p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-blue-100">
+                <TrendingUp className="text-blue-600" size={24} />
+              </div>
+              <div>
+                <p className="text-sm text-slate-500">総売上</p>
+                <p className="text-xl font-bold text-slate-800">¥{myTotalSales.toLocaleString()}</p>
+              </div>
+            </div>
+          </div>
+          <div className="card p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-green-100">
+                <DollarSign className="text-green-600" size={24} />
+              </div>
+              <div>
+                <p className="text-sm text-slate-500">総コミッション</p>
+                <p className="text-xl font-bold text-slate-800">¥{myTotalCommission.toLocaleString()}</p>
+              </div>
+            </div>
+          </div>
+          <div className="card p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-orange-100">
+                <BarChart3 className="text-orange-600" size={24} />
+              </div>
+              <div>
+                <p className="text-sm text-slate-500">売上件数</p>
+                <p className="text-xl font-bold text-slate-800">{mySales.length}件</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-2 bg-white rounded-xl p-1 border border-slate-200 w-fit">
+          {[
+            { id: 'profile' as const, label: '基本情報', icon: Users },
+            { id: 'sales' as const, label: '売上履歴', icon: TrendingUp },
+            { id: 'incentives' as const, label: 'インセンティブ', icon: Gift },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setSelfTab(tab.id)}
+              className={cn(
+                "px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2",
+                selfTab === tab.id ? "bg-primary-500 text-white" : "text-slate-600 hover:bg-slate-100"
+              )}
+            >
+              <tab.icon size={16} />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {selfTab === 'profile' && (
+          <div className="card p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-bold text-slate-800">基本情報</h2>
+              {!isEditingProfile && (
+                <button onClick={() => setIsEditingProfile(true)} className="btn-secondary text-sm flex items-center gap-2">
+                  <Edit size={14} />
+                  編集
+                </button>
+              )}
+            </div>
+
+            {isEditingProfile ? (
+              <div className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs text-slate-500">電話番号</label>
+                    <input
+                      type="tel"
+                      className="input-field"
+                      value={profileForm.phone}
+                      onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="border-t pt-4 mt-4">
+                  <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                    <CreditCard size={16} />
+                    振込先情報
+                  </h3>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs text-slate-500">銀行名</label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        value={profileForm.bankName}
+                        onChange={(e) => setProfileForm({ ...profileForm, bankName: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-500">支店名</label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        value={profileForm.bankBranch}
+                        onChange={(e) => setProfileForm({ ...profileForm, bankBranch: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-500">口座種別</label>
+                      <select
+                        className="input-field"
+                        value={profileForm.bankAccountType}
+                        onChange={(e) => setProfileForm({ ...profileForm, bankAccountType: e.target.value })}
+                      >
+                        <option value="普通">普通</option>
+                        <option value="当座">当座</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-500">口座番号</label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        value={profileForm.bankAccountNumber}
+                        onChange={(e) => setProfileForm({ ...profileForm, bankAccountNumber: e.target.value })}
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="text-xs text-slate-500">口座名義</label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        value={profileForm.bankAccountHolder}
+                        onChange={(e) => setProfileForm({ ...profileForm, bankAccountHolder: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-2 justify-end pt-4">
+                  <button onClick={() => setIsEditingProfile(false)} className="btn-secondary">キャンセル</button>
+                  <button onClick={handleProfileSave} className="btn-primary flex items-center gap-2">
+                    <Save size={16} />
+                    保存
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-slate-500">名前</p>
+                    <p className="text-slate-800">{user.name}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">メールアドレス</p>
+                    <p className="text-slate-800">{user.email}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">電話番号</p>
+                    <p className="text-slate-800">{user.phone || '-'}</p>
+                  </div>
+                </div>
+                <div className="border-t pt-4 mt-4">
+                  <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                    <CreditCard size={16} />
+                    振込先情報
+                  </h3>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-slate-500">銀行名</p>
+                      <p className="text-slate-800">{user.bankName || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500">支店名</p>
+                      <p className="text-slate-800">{user.bankBranch || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500">口座種別</p>
+                      <p className="text-slate-800">{user.bankAccountType || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500">口座番号</p>
+                      <p className="text-slate-800">{user.bankAccountNumber || '-'}</p>
+                    </div>
+                    <div className="md:col-span-2">
+                      <p className="text-xs text-slate-500">口座名義</p>
+                      <p className="text-slate-800">{user.bankAccountHolder || '-'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {selfTab === 'sales' && (
+          <div className="card p-6">
+            <h2 className="text-lg font-bold text-slate-800 mb-4">売上履歴</h2>
+            {mySales.length === 0 ? (
+              <p className="text-slate-500 text-center py-8">売上データがありません</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200">
+                      <th className="text-left py-3 px-2 text-slate-600 font-medium">日付</th>
+                      <th className="text-left py-3 px-2 text-slate-600 font-medium">顧客名</th>
+                      <th className="text-left py-3 px-2 text-slate-600 font-medium">案件名</th>
+                      <th className="text-right py-3 px-2 text-slate-600 font-medium">売上</th>
+                      <th className="text-right py-3 px-2 text-slate-600 font-medium">コミッション</th>
+                      <th className="text-center py-3 px-2 text-slate-600 font-medium">ステータス</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {mySales.map((sale) => (
+                      <tr key={sale.id} className="border-b border-slate-100 hover:bg-slate-50">
+                        <td className="py-3 px-2">{format(new Date(sale.saleDate), 'yyyy/MM/dd')}</td>
+                        <td className="py-3 px-2">{sale.clientName}</td>
+                        <td className="py-3 px-2">{sale.projectName || '-'}</td>
+                        <td className="py-3 px-2 text-right font-medium">¥{parseFloat(sale.amount).toLocaleString()}</td>
+                        <td className="py-3 px-2 text-right text-green-600 font-medium">¥{parseFloat(sale.commission || '0').toLocaleString()}</td>
+                        <td className="py-3 px-2 text-center">
+                          <span className={cn(
+                            "px-2 py-1 text-xs rounded-full",
+                            sale.status === 'approved' && "bg-green-100 text-green-700",
+                            sale.status === 'paid' && "bg-blue-100 text-blue-700",
+                            sale.status === 'pending' && "bg-yellow-100 text-yellow-700",
+                            sale.status === 'rejected' && "bg-red-100 text-red-700"
+                          )}>
+                            {sale.status === 'approved' ? '承認済み' : sale.status === 'paid' ? '支払済み' : sale.status === 'pending' ? '保留中' : '却下'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {selfTab === 'incentives' && (
+          <div className="card p-6">
+            <h2 className="text-lg font-bold text-slate-800 mb-4">インセンティブ</h2>
+            {myIncentives.length === 0 ? (
+              <p className="text-slate-500 text-center py-8">インセンティブがありません</p>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                {myIncentives.map((incentive) => (
+                  <div key={incentive.id} className="border border-slate-200 rounded-xl p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-semibold text-slate-800">{incentive.projectName}</h3>
+                      <span className={cn(
+                        "px-2 py-1 text-xs rounded-full",
+                        incentive.status === 'active' ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600"
+                      )}>
+                        {incentive.status === 'active' ? '有効' : '無効'}
+                      </span>
+                    </div>
+                    {incentive.description && (
+                      <p className="text-sm text-slate-500 mb-2">{incentive.description}</p>
+                    )}
+                    <div className="flex items-center gap-4 text-sm">
+                      <span className="text-primary-600 font-bold">
+                        {incentive.incentiveType === 'percentage' ? `${incentive.incentiveValue}%` : `¥${parseFloat(incentive.incentiveValue).toLocaleString()}`}
+                      </span>
+                      {incentive.startDate && (
+                        <span className="text-slate-500">
+                          {format(new Date(incentive.startDate), 'yyyy/MM/dd')} ～ {incentive.endDate ? format(new Date(incentive.endDate), 'yyyy/MM/dd') : '期限なし'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
