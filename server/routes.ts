@@ -657,15 +657,15 @@ export function registerRoutes(app: Express) {
   app.get('/api/staff/pending-approvals-count', requireAuth, async (req: Request, res: Response) => {
     try {
       const currentUser = (req as any).currentUser;
-      if (!['admin', 'ceo', 'manager'].includes(currentUser.role)) {
-        return res.json({ count: 0 });
+      if (!currentUser || !['admin', 'ceo', 'manager'].includes(currentUser.role)) {
+        return res.json({ count: 0, advances: 0, shifts: 0 });
       }
       
-      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const globalStorage = createTenantStorage(null, { allowGlobal: true });
       
       const [advances, pendingShifts] = await Promise.all([
-        tenantStorage.getAdvancePayments(),
-        tenantStorage.getAllPendingShifts(),
+        globalStorage.getAdvancePayments(),
+        globalStorage.getAllPendingShifts(),
       ]);
       
       const pendingAdvancesCount = advances.filter((a: any) => a.status === 'pending').length;
@@ -677,6 +677,7 @@ export function registerRoutes(app: Express) {
         shifts: pendingShiftsCount,
       });
     } catch (err) {
+      console.error('Staff pending approvals count error:', err);
       res.json({ count: 0, advances: 0, shifts: 0 });
     }
   });

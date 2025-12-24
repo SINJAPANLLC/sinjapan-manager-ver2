@@ -65,10 +65,12 @@ export function Layout({ children }: LayoutProps) {
       }
     };
 
-    fetchBadgeCounts();
-    const interval = setInterval(fetchBadgeCounts, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    if (user) {
+      fetchBadgeCounts();
+      const interval = setInterval(fetchBadgeCounts, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
 
   const getBadgeCount = (href: string): number => {
     switch (href) {
