@@ -1922,14 +1922,11 @@ export function StaffPage() {
             </div>
             {showAdvanceForm && (
               <div className="p-4 bg-slate-50 border-b border-slate-100">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                <div className="mb-3">
+                  <p className="text-xs text-slate-500 mb-2">※ 理由の入力は不要です。上限は報酬金額の半額までです。</p>
                   <div>
                     <label className="text-xs text-slate-500">金額 *</label>
                     <input type="number" className="input-field text-sm" placeholder="50000" value={advanceForm.amount} onChange={(e) => setAdvanceForm({ ...advanceForm, amount: e.target.value })} />
-                  </div>
-                  <div>
-                    <label className="text-xs text-slate-500">理由</label>
-                    <input type="text" className="input-field text-sm" placeholder="緊急の出費のため" value={advanceForm.reason} onChange={(e) => setAdvanceForm({ ...advanceForm, reason: e.target.value })} />
                   </div>
                 </div>
                 <div className="flex gap-2">
