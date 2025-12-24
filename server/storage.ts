@@ -1,8 +1,8 @@
 import { db } from './db';
-import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, systemSettings, leads, leadActivities, clientProjects, clientInvoices, companies, quickNotes, investments, staffAffiliates } from '../shared/schema';
+import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, systemSettings, leads, leadActivities, clientProjects, clientInvoices, companies, quickNotes, investments, staffAffiliates, financialEntries } from '../shared/schema';
 import { eq, and, or, desc, sql, isNull, gte, lte, like, ilike } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, SystemSetting, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Company, InsertCompany, QuickNote, InsertQuickNote, Investment, InsertInvestment } from '../shared/schema';
+import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, SystemSetting, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Company, InsertCompany, QuickNote, InsertQuickNote, Investment, InsertInvestment, FinancialEntry, InsertFinancialEntry } from '../shared/schema';
 
 export const storage = {
   async getUser(id: number): Promise<User | undefined> {
@@ -867,5 +867,64 @@ export const storage = {
     await db.update(staffAffiliates)
       .set({ totalClicks: sql`COALESCE(${staffAffiliates.totalClicks}, 0) + 1` })
       .where(eq(staffAffiliates.id, id));
+  },
+
+  async getFinancialEntries(statementType?: string, startDate?: Date, endDate?: Date): Promise<FinancialEntry[]> {
+    const conditions = [];
+    if (statementType) {
+      conditions.push(eq(financialEntries.statementType, statementType));
+    }
+    if (startDate) {
+      conditions.push(gte(financialEntries.entryDate, startDate));
+    }
+    if (endDate) {
+      conditions.push(lte(financialEntries.entryDate, endDate));
+    }
+    if (conditions.length > 0) {
+      return db.select().from(financialEntries)
+        .where(and(...conditions))
+        .orderBy(desc(financialEntries.entryDate));
+    }
+    return db.select().from(financialEntries).orderBy(desc(financialEntries.entryDate));
+  },
+
+  async createFinancialEntry(data: InsertFinancialEntry): Promise<FinancialEntry> {
+    const [entry] = await db.insert(financialEntries).values(data).returning();
+    return entry;
+  },
+
+  async updateFinancialEntry(id: number, data: Partial<InsertFinancialEntry>): Promise<FinancialEntry | undefined> {
+    const [entry] = await db.update(financialEntries)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(financialEntries.id, id))
+      .returning();
+    return entry;
+  },
+
+  async deleteFinancialEntry(id: number): Promise<boolean> {
+    await db.delete(financialEntries).where(eq(financialEntries.id, id));
+    return true;
+  },
+
+  async getFinancialEntrySummary(statementType: string, startDate?: Date, endDate?: Date): Promise<{ category: string; subCategory: string | null; total: number }[]> {
+    const conditions = [eq(financialEntries.statementType, statementType)];
+    if (startDate) {
+      conditions.push(gte(financialEntries.entryDate, startDate));
+    }
+    if (endDate) {
+      conditions.push(lte(financialEntries.entryDate, endDate));
+    }
+    const result = await db.select({
+      category: financialEntries.category,
+      subCategory: financialEntries.subCategory,
+      total: sql<number>`COALESCE(SUM(${financialEntries.amount}), 0)`,
+    }).from(financialEntries)
+      .where(and(...conditions))
+      .groupBy(financialEntries.category, financialEntries.subCategory);
+    return result.map(r => ({
+      category: r.category,
+      subCategory: r.subCategory,
+      total: parseFloat(String(r.total || 0)),
+    }));
   },
 };

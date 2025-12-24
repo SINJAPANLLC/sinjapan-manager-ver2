@@ -2613,6 +2613,87 @@ ${articleList}`
     }
   });
 
+  // Financial Entries API (PL/BS/CF詳細入力)
+  app.get('/api/financial-entries', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { statementType, startDate, endDate } = req.query;
+      const entries = await storage.getFinancialEntries(
+        statementType as string | undefined,
+        startDate ? new Date(startDate as string) : undefined,
+        endDate ? new Date(endDate as string) : undefined
+      );
+      res.json(entries);
+    } catch (error) {
+      console.error('Get financial entries error:', error);
+      res.status(500).json([]);
+    }
+  });
+
+  app.get('/api/financial-entries/summary', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { statementType, startDate, endDate } = req.query;
+      if (!statementType) {
+        return res.status(400).json({ error: 'statementType is required' });
+      }
+      const summary = await storage.getFinancialEntrySummary(
+        statementType as string,
+        startDate ? new Date(startDate as string) : undefined,
+        endDate ? new Date(endDate as string) : undefined
+      );
+      res.json(summary);
+    } catch (error) {
+      console.error('Get financial entry summary error:', error);
+      res.status(500).json([]);
+    }
+  });
+
+  app.post('/api/financial-entries', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const { statementType, category, subCategory, amount, description, entryDate } = req.body;
+      const entry = await storage.createFinancialEntry({
+        statementType,
+        category,
+        subCategory: subCategory || null,
+        amount,
+        description: description || null,
+        entryDate: entryDate ? new Date(entryDate) : new Date(),
+        createdBy: req.session.userId,
+      });
+      res.json(entry);
+    } catch (error) {
+      console.error('Create financial entry error:', error);
+      res.status(500).json({ error: '財務データの作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/financial-entries/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const { statementType, category, subCategory, amount, description, entryDate } = req.body;
+      const entry = await storage.updateFinancialEntry(parseInt(req.params.id), {
+        statementType,
+        category,
+        subCategory: subCategory || null,
+        amount,
+        description: description || null,
+        entryDate: entryDate ? new Date(entryDate) : undefined,
+      });
+      res.json(entry);
+    } catch (error) {
+      console.error('Update financial entry error:', error);
+      res.status(500).json({ error: '財務データの更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/financial-entries/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      await storage.deleteFinancialEntry(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete financial entry error:', error);
+      res.status(500).json({ error: '財務データの削除に失敗しました' });
+    }
+  });
+
   // Square API (テナント別対応)
   app.get('/api/square/status', requireRole('admin', 'ceo'), async (req: Request, res: Response) => {
     try {
