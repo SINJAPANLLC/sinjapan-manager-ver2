@@ -1923,7 +1923,7 @@ export function StaffPage() {
             {showAdvanceForm && (
               <div className="p-4 bg-slate-50 border-b border-slate-100">
                 <div className="mb-3">
-                  <p className="text-xs text-slate-500 mb-2">※ 理由の入力は不要です。上限は報酬金額の半額までです。</p>
+                  <p className="text-xs text-slate-500 mb-2">※ 申請上限は報酬金額の半額までになります</p>
                   <div>
                     <label className="text-xs text-slate-500">金額 *</label>
                     <input type="number" className="input-field text-sm" placeholder="50000" value={advanceForm.amount} onChange={(e) => setAdvanceForm({ ...advanceForm, amount: e.target.value })} />
