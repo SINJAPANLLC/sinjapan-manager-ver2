@@ -18,7 +18,9 @@ import {
   Target,
   FileSpreadsheet,
   TrendingUp,
-  Compass
+  Compass,
+  Menu,
+  X
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -38,6 +40,11 @@ export function Layout({ children }: LayoutProps) {
   const { tenant } = useTenant();
   const [location] = useLocation();
   const [badgeCounts, setBadgeCounts] = useState<BadgeCounts>({ notifications: 0, messages: 0, tasks: 0, staffApprovals: 0 });
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location]);
 
   useEffect(() => {
     const fetchBadgeCounts = async () => {
@@ -105,9 +112,41 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-primary-50/30">
-      <aside className="fixed inset-y-0 left-0 z-40 w-72 glass-sidebar shadow-soft">
-        <div className="flex flex-col h-full">
-          <div className="p-6 border-b border-slate-100">
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 glass-sidebar shadow-soft px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {tenant?.logoUrl && (
+            <img 
+              src={tenant.logoUrl} 
+              alt={tenant.name} 
+              className="w-8 h-8 object-contain rounded-lg"
+            />
+          )}
+          <h1 className="text-lg font-bold gradient-text">
+            {tenant?.name || 'SIN JAPAN'}
+          </h1>
+        </div>
+        <button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="p-2 rounded-xl hover:bg-primary-50 text-slate-600 transition-colors"
+        >
+          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+      </header>
+
+      {isMobileMenuOpen && (
+        <div 
+          className="lg:hidden fixed inset-0 bg-black/30 z-40 backdrop-blur-sm"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      <aside className={cn(
+        "fixed inset-y-0 left-0 z-40 w-72 glass-sidebar shadow-soft transition-transform duration-300 ease-in-out",
+        "lg:translate-x-0",
+        isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
+        <div className="flex flex-col h-full pt-16 lg:pt-0">
+          <div className="hidden lg:block p-6 border-b border-slate-100">
             <div className="flex items-center gap-3">
               {tenant?.logoUrl && (
                 <img 
@@ -124,7 +163,6 @@ export function Layout({ children }: LayoutProps) {
               </div>
             </div>
           </div>
-
 
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             {menuItems.map((item) => {
@@ -174,8 +212,8 @@ export function Layout({ children }: LayoutProps) {
         </div>
       </aside>
 
-      <main className="ml-72 min-h-screen">
-        <div className="p-6 lg:p-8 animate-fade-in">
+      <main className="lg:ml-72 min-h-screen pt-16 lg:pt-0">
+        <div className="p-4 sm:p-6 lg:p-8 animate-fade-in">
           {children}
         </div>
       </main>

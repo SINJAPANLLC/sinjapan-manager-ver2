@@ -11,6 +11,14 @@ I prefer simple language and detailed explanations. I want iterative development
 ### UI/UX Decisions
 The application features a refined white-based theme with blue gradient accents, implemented using Tailwind CSS. Key design elements include rounded cards with soft shadows, blue gradient buttons, and consistent styling across all pages for improved visual hierarchy and user experience. Custom components like `.glass-card` provide modern visual effects.
 
+**Mobile Responsive Design (Dec 2024)**:
+-   Collapsible hamburger menu for mobile devices (hidden sidebar by default on screens < lg)
+-   Fixed header with app branding on mobile
+-   Responsive grid layouts (1-column on mobile, expanding on larger screens)
+-   Horizontal scrollable tables for financial data on small screens
+-   Touch-friendly navigation with proper spacing and tap targets
+-   CSS utility classes: `.mobile-scroll-x`, `.page-header`, `.page-title`, `.grid-responsive`, `.modal-container`
+
 ### Technical Implementations
 -   **Frontend**: React 18 with TypeScript, Vite for build tooling, TanStack Query for state management, and Wouter for routing.
 -   **Backend**: Express.js with TypeScript, using PostgreSQL (Neon) via Drizzle ORM.

@@ -74,8 +74,44 @@
   }
 
   .stat-card {
-    @apply bg-white rounded-2xl p-6 border border-slate-100 shadow-soft;
+    @apply bg-white rounded-2xl p-4 sm:p-6 border border-slate-100 shadow-soft;
     @apply hover:shadow-card hover:border-primary-100 transition-all duration-300;
+  }
+
+  .mobile-scroll-x {
+    @apply overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0;
+  }
+
+  .mobile-table {
+    @apply min-w-[640px] sm:min-w-0;
+  }
+
+  .page-header {
+    @apply flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6;
+  }
+
+  .page-title {
+    @apply text-xl sm:text-2xl lg:text-3xl font-bold text-slate-800;
+  }
+
+  .grid-responsive {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6;
+  }
+
+  .grid-responsive-2 {
+    @apply grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6;
+  }
+
+  .modal-container {
+    @apply fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4;
+  }
+
+  .modal-content {
+    @apply bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[90vh] overflow-y-auto;
+  }
+
+  .form-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 gap-4;
   }
 
   .nav-item {

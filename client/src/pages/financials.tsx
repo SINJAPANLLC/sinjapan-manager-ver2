@@ -588,8 +588,8 @@ export function FinancialsPage() {
                 損益計算書（P/L）
               </h3>
             </div>
-            <div className="p-6">
-              <table className="w-full">
+            <div className="p-4 sm:p-6 overflow-x-auto">
+              <table className="w-full min-w-[400px]">
                 <thead>
                   <tr className="border-b border-slate-100">
                     <th className="text-left py-3 text-sm font-medium text-slate-500">勘定科目</th>
@@ -750,8 +750,8 @@ export function FinancialsPage() {
                 貸借対照表（B/S）
               </h3>
             </div>
-            <div className="p-6">
-              <div className="grid grid-cols-2 gap-8">
+            <div className="p-4 sm:p-6 overflow-x-auto">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 min-w-[320px]">
                 <div>
                   <h4 className="font-bold text-slate-800 mb-4 pb-2 border-b-2 border-blue-500">資産の部</h4>
                   <table className="w-full">
@@ -923,7 +923,7 @@ export function FinancialsPage() {
             </button>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-white rounded-2xl p-5 shadow-soft border border-slate-100">
               <div className="flex items-center gap-3 mb-2">
                 <div className="p-2.5 bg-blue-100 rounded-xl">
@@ -962,8 +962,8 @@ export function FinancialsPage() {
                 キャッシュフロー計算書（C/F）
               </h3>
             </div>
-            <div className="p-6">
-              <table className="w-full">
+            <div className="p-4 sm:p-6 overflow-x-auto">
+              <table className="w-full min-w-[400px]">
                 <thead>
                   <tr className="border-b border-slate-100">
                     <th className="text-left py-3 text-sm font-medium text-slate-500">項目</th>
