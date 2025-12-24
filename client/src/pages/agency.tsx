@@ -13,7 +13,8 @@ import {
   Loader2,
   Calendar,
   BarChart3,
-  Gift
+  Gift,
+  Users
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
@@ -308,6 +309,16 @@ export function AgencyPage() {
           <p className="text-slate-500 mt-1">代理店の登録・売上管理</p>
         </div>
         <div className="flex gap-2">
+          <button
+            onClick={() => setViewMode('list')}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg transition-colors",
+              viewMode === 'list' ? "bg-primary-500 text-white" : "btn-secondary"
+            )}
+          >
+            <Users size={18} />
+            代理店一覧
+          </button>
           <button
             onClick={() => setViewMode('incentive')}
             className={cn(
