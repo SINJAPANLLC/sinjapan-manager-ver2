@@ -603,113 +603,141 @@ export function StaffPage() {
     setEmployeeData(null);
   };
 
-  const exportStaffToPDF = () => {
-    if (!selectedStaff || !employeeData) return;
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
+  
+  const exportStaffToPDF = async () => {
+    if (!selectedStaff || !employeeData || isExportingPDF) return;
     
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4',
-    });
+    setIsExportingPDF(true);
     
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    let y = 20;
-    const leftMargin = 20;
-    const lineHeight = 7;
-    
-    pdf.setFontSize(18);
-    pdf.text('スタッフ情報', pageWidth / 2, y, { align: 'center' });
-    y += 15;
-    
-    pdf.setFontSize(12);
-    pdf.text(`出力日: ${format(new Date(), 'yyyy年MM月dd日')}`, pageWidth - 20, y, { align: 'right' });
-    y += 10;
-    
-    pdf.setFontSize(14);
-    pdf.text('基本情報', leftMargin, y);
-    y += 8;
-    pdf.setFontSize(10);
-    
-    const basicInfo = [
-      ['氏名', selectedStaff.name],
-      ['メールアドレス', selectedStaff.email],
-      ['電話番号', selectedStaff.phone || '-'],
-      ['部署', selectedStaff.department || '-'],
-      ['役職', selectedStaff.position || '-'],
-      ['社員番号', employeeData.employeeNumber || '-'],
-      ['入社日', employeeData.hireDate ? format(new Date(employeeData.hireDate), 'yyyy年MM月dd日') : '-'],
-      ['基本給', employeeData.salary ? `¥${Number(employeeData.salary).toLocaleString()}` : '-'],
-    ];
-    
-    basicInfo.forEach(([label, value]) => {
-      pdf.text(`${label}: ${value}`, leftMargin, y);
-      y += lineHeight;
-    });
-    
-    y += 5;
-    pdf.setFontSize(14);
-    pdf.text('銀行口座情報', leftMargin, y);
-    y += 8;
-    pdf.setFontSize(10);
-    
-    const bankInfo = [
-      ['銀行名', employeeData.bankName || '-'],
-      ['支店名', employeeData.bankBranch || '-'],
-      ['口座種別', employeeData.bankAccountType || '-'],
-      ['口座番号', employeeData.bankAccountNumber || '-'],
-      ['口座名義', employeeData.bankAccountHolder || '-'],
-    ];
-    
-    bankInfo.forEach(([label, value]) => {
-      pdf.text(`${label}: ${value}`, leftMargin, y);
-      y += lineHeight;
-    });
-    
-    y += 5;
-    pdf.setFontSize(14);
-    pdf.text('緊急連絡先', leftMargin, y);
-    y += 8;
-    pdf.setFontSize(10);
-    
-    pdf.text(`連絡先名: ${employeeData.emergencyContact || '-'}`, leftMargin, y);
-    y += lineHeight;
-    pdf.text(`電話番号: ${employeeData.emergencyPhone || '-'}`, leftMargin, y);
-    y += lineHeight;
-    
-    if (salaries.length > 0) {
+    try {
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+      
+      const fontUrl = 'https://fonts.gstatic.com/s/notosansjp/v52/-F6jfjtqLzI2JPCgQBnw7HFyzSD-AsregP8VFBEj75vY0rw-oME.ttf';
+      const fontRes = await fetch(fontUrl);
+      const fontBlob = await fontRes.blob();
+      
+      const base64Font = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          resolve(result.split(',')[1]);
+        };
+        reader.readAsDataURL(fontBlob);
+      });
+      
+      pdf.addFileToVFS('NotoSansJP.ttf', base64Font);
+      pdf.addFont('NotoSansJP.ttf', 'NotoSansJP', 'normal');
+      pdf.setFont('NotoSansJP');
+      
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      let y = 20;
+      const leftMargin = 20;
+      const lineHeight = 7;
+      
+      pdf.setFontSize(18);
+      pdf.text('スタッフ情報', pageWidth / 2, y, { align: 'center' });
+      y += 15;
+      
+      pdf.setFontSize(12);
+      pdf.text(`出力日: ${format(new Date(), 'yyyy年MM月dd日')}`, pageWidth - 20, y, { align: 'right' });
       y += 10;
+      
       pdf.setFontSize(14);
-      pdf.text('給料履歴', leftMargin, y);
+      pdf.text('基本情報', leftMargin, y);
       y += 8;
       pdf.setFontSize(10);
       
-      const recentSalaries = salaries.slice(0, 6);
-      recentSalaries.forEach((sal) => {
-        const line = `${sal.year}年${sal.month}月: 報酬 ¥${Number(sal.baseSalary).toLocaleString()} / 控除 ¥${Number(sal.deductions || 0).toLocaleString()} / 手取り ¥${Number(sal.netSalary).toLocaleString()}`;
-        pdf.text(line, leftMargin, y);
+      const basicInfo = [
+        ['氏名', selectedStaff.name],
+        ['メールアドレス', selectedStaff.email],
+        ['電話番号', selectedStaff.phone || '-'],
+        ['部署', selectedStaff.department || '-'],
+        ['役職', selectedStaff.position || '-'],
+        ['社員番号', employeeData.employeeNumber || '-'],
+        ['入社日', employeeData.hireDate ? format(new Date(employeeData.hireDate), 'yyyy年MM月dd日') : '-'],
+        ['基本給', employeeData.salary ? `¥${Number(employeeData.salary).toLocaleString()}` : '-'],
+      ];
+      
+      basicInfo.forEach(([label, value]) => {
+        pdf.text(`${label}: ${value}`, leftMargin, y);
         y += lineHeight;
       });
-    }
-    
-    if (employeeData.notes) {
-      y += 10;
+      
+      y += 5;
       pdf.setFontSize(14);
-      pdf.text('備考', leftMargin, y);
+      pdf.text('銀行口座情報', leftMargin, y);
       y += 8;
       pdf.setFontSize(10);
-      const notesLines = pdf.splitTextToSize(employeeData.notes, pageWidth - 40);
-      notesLines.forEach((line: string) => {
-        if (y > 270) {
-          pdf.addPage();
-          y = 20;
-        }
-        pdf.text(line, leftMargin, y);
+      
+      const bankInfo = [
+        ['銀行名', employeeData.bankName || '-'],
+        ['支店名', employeeData.bankBranch || '-'],
+        ['口座種別', employeeData.bankAccountType || '-'],
+        ['口座番号', employeeData.bankAccountNumber || '-'],
+        ['口座名義', employeeData.bankAccountHolder || '-'],
+      ];
+      
+      bankInfo.forEach(([label, value]) => {
+        pdf.text(`${label}: ${value}`, leftMargin, y);
         y += lineHeight;
       });
+      
+      y += 5;
+      pdf.setFontSize(14);
+      pdf.text('緊急連絡先', leftMargin, y);
+      y += 8;
+      pdf.setFontSize(10);
+      
+      pdf.text(`連絡先名: ${employeeData.emergencyContact || '-'}`, leftMargin, y);
+      y += lineHeight;
+      pdf.text(`電話番号: ${employeeData.emergencyPhone || '-'}`, leftMargin, y);
+      y += lineHeight;
+      
+      if (salaries.length > 0) {
+        y += 10;
+        pdf.setFontSize(14);
+        pdf.text('給料履歴', leftMargin, y);
+        y += 8;
+        pdf.setFontSize(10);
+        
+        const recentSalaries = salaries.slice(0, 6);
+        recentSalaries.forEach((sal) => {
+          const line = `${sal.year}年${sal.month}月: 報酬 ¥${Number(sal.baseSalary).toLocaleString()} / 控除 ¥${Number(sal.deductions || 0).toLocaleString()} / 手取り ¥${Number(sal.netSalary).toLocaleString()}`;
+          pdf.text(line, leftMargin, y);
+          y += lineHeight;
+        });
+      }
+      
+      if (employeeData.notes) {
+        y += 10;
+        pdf.setFontSize(14);
+        pdf.text('備考', leftMargin, y);
+        y += 8;
+        pdf.setFontSize(10);
+        const notesLines = pdf.splitTextToSize(employeeData.notes, pageWidth - 40);
+        notesLines.forEach((line: string) => {
+          if (y > 270) {
+            pdf.addPage();
+            y = 20;
+          }
+          pdf.text(line, leftMargin, y);
+          y += lineHeight;
+        });
+      }
+      
+      const filename = `staff_${selectedStaff.name.replace(/\s/g, '_')}_${format(new Date(), 'yyyyMMdd')}.pdf`;
+      pdf.save(filename);
+    } catch (error) {
+      console.error('PDF export failed:', error);
+      alert('PDF出力に失敗しました');
+    } finally {
+      setIsExportingPDF(false);
     }
-    
-    const filename = `staff_${selectedStaff.name.replace(/\s/g, '_')}_${format(new Date(), 'yyyyMMdd')}.pdf`;
-    pdf.save(filename);
   };
 
   const handleAddSalary = async () => {
@@ -1024,10 +1052,11 @@ export function StaffPage() {
           </div>
           <button
             onClick={exportStaffToPDF}
-            className="btn-secondary flex items-center gap-2"
+            disabled={isExportingPDF}
+            className="btn-secondary flex items-center gap-2 disabled:opacity-50"
           >
-            <Download size={16} />
-            PDF出力
+            {isExportingPDF ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+            {isExportingPDF ? 'PDF出力中...' : 'PDF出力'}
           </button>
         </div>
 
