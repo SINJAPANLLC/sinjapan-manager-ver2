@@ -684,7 +684,11 @@ export function registerRoutes(app: Express) {
 
   app.get('/api/tasks/pending-count', requireAuth, async (req: Request, res: Response) => {
     try {
-      const currentUser = (req as any).currentUser;
+      const currentUser = await storage.getUser(req.session.userId!);
+      if (!currentUser) {
+        return res.json({ count: 0 });
+      }
+      
       const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
       let tasks = await tenantStorage.getTasks();
       
