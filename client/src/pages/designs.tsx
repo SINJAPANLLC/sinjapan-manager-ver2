@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Edit2, Trash2, X, Compass, Target, Users, AlertTriangle, TrendingUp, UserCheck, CheckCircle, RefreshCw, ChevronDown, ChevronUp, Briefcase } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Compass, Target, Users, AlertTriangle, TrendingUp, UserCheck, CheckCircle, RefreshCw, ChevronDown, ChevronUp, Briefcase, Sparkles, Loader2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 
@@ -52,6 +52,7 @@ export function DesignsPage() {
     successCriteria: '',
     operationLoop: '',
   });
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     fetchBusinesses();
@@ -158,6 +159,51 @@ export function DesignsPage() {
 
   const toggleExpand = (id: number) => {
     setExpandedDesign(expandedDesign === id ? null : id);
+  };
+
+  const handleAiGenerate = async () => {
+    if (!formData.businessId) {
+      alert('事業を選択してください');
+      return;
+    }
+
+    const business = businesses.find(b => b.id === formData.businessId);
+    if (!business) {
+      alert('事業が見つかりません');
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const res = await fetch('/api/ai/business-design', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ businessName: business.name }),
+      });
+
+      if (res.ok) {
+        const design = await res.json();
+        setFormData({
+          ...formData,
+          purpose: design.purpose || '',
+          customerProblem: design.customerProblem || '',
+          solution: design.solution || '',
+          alternatives: design.alternatives || '',
+          numbers: design.numbers || '',
+          responsibility: design.responsibility || '',
+          successCriteria: design.successCriteria || '',
+          operationLoop: design.operationLoop || '',
+        });
+      } else {
+        const error = await res.json();
+        alert(error.error || 'AI生成に失敗しました');
+      }
+    } catch (error) {
+      console.error('AI generation error:', error);
+      alert('AI生成中にエラーが発生しました');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -267,12 +313,37 @@ export function DesignsPage() {
               <h2 className="text-xl font-bold text-slate-800">
                 {editingDesign ? '設計を編集' : '新規設計'}
               </h2>
-              <button
-                onClick={closeModal}
-                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-              >
-                <X size={20} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleAiGenerate}
+                  disabled={isGenerating || !formData.businessId}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200",
+                    isGenerating || !formData.businessId
+                      ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                      : "bg-gradient-to-r from-purple-600 to-pink-500 text-white hover:shadow-lg"
+                  )}
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin" />
+                      AI生成中...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={18} />
+                      AIで生成
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={closeModal}
+                  className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-6">

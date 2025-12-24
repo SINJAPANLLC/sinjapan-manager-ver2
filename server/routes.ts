@@ -1972,6 +1972,69 @@ ${articleList}`
     }
   });
 
+  app.post('/api/ai/business-design', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { businessName } = req.body;
+      if (!businessName) {
+        return res.status(400).json({ error: '事業名が必要です' });
+      }
+
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      });
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `あなたは事業戦略コンサルタントです。与えられた事業名に基づいて、包括的な事業設計を作成してください。
+
+以下のJSON形式で出力してください:
+{
+  "purpose": "事業の目的（なぜやるか）- 社会的意義やビジョンを含む",
+  "customerProblem": "顧客課題（困りごと）- ターゲット顧客が抱える具体的な問題点",
+  "solution": "解決策（戦略/どう解くか）- 課題を解決するための具体的なアプローチ",
+  "alternatives": "代替案と却下理由（他案/なぜ捨てるか）- 検討した他の選択肢とその却下理由",
+  "numbers": "数字（KPI逆算・コスト・利益・リスク・拡大・CF）- 具体的な数値目標と財務計画",
+  "responsibility": "責任者/チーム/セル生産/割り振り（役割設計）- 組織体制と役割分担",
+  "successCriteria": "実行後の世界（成功/失敗の線引き）- 成功と失敗を判断する明確な基準",
+  "operationLoop": "到達思考→行動→継続→改善（運用ループ）- PDCAサイクルの具体的な運用方法"
+}
+
+各項目は詳細で実用的な内容を記述してください。日本市場を想定してください。`
+          },
+          {
+            role: 'user',
+            content: `事業名: ${businessName}\n\nこの事業に対する包括的な事業設計を作成してください。`
+          }
+        ],
+        response_format: { type: 'json_object' },
+      });
+
+      const content = completion.choices[0]?.message?.content;
+      if (content) {
+        const design = JSON.parse(content);
+        
+        await createTenantStorage(getCompanyId(req), { allowGlobal: true }).createAiLog({
+          type: 'business-design',
+          prompt: `事業設計生成: ${businessName}`,
+          result: JSON.stringify(design).substring(0, 500),
+          status: 'success',
+          userId: req.session.userId,
+        });
+
+        res.json(design);
+      } else {
+        res.status(500).json({ error: '生成結果が空でした' });
+      }
+    } catch (error) {
+      console.error('Business design generation error:', error);
+      res.status(500).json({ error: '事業設計の生成に失敗しました' });
+    }
+  });
+
   app.get('/api/ai/logs', requireAuth, async (req: Request, res: Response) => {
     try {
       const user = await storage.getUser(req.session.userId!);
