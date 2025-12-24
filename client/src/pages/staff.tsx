@@ -1848,9 +1848,9 @@ export function StaffPage() {
                         申請額: ¥{Number(adv.amount).toLocaleString()}
                       </p>
                       <div className="flex gap-4 text-sm text-slate-600">
-                        <span>振込手数料: ¥{Number(adv.feeAmount || 330).toLocaleString()}</span>
+                        <span>手数料(5%+¥330): ¥{Number(adv.feeAmount || (Math.floor(Number(adv.amount) * 0.05) + 330)).toLocaleString()}</span>
                         <span className="font-medium text-green-700">
-                          支払額: ¥{Number(adv.netAmount || (Number(adv.amount) - 330)).toLocaleString()}
+                          支払額: ¥{Number(adv.netAmount || (Number(adv.amount) - Math.floor(Number(adv.amount) * 0.05) - 330)).toLocaleString()}
                         </span>
                       </div>
                       <p className="text-sm text-slate-500">{adv.reason || '-'}</p>

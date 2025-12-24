@@ -4194,7 +4194,9 @@ URL/名前: ${url || '未指定'}
     try {
       const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
       const amount = parseFloat(req.body.amount || 0);
-      const feeAmount = 330; // Fixed transfer fee
+      const percentageFee = Math.floor(amount * 0.05); // 5% fee
+      const transferFee = 330; // Fixed transfer fee
+      const feeAmount = percentageFee + transferFee; // Total fee = 5% + ¥330
       const netAmount = Math.max(0, amount - feeAmount).toFixed(2);
       
       const payment = await tenantStorage.createAdvancePayment({
