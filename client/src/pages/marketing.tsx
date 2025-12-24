@@ -681,6 +681,9 @@ function ImprovementPanel({ category }: { category: string }) {
 
 function AutomationPanel({ category }: { category: string }) {
   const [automations, setAutomations] = useState<{ id: string; name: string; status: 'active' | 'paused'; lastRun: string }[]>([]);
+  const [isExecuting, setIsExecuting] = useState<string | null>(null);
+  const [executionResult, setExecutionResult] = useState<{ automationId: string; content: string } | null>(null);
+  const [inputTopic, setInputTopic] = useState('');
 
   const automationOptions: Record<string, { title: string; items: { id: string; name: string; description: string; icon: any }[] }> = {
     aio: {
@@ -759,14 +762,52 @@ function AutomationPanel({ category }: { category: string }) {
 
   const options = automationOptions[category] || automationOptions.seo;
 
+  const executeAutomation = async (id: string, name: string) => {
+    setIsExecuting(id);
+    try {
+      const res = await fetch('/api/marketing/automate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category, automationId: id, topic: inputTopic }),
+      });
+      
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: '実行に失敗しました' }));
+        throw new Error(err.error || '実行に失敗しました');
+      }
+      
+      const data = await res.json();
+      setExecutionResult({ automationId: id, content: data.content });
+      
+      const existing = automations.find(a => a.id === id);
+      const now = new Date().toLocaleString('ja-JP');
+      if (existing) {
+        setAutomations(automations.map(a => 
+          a.id === id ? { ...a, status: 'active', lastRun: now } : a
+        ));
+      } else {
+        setAutomations([...automations, { id, name, status: 'active', lastRun: now }]);
+      }
+    } catch (error: any) {
+      console.error(error);
+      alert(error.message || '自動化の実行に失敗しました');
+    } finally {
+      setIsExecuting(null);
+    }
+  };
+
   const toggleAutomation = (id: string, name: string) => {
     const existing = automations.find(a => a.id === id);
     if (existing) {
-      setAutomations(automations.map(a => 
-        a.id === id ? { ...a, status: a.status === 'active' ? 'paused' : 'active' } : a
-      ));
+      if (existing.status === 'active') {
+        setAutomations(automations.map(a => 
+          a.id === id ? { ...a, status: 'paused' } : a
+        ));
+      } else {
+        executeAutomation(id, name);
+      }
     } else {
-      setAutomations([...automations, { id, name, status: 'active', lastRun: '未実行' }]);
+      executeAutomation(id, name);
     }
   };
 
@@ -781,6 +822,19 @@ function AutomationPanel({ category }: { category: string }) {
             <h3 className="font-semibold text-slate-800">{options.title}</h3>
             <p className="text-sm text-slate-500">自動化を設定して効率化</p>
           </div>
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            トピック・キーワード（任意）
+          </label>
+          <input
+            type="text"
+            value={inputTopic}
+            onChange={(e) => setInputTopic(e.target.value)}
+            placeholder="ビジネス名や商品名を入力（例：カフェ、IT企業）"
+            className="input-field w-full"
+          />
         </div>
 
         <div className="space-y-3">
@@ -815,14 +869,22 @@ function AutomationPanel({ category }: { category: string }) {
                 </div>
                 <button
                   onClick={() => toggleAutomation(item.id, item.name)}
+                  disabled={isExecuting === item.id}
                   className={cn(
-                    "px-4 py-2 rounded-lg font-medium text-sm transition-colors",
-                    isActive
-                      ? "bg-green-600 text-white hover:bg-green-700"
-                      : "bg-blue-600 text-white hover:bg-blue-700"
+                    "px-4 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-2",
+                    isExecuting === item.id
+                      ? "bg-slate-300 text-slate-600 cursor-not-allowed"
+                      : isActive
+                        ? "bg-green-600 text-white hover:bg-green-700"
+                        : "bg-blue-600 text-white hover:bg-blue-700"
                   )}
                 >
-                  {isActive ? '停止' : '開始'}
+                  {isExecuting === item.id ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      実行中...
+                    </>
+                  ) : isActive ? '停止' : '開始'}
                 </button>
               </div>
             );
@@ -844,6 +906,34 @@ function AutomationPanel({ category }: { category: string }) {
                 <span className="text-xs text-green-600 ml-auto">稼働中</span>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {executionResult && (
+        <div className="bg-white rounded-xl border border-slate-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="font-semibold text-slate-800 flex items-center gap-2">
+              <Sparkles size={18} className="text-blue-600" />
+              生成結果
+            </h4>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigator.clipboard.writeText(executionResult.content)}
+                className="text-sm text-blue-600 hover:text-blue-700 px-3 py-1 rounded-lg hover:bg-blue-50"
+              >
+                コピー
+              </button>
+              <button
+                onClick={() => setExecutionResult(null)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X size={18} />
+              </button>
+            </div>
+          </div>
+          <div className="bg-slate-50 rounded-lg p-4 whitespace-pre-wrap text-sm text-slate-700 max-h-96 overflow-y-auto">
+            {executionResult.content}
           </div>
         </div>
       )}

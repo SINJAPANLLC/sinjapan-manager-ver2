@@ -3971,6 +3971,98 @@ URL/名前: ${url || '未指定'}
     }
   });
 
+  // Marketing Automation Execute API
+  app.post('/api/marketing/automate', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { category, automationId, topic } = req.body;
+      
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      });
+
+      const automationPrompts: Record<string, Record<string, string>> = {
+        aio: {
+          'aio-faq': 'よくある質問(FAQ)を10個生成してください。質問と回答のペアを作成し、AI検索で表示されやすい形式にしてください。',
+          'aio-content': 'AI検索エンジンに最適化されたコンテンツを生成してください。構造化された見出し、明確な説明、箇条書きを含めてください。',
+          'aio-monitor': 'AI検索での表示状況分析レポートを生成してください。改善ポイントと推奨アクションを含めてください。',
+        },
+        seo: {
+          'seo-article': 'SEOに最適化された記事を生成してください。タイトル、メタディスクリプション、H2/H3見出し、本文を含めてください。',
+          'seo-index': 'サイトマップとインデックス登録の最適化提案を生成してください。Google Search Consoleでの設定方法も含めてください。',
+          'seo-rank': '検索順位向上のための分析レポートを生成してください。キーワード戦略と改善アクションを提案してください。',
+        },
+        meo: {
+          'meo-post': 'Googleビジネスプロフィール用の投稿を5つ生成してください。各投稿には画像の提案も含めてください。',
+          'meo-review': '様々なレビュー(高評価・低評価・質問型)への返信テンプレートを各3パターン生成してください。',
+          'meo-photo': '投稿すべき写真の種類と撮影のヒント、最適な投稿タイミングを提案してください。',
+        },
+        hp: {
+          'hp-lp': 'コンバージョン最適化されたランディングページの完全な構成案を生成してください。各セクションのコピーを含めてください。',
+          'hp-ab': 'A/Bテストの実施計画を生成してください。テスト対象要素、仮説、成功指標を含めてください。',
+          'hp-update': 'サイトコンテンツの更新計画を生成してください。更新すべきページと改善内容を提案してください。',
+        },
+        sns: {
+          'sns-post': '1週間分のSNS投稿カレンダーを生成してください。X、Instagram、Facebook向けにそれぞれ最適化してください。',
+          'sns-reply': 'よくあるコメントへの返信テンプレートを10パターン生成してください。ポジティブ・質問・クレーム対応を含めてください。',
+          'sns-dm': 'DM自動応答のテンプレートを生成してください。よくある問い合わせへの回答を10パターン作成してください。',
+        },
+        ads: {
+          'ads-optimize': '広告入札最適化の戦略レポートを生成してください。キーワードごとの推奨入札額と理由を含めてください。',
+          'ads-creative': '広告クリエイティブのA/Bテスト計画を生成してください。テストするバリエーションと仮説を含めてください。',
+          'ads-report': '広告パフォーマンスの分析レポートテンプレートを生成してください。KPIと改善提案を含めてください。',
+        },
+        external: {
+          'ext-pr': 'プレスリリースを生成してください。ニュースバリュー、本文、会社概要を含む完全な形式にしてください。',
+          'ext-influencer': 'インフルエンサーへのアプローチ文を5パターン生成してください。コラボ提案と報酬条件も含めてください。',
+          'ext-mention': 'ブランドメンション監視レポートのテンプレートを生成してください。対応すべきメンションの優先度付けを含めてください。',
+        },
+        offline: {
+          'off-design': 'チラシ・名刺・パンフレットのデザインコンセプトとコピーを生成してください。',
+          'off-order': '印刷物の在庫管理と発注計画のテンプレートを生成してください。',
+          'off-track': 'オフラインマーケティングの効果測定方法とQRコード活用戦略を提案してください。',
+        },
+        sales: {
+          'sales-email': 'フォローアップメールのシーケンス(初回〜5回目)を生成してください。各メールのタイミングと内容を含めてください。',
+          'sales-lead': 'リードスコアリングの基準と判定ルールを生成してください。スコアに応じたアクション提案も含めてください。',
+          'sales-report': '営業活動の週次レポートテンプレートを生成してください。KPI、達成状況、次週アクションを含めてください。',
+        },
+      };
+
+      const categoryPrompts = automationPrompts[category] || automationPrompts.seo;
+      const specificPrompt = categoryPrompts[automationId] || '効果的なマーケティング自動化コンテンツを生成してください。';
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: 'あなたは優秀なマーケティング自動化の専門家です。実用的で即座に使えるコンテンツを生成してください。' },
+          { role: 'user', content: `トピック: ${topic || '一般的なビジネス'}\n\n${specificPrompt}` }
+        ],
+        temperature: 0.8,
+        max_tokens: 3000,
+      });
+
+      const content = completion.choices[0].message.content;
+      
+      await createTenantStorage(getCompanyId(req), { allowGlobal: true }).createAiLog({
+        type: 'marketing-automation',
+        prompt: `${category}/${automationId}: ${topic || '自動生成'}`,
+        result: (content || '').substring(0, 500),
+        status: 'success',
+        userId: req.session.userId,
+      });
+
+      res.json({ 
+        content,
+        executedAt: new Date().toISOString(),
+        automationId,
+      });
+    } catch (error) {
+      console.error('Marketing automation error:', error);
+      res.status(500).json({ error: '自動化の実行に失敗しました' });
+    }
+  });
+
   // Site Credentials (サイト情報) API
   app.get('/api/site-credentials', requireAuth, async (req: Request, res: Response) => {
     try {
