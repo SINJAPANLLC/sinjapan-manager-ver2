@@ -4158,9 +4158,20 @@ URL/名前: ${url || '未指定'}
   });
 
   // Staff Salaries API
-  app.get('/api/employees/:employeeId/salaries', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+  app.get('/api/employees/:employeeId/salaries', requireRole('admin', 'ceo', 'manager', 'staff'), async (req: Request, res: Response) => {
     try {
       const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const userRole = (req.session as any).user?.role;
+      const userId = (req.session as any).user?.id;
+      
+      // Staff can only view their own salaries
+      if (userRole === 'staff') {
+        const user = await tenantStorage.getUser(userId);
+        if (!user?.employeeId || user.employeeId !== parseInt(req.params.employeeId)) {
+          return res.status(403).json({ error: 'アクセス権限がありません' });
+        }
+      }
+      
       const salaries = await tenantStorage.getStaffSalaries(parseInt(req.params.employeeId));
       res.json(salaries);
     } catch (error) {
@@ -4169,11 +4180,15 @@ URL/名前: ${url || '未指定'}
     }
   });
 
-  app.post('/api/employees/:employeeId/salaries', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+  app.post('/api/employees/:employeeId/salaries', requireRole('admin', 'ceo', 'manager', 'staff'), async (req: Request, res: Response) => {
     try {
       const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
       const userId = (req.session as any).user?.id;
+      const userRole = (req.session as any).user?.role;
       const { year, month, baseSalary, overtime, bonus, deductions, netSalary, paidAt, notes } = req.body;
+      
+      // Staff creates with pending status, admin/ceo/manager creates as approved
+      const status = ['admin', 'ceo', 'manager'].includes(userRole) ? 'approved' : 'pending';
       
       const salary = await tenantStorage.createStaffSalary({
         employeeId: parseInt(req.params.employeeId),
@@ -4187,6 +4202,7 @@ URL/名前: ${url || '未指定'}
         paidAt: paidAt ? new Date(paidAt) : null,
         notes: notes || null,
         createdBy: userId,
+        status,
       });
       res.json(salary);
     } catch (error) {
@@ -4234,6 +4250,33 @@ URL/名前: ${url || '未指定'}
     } catch (error) {
       console.error('Delete salary error:', error);
       res.status(500).json({ error: '給料情報の削除に失敗しました' });
+    }
+  });
+
+  // Salary approval endpoint
+  app.put('/api/salaries/:id/approve', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const userId = (req.session as any).user?.id;
+      const { status } = req.body; // 'approved' or 'rejected'
+      
+      if (!['approved', 'rejected'].includes(status)) {
+        return res.status(400).json({ error: '無効なステータスです' });
+      }
+      
+      const salary = await tenantStorage.updateStaffSalary(parseInt(req.params.id), { 
+        status,
+        approvedBy: userId,
+        approvedAt: new Date()
+      });
+      
+      if (!salary) {
+        return res.status(404).json({ error: '給料情報が見つかりません' });
+      }
+      res.json(salary);
+    } catch (error) {
+      console.error('Approve salary error:', error);
+      res.status(500).json({ error: '給料承認に失敗しました' });
     }
   });
 

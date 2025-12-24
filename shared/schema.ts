@@ -531,6 +531,8 @@ export const staffSalaries = pgTable("staff_salaries", {
   status: varchar("status", { length: 50 }).default("pending"),
   notes: text("notes"),
   createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  approvedBy: integer("approved_by").references(() => users.id, { onDelete: "set null" }),
+  approvedAt: timestamp("approved_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

@@ -810,6 +810,19 @@ export function StaffPage() {
     }
   };
 
+  const handleApproveSalary = async (salaryId: number, status: 'approved' | 'rejected') => {
+    const res = await fetch(`/api/salaries/${salaryId}/approve`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ status }),
+    });
+    if (res.ok) {
+      const updatedSal = await res.json();
+      setSalaries(salaries.map((s) => (s.id === salaryId ? updatedSal : s)));
+    }
+  };
+
   const handleAddShift = async () => {
     if (!employeeData || !shiftForm.date || !shiftForm.startTime || !shiftForm.endTime) return;
     const start = shiftForm.startTime.split(':').map(Number);
@@ -1376,10 +1389,21 @@ export function StaffPage() {
                       >
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
-                            <p className="font-medium text-slate-800 mb-3">
-                              {sal.year}年{sal.month}月
-                              {sal.paidAt && <span className="text-sm text-slate-500 ml-2">({format(new Date(sal.paidAt), 'yyyy/MM/dd')} 支払済)</span>}
-                            </p>
+                            <div className="flex items-center gap-2 mb-3">
+                              <p className="font-medium text-slate-800">
+                                {sal.year}年{sal.month}月
+                              </p>
+                              {sal.status === 'pending' && (
+                                <span className="px-2 py-0.5 text-xs bg-yellow-100 text-yellow-700 rounded-full">承認待ち</span>
+                              )}
+                              {sal.status === 'approved' && (
+                                <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">承認済</span>
+                              )}
+                              {sal.status === 'rejected' && (
+                                <span className="px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded-full">却下</span>
+                              )}
+                              {sal.paidAt && <span className="text-sm text-slate-500">({format(new Date(sal.paidAt), 'yyyy/MM/dd')} 支払済)</span>}
+                            </div>
                             <div className="space-y-2 text-sm">
                               <div className="flex justify-between items-center py-1 border-b border-slate-100">
                                 <span className="text-slate-600">基本報酬</span>
@@ -1412,6 +1436,24 @@ export function StaffPage() {
                                 <span className="font-bold text-slate-700">小計</span>
                                 <span className="font-bold text-lg text-primary-600">¥{totalAmount.toLocaleString()}</span>
                               </div>
+                              {sal.status === 'pending' && ['admin', 'ceo', 'manager'].includes(user?.role || '') && (
+                                <div className="flex gap-2 mt-3 pt-3 border-t border-slate-100">
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); handleApproveSalary(sal.id, 'approved'); }}
+                                    className="flex-1 px-3 py-1.5 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 flex items-center justify-center gap-1"
+                                  >
+                                    <Check size={14} />
+                                    承認
+                                  </button>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); handleApproveSalary(sal.id, 'rejected'); }}
+                                    className="flex-1 px-3 py-1.5 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 flex items-center justify-center gap-1"
+                                  >
+                                    <X size={14} />
+                                    却下
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
