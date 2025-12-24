@@ -310,16 +310,6 @@ export function AgencyPage() {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => setViewMode('list')}
-            className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-lg transition-colors",
-              viewMode === 'list' ? "bg-primary-500 text-white" : "btn-secondary"
-            )}
-          >
-            <Users size={18} />
-            代理店一覧
-          </button>
-          <button
             onClick={() => setViewMode('incentive')}
             className={cn(
               "flex items-center gap-2 px-4 py-2 rounded-lg transition-colors",
