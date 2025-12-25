@@ -1146,6 +1146,67 @@ export function registerRoutes(app: Express) {
     }
   });
 
+  app.get('/api/agency/payment-settings', requireRole('agency'), async (req: Request, res: Response) => {
+    try {
+      const settings = await storage.getOrCreateAgencyPaymentSettings(req.session.userId!, getCompanyId(req));
+      res.json(settings);
+    } catch (error) {
+      console.error('Get agency payment settings error:', error);
+      res.status(500).json({ error: '支払い設定の取得に失敗しました' });
+    }
+  });
+
+  app.get('/api/agency/:id/payment-settings', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const agencyId = parseInt(req.params.id);
+      const settings = await storage.getOrCreateAgencyPaymentSettings(agencyId, getCompanyId(req));
+      res.json(settings);
+    } catch (error) {
+      console.error('Get agency payment settings error:', error);
+      res.status(500).json({ error: '支払い設定の取得に失敗しました' });
+    }
+  });
+
+  app.put('/api/agency/:id/payment-settings', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const agencyId = parseInt(req.params.id);
+      const { closingDay, payoutOffsetMonths, payoutDay, transferFee, notes } = req.body;
+      
+      if (payoutDay && (payoutDay < 1 || payoutDay > 31)) {
+        return res.status(400).json({ error: '支払い日は1〜31の範囲で指定してください' });
+      }
+      if (payoutOffsetMonths !== undefined && (payoutOffsetMonths < 0 || payoutOffsetMonths > 3)) {
+        return res.status(400).json({ error: '支払い月は0〜3の範囲で指定してください' });
+      }
+      
+      const existing = await storage.getAgencyPaymentSettings(agencyId);
+      let settings;
+      if (existing) {
+        settings = await storage.updateAgencyPaymentSettings(agencyId, {
+          closingDay,
+          payoutOffsetMonths,
+          payoutDay,
+          transferFee: transferFee?.toString(),
+          notes,
+        });
+      } else {
+        settings = await storage.createAgencyPaymentSettings({
+          agencyId,
+          companyId: getCompanyId(req),
+          closingDay: closingDay || 'end_of_month',
+          payoutOffsetMonths: payoutOffsetMonths ?? 2,
+          payoutDay: payoutDay || 5,
+          transferFee: transferFee?.toString() || '330',
+          notes,
+        });
+      }
+      res.json(settings);
+    } catch (error) {
+      console.error('Update agency payment settings error:', error);
+      res.status(500).json({ error: '支払い設定の更新に失敗しました' });
+    }
+  });
+
   app.get('/api/dashboard/stats', requireAuth, async (req: Request, res: Response) => {
     const user = await storage.getUser(req.session.userId!);
     if (!user) {

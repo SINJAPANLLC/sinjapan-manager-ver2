@@ -1,8 +1,8 @@
 import { db } from './db';
-import { users, customers, tasks, notifications, chatMessages, chatGroups, chatGroupMembers, employees, agencySales, agencyMemos, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, systemSettings, leads, leadActivities, clientProjects, clientInvoices, companies, quickNotes, investments, staffAffiliates, financialEntries } from '../shared/schema';
+import { users, customers, tasks, notifications, chatMessages, chatGroups, chatGroupMembers, employees, agencySales, agencyMemos, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, systemSettings, leads, leadActivities, clientProjects, clientInvoices, companies, quickNotes, investments, staffAffiliates, financialEntries, agencyPaymentSettings } from '../shared/schema';
 import { eq, and, or, desc, sql, isNull, gte, lte, like, ilike, inArray } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, ChatGroup, InsertChatGroup, ChatGroupMember, InsertChatGroupMember, Employee, InsertEmployee, AgencySale, InsertAgencySale, AgencyMemo, InsertAgencyMemo, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, SystemSetting, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Company, InsertCompany, QuickNote, InsertQuickNote, Investment, InsertInvestment, FinancialEntry, InsertFinancialEntry } from '../shared/schema';
+import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, ChatGroup, InsertChatGroup, ChatGroupMember, InsertChatGroupMember, Employee, InsertEmployee, AgencySale, InsertAgencySale, AgencyMemo, InsertAgencyMemo, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, SystemSetting, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Company, InsertCompany, QuickNote, InsertQuickNote, Investment, InsertInvestment, FinancialEntry, InsertFinancialEntry, AgencyPaymentSettings, InsertAgencyPaymentSettings } from '../shared/schema';
 
 export const storage = {
   async getUser(id: number): Promise<User | undefined> {
@@ -341,6 +341,37 @@ export const storage = {
 
   async deleteAgencyMemo(id: number): Promise<void> {
     await db.delete(agencyMemos).where(eq(agencyMemos.id, id));
+  },
+
+  async getAgencyPaymentSettings(agencyId: number): Promise<AgencyPaymentSettings | undefined> {
+    const [settings] = await db.select().from(agencyPaymentSettings).where(eq(agencyPaymentSettings.agencyId, agencyId));
+    return settings;
+  },
+
+  async createAgencyPaymentSettings(data: InsertAgencyPaymentSettings): Promise<AgencyPaymentSettings> {
+    const [settings] = await db.insert(agencyPaymentSettings).values(data).returning();
+    return settings;
+  },
+
+  async updateAgencyPaymentSettings(agencyId: number, data: Partial<InsertAgencyPaymentSettings>): Promise<AgencyPaymentSettings | undefined> {
+    const [settings] = await db.update(agencyPaymentSettings)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(agencyPaymentSettings.agencyId, agencyId))
+      .returning();
+    return settings;
+  },
+
+  async getOrCreateAgencyPaymentSettings(agencyId: number, companyId?: string): Promise<AgencyPaymentSettings> {
+    const existing = await this.getAgencyPaymentSettings(agencyId);
+    if (existing) return existing;
+    return this.createAgencyPaymentSettings({
+      agencyId,
+      companyId,
+      closingDay: 'end_of_month',
+      payoutOffsetMonths: 2,
+      payoutDay: 5,
+      transferFee: '330',
+    });
   },
 
   async getDashboardStats(userId: number, role: string) {

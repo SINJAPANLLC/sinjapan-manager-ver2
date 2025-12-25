@@ -98,6 +98,24 @@ export function AgencyPage() {
   const [showMemoForm, setShowMemoForm] = useState(false);
   const [memoContent, setMemoContent] = useState('');
   const [isEditingSystem, setIsEditingSystem] = useState(false);
+  const [paymentSettings, setPaymentSettings] = useState<{
+    closingDay: string;
+    payoutOffsetMonths: number;
+    payoutDay: number;
+    transferFee: string;
+    notes?: string;
+  } | null>(null);
+  const [editAgencyPaymentSettings, setEditAgencyPaymentSettings] = useState<{
+    closingDay: string;
+    payoutOffsetMonths: number;
+    payoutDay: number;
+    transferFee: string;
+  }>({
+    closingDay: 'end_of_month',
+    payoutOffsetMonths: 2,
+    payoutDay: 5,
+    transferFee: '330',
+  });
   const [selfSaleForm, setSelfSaleForm] = useState({
     clientName: '',
     projectName: '',
@@ -179,12 +197,49 @@ export function AgencyPage() {
     }
   };
 
+  const fetchPaymentSettings = async () => {
+    if (!isAgencyUser) return;
+    const res = await fetch('/api/agency/payment-settings', { credentials: 'include' });
+    if (res.ok) {
+      setPaymentSettings(await res.json());
+    }
+  };
+
+  const fetchAgencyPaymentSettings = async (agencyId: number) => {
+    const res = await fetch(`/api/agency/${agencyId}/payment-settings`, { credentials: 'include' });
+    if (res.ok) {
+      const data = await res.json();
+      setEditAgencyPaymentSettings({
+        closingDay: data.closingDay || 'end_of_month',
+        payoutOffsetMonths: data.payoutOffsetMonths ?? 2,
+        payoutDay: data.payoutDay || 5,
+        transferFee: data.transferFee || '330',
+      });
+    }
+  };
+
+  const saveAgencyPaymentSettings = async (agencyId: number) => {
+    const res = await fetch(`/api/agency/${agencyId}/payment-settings`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(editAgencyPaymentSettings),
+    });
+    return res.ok;
+  };
+
   useEffect(() => {
     fetchAgencies();
     fetchSales();
     fetchBusinesses();
     fetchIncentives();
   }, []);
+
+  useEffect(() => {
+    if (isAgencyUser) {
+      fetchPaymentSettings();
+    }
+  }, [isAgencyUser]);
 
   useEffect(() => {
     if (isAgencyUser && user) {
@@ -344,9 +399,13 @@ export function AgencyPage() {
     });
 
     if (res.ok) {
+      if (editingAgency) {
+        await saveAgencyPaymentSettings(editingAgency.id);
+      }
       setShowModal(false);
       setEditingAgency(null);
       setForm({ email: '', name: '', password: '', phone: '', bankName: '', bankBranch: '', bankAccountType: '普通', bankAccountNumber: '', bankAccountHolder: '' });
+      setEditAgencyPaymentSettings({ closingDay: 'end_of_month', payoutOffsetMonths: 2, payoutDay: 5, transferFee: '330' });
       fetchAgencies();
     } else {
       const data = await res.json();
@@ -910,17 +969,23 @@ export function AgencyPage() {
           <div className="card p-6">
             <h2 className="text-lg font-bold text-slate-800 mb-6">支払いスケジュール</h2>
             
+            {!paymentSettings ? (
+              <div className="text-center py-8 text-slate-500">読み込み中...</div>
+            ) : (
             <div className="space-y-6">
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
                 <h3 className="font-medium text-blue-800 mb-2">支払い規定</h3>
                 <div className="grid md:grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="text-blue-600">支払い日</p>
-                    <p className="text-blue-900 font-medium">毎月末締め / 翌月25日払い</p>
+                    <p className="text-blue-900 font-medium">
+                      {paymentSettings.closingDay === 'end_of_month' ? '毎月末締め' : paymentSettings.closingDay} / 
+                      {paymentSettings.payoutOffsetMonths === 1 ? '翌月' : paymentSettings.payoutOffsetMonths === 2 ? '翌々月' : `${paymentSettings.payoutOffsetMonths}ヶ月後`}{paymentSettings.payoutDay}日払い
+                    </p>
                   </div>
                   <div>
                     <p className="text-blue-600">振込手数料</p>
-                    <p className="text-blue-900 font-medium">¥330（税込）</p>
+                    <p className="text-blue-900 font-medium">¥{parseInt(paymentSettings.transferFee || '330').toLocaleString()}（税込）</p>
                   </div>
                 </div>
               </div>
@@ -936,14 +1001,16 @@ export function AgencyPage() {
                   <p className="text-2xl font-bold text-orange-700">
                     {(() => {
                       const now = new Date();
-                      const nextPayDate = new Date(now.getFullYear(), now.getMonth() + 1, 25);
-                      if (now.getDate() > 25) {
+                      const offsetMonths = paymentSettings.payoutOffsetMonths || 2;
+                      const payDay = paymentSettings.payoutDay || 5;
+                      const nextPayDate = new Date(now.getFullYear(), now.getMonth() + offsetMonths, payDay);
+                      if (now.getDate() > payDay && offsetMonths === 1) {
                         nextPayDate.setMonth(nextPayDate.getMonth() + 1);
                       }
                       return format(nextPayDate, 'yyyy/MM/dd');
                     })()}
                   </p>
-                  <p className="text-xs text-orange-600 mt-1">25日が土日祝の場合は前営業日</p>
+                  <p className="text-xs text-orange-600 mt-1">{paymentSettings.payoutDay}日が土日祝の場合は前営業日</p>
                 </div>
               </div>
 
@@ -984,6 +1051,7 @@ export function AgencyPage() {
                 )}
               </div>
             </div>
+            )}
           </div>
         )}
 
@@ -1266,6 +1334,7 @@ export function AgencyPage() {
                     onClick={() => {
                       setEditingAgency(a);
                       setForm({ email: a.email, name: a.name, password: '', phone: a.phone || '', bankName: a.bankName || '', bankBranch: a.bankBranch || '', bankAccountType: a.bankAccountType || '普通', bankAccountNumber: a.bankAccountNumber || '', bankAccountHolder: a.bankAccountHolder || '' });
+                      fetchAgencyPaymentSettings(a.id);
                       setShowModal(true);
                     }}
                     className="btn-secondary text-sm py-1.5"
@@ -1536,6 +1605,64 @@ export function AgencyPage() {
                   </div>
                 </div>
               </div>
+
+              {editingAgency && (
+                <div className="border-t border-slate-200 pt-4 mt-4">
+                  <h3 className="font-medium text-slate-700 mb-3">支払いスケジュール</h3>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm text-slate-600 mb-1">締め日</label>
+                        <select
+                          className="input-field"
+                          value={editAgencyPaymentSettings.closingDay}
+                          onChange={(e) => setEditAgencyPaymentSettings({ ...editAgencyPaymentSettings, closingDay: e.target.value })}
+                        >
+                          <option value="end_of_month">月末</option>
+                          <option value="15th">15日</option>
+                          <option value="20th">20日</option>
+                          <option value="25th">25日</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm text-slate-600 mb-1">支払い月</label>
+                        <select
+                          className="input-field"
+                          value={editAgencyPaymentSettings.payoutOffsetMonths}
+                          onChange={(e) => setEditAgencyPaymentSettings({ ...editAgencyPaymentSettings, payoutOffsetMonths: parseInt(e.target.value) })}
+                        >
+                          <option value={1}>翌月</option>
+                          <option value={2}>翌々月</option>
+                          <option value={3}>3ヶ月後</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm text-slate-600 mb-1">支払い日</label>
+                        <select
+                          className="input-field"
+                          value={editAgencyPaymentSettings.payoutDay}
+                          onChange={(e) => setEditAgencyPaymentSettings({ ...editAgencyPaymentSettings, payoutDay: parseInt(e.target.value) })}
+                        >
+                          {[5, 10, 15, 20, 25, 28, 31].map(d => (
+                            <option key={d} value={d}>{d}日</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm text-slate-600 mb-1">振込手数料</label>
+                        <input
+                          type="number"
+                          className="input-field"
+                          value={editAgencyPaymentSettings.transferFee}
+                          onChange={(e) => setEditAgencyPaymentSettings({ ...editAgencyPaymentSettings, transferFee: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="flex gap-3 pt-4">
                 <button onClick={() => setShowModal(false)} className="flex-1 btn-secondary">

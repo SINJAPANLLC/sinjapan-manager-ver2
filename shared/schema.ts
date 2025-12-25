@@ -706,3 +706,19 @@ export const financialEntries = pgTable("financial_entries", {
 
 export type FinancialEntry = typeof financialEntries.$inferSelect;
 export type InsertFinancialEntry = typeof financialEntries.$inferInsert;
+
+export const agencyPaymentSettings = pgTable("agency_payment_settings", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  agencyId: integer("agency_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  closingDay: varchar("closing_day", { length: 20 }).notNull().default("end_of_month"),
+  payoutOffsetMonths: integer("payout_offset_months").notNull().default(2),
+  payoutDay: integer("payout_day").notNull().default(5),
+  transferFee: decimal("transfer_fee", { precision: 10, scale: 0 }).notNull().default("330"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type AgencyPaymentSettings = typeof agencyPaymentSettings.$inferSelect;
+export type InsertAgencyPaymentSettings = typeof agencyPaymentSettings.$inferInsert;
