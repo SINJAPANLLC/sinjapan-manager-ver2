@@ -333,7 +333,7 @@ export function TasksPage() {
 
   const fetchPendingApprovalCount = async () => {
     try {
-      const res = await fetch('/api/tasks/pending-approvals');
+      const res = await fetch('/api/tasks/pending-approvals', { credentials: 'include' });
       if (res.ok) {
         const data = await res.json();
         setPendingApprovalCount(data.length);
@@ -346,7 +346,7 @@ export function TasksPage() {
   const approveReward = async (taskId: number) => {
     if (!confirm('この報酬を承認しますか？承認すると担当者の給料に反映されます。')) return;
     try {
-      const res = await fetch(`/api/tasks/${taskId}/approve-reward`, { method: 'POST' });
+      const res = await fetch(`/api/tasks/${taskId}/approve-reward`, { method: 'POST', credentials: 'include' });
       if (res.ok) {
         fetchTasks();
         fetchPendingApprovalCount();

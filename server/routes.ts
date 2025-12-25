@@ -1056,6 +1056,17 @@ export function registerRoutes(app: Express) {
     res.json({ message: '削除しました' });
   });
 
+  app.get('/api/agency/sales/pending-count', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+    try {
+      const allSales = await storage.getAgencySales();
+      const pendingCount = allSales.filter(s => s.status === 'pending').length;
+      res.json({ count: pendingCount });
+    } catch (error) {
+      console.error('Get pending agency sales count error:', error);
+      res.status(500).json({ error: '承認待ち件数の取得に失敗しました' });
+    }
+  });
+
   app.get('/api/agency/incentives', requireRole('admin', 'ceo', 'manager', 'agency'), async (req: Request, res: Response) => {
     try {
       const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
