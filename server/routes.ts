@@ -380,7 +380,7 @@ export function registerRoutes(app: Express) {
   app.get('/api/users/pending-count', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     try {
       const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
-      const users = await tenantStorage.getUsers();
+      const users = await tenantStorage.getAllUsers();
       const pendingCount = users.filter((u: any) => !u.isActive).length;
       res.json({ count: pendingCount });
     } catch (error) {
@@ -4498,13 +4498,12 @@ URL/名前: ${url || '未指定'}
   app.get('/api/employees/:employeeId/salaries', requireRole('admin', 'ceo', 'manager', 'staff'), async (req: Request, res: Response) => {
     try {
       const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
-      const userRole = (req.session as any).user?.role;
-      const userId = (req.session as any).user?.id;
+      const currentUser = await storage.getUser(req.session.userId!);
       
       // Staff can only view their own salaries
-      if (userRole === 'staff') {
-        const user = await tenantStorage.getUser(userId);
-        if (!user?.employeeId || user.employeeId !== parseInt(req.params.employeeId)) {
+      if (currentUser?.role === 'staff') {
+        const employee = await storage.getEmployee(req.session.userId!);
+        if (!employee || employee.id !== parseInt(req.params.employeeId)) {
           return res.status(403).json({ error: 'アクセス権限がありません' });
         }
       }
