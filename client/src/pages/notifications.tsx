@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/use-auth';
-import { Bell, Check, CheckCheck, Send, X, Info, AlertCircle, CheckCircle, History } from 'lucide-react';
+import { Bell, Check, CheckCheck, Send, X, Info, AlertCircle, CheckCircle, History, Trash2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 
@@ -79,6 +79,12 @@ export function NotificationsPage() {
 
   const markAllAsRead = async () => {
     await fetch('/api/notifications/read-all', { method: 'POST' });
+    fetchNotifications();
+  };
+
+  const deleteNotification = async (id: number) => {
+    if (!confirm('この通知を削除しますか？')) return;
+    await fetch(`/api/notifications/${id}`, { method: 'DELETE', credentials: 'include' });
     fetchNotifications();
   };
 
@@ -229,15 +235,24 @@ export function NotificationsPage() {
                         <h3 className="font-semibold text-slate-800">{notification.title}</h3>
                         <p className="text-slate-600 mt-1 text-sm">{notification.message}</p>
                       </div>
-                      {!notification.isRead && (
+                      <div className="flex gap-1 shrink-0">
+                        {!notification.isRead && (
+                          <button
+                            onClick={() => markAsRead(notification.id)}
+                            className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-all duration-200 hover:scale-105"
+                            title="既読にする"
+                          >
+                            <Check size={18} />
+                          </button>
+                        )}
                         <button
-                          onClick={() => markAsRead(notification.id)}
-                          className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-all duration-200 hover:scale-105 shrink-0"
-                          title="既読にする"
+                          onClick={() => deleteNotification(notification.id)}
+                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all duration-200 hover:scale-105"
+                          title="削除"
                         >
-                          <Check size={18} />
+                          <Trash2 size={18} />
                         </button>
-                      )}
+                      </div>
                     </div>
                     <p className="text-xs text-slate-400 mt-2">
                       {format(new Date(notification.createdAt), 'yyyy/MM/dd HH:mm')}

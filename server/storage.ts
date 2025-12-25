@@ -149,6 +149,11 @@ export const storage = {
     await db.update(notifications).set({ isRead: true }).where(eq(notifications.userId, userId));
   },
 
+  async deleteNotification(id: number): Promise<boolean> {
+    await db.delete(notifications).where(eq(notifications.id, id));
+    return true;
+  },
+
   async getUnreadNotificationCount(userId: number): Promise<number> {
     const result = await db.select({ count: sql<number>`count(*)` }).from(notifications)
       .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));

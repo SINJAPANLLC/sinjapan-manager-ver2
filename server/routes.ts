@@ -686,6 +686,15 @@ export function registerRoutes(app: Express) {
     res.json({ message: '全て既読にしました' });
   });
 
+  app.delete('/api/notifications/:id', requireAuth, async (req: Request, res: Response) => {
+    const notification = await storage.getNotificationById(parseInt(req.params.id));
+    if (!notification || notification.userId !== req.session.userId) {
+      return res.status(403).json({ message: '権限がありません' });
+    }
+    await storage.deleteNotification(parseInt(req.params.id));
+    res.json({ message: '削除しました' });
+  });
+
   app.get('/api/notifications/sent', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     const sentNotifications = await storage.getSentNotifications(req.session.userId!);
     res.json(sentNotifications);
