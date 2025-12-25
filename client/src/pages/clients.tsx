@@ -15,7 +15,9 @@ import {
   Loader2,
   Building2,
   Receipt,
-  TrendingUp
+  TrendingUp,
+  ToggleLeft,
+  ToggleRight
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
@@ -222,6 +224,18 @@ export function ClientsPage() {
   const handleDelete = async (id: number) => {
     if (!confirm('このクライアントを削除しますか？')) return;
     const res = await fetch(`/api/users/${id}`, { method: 'DELETE', credentials: 'include' });
+    if (res.ok) {
+      fetchClients();
+    }
+  };
+
+  const handleToggleClientStatus = async (client: Client) => {
+    const res = await fetch(`/api/users/${client.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ isActive: !client.isActive }),
+    });
     if (res.ok) {
       fetchClients();
     }
@@ -473,12 +487,20 @@ export function ClientsPage() {
                       <p className="text-sm text-slate-500">クライアント</p>
                     </div>
                   </div>
-                  <span className={cn(
-                    "px-2 py-1 text-xs rounded-full",
-                    c.isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                  )}>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleClientStatus(c);
+                    }}
+                    className={cn(
+                      "flex items-center gap-1 px-2 py-1 text-xs rounded-full cursor-pointer hover:opacity-80 transition-opacity",
+                      c.isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                    )}
+                    title={c.isActive ? 'クリックで無効化' : 'クリックで有効化'}
+                  >
+                    {c.isActive ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
                     {c.isActive ? '有効' : '無効'}
-                  </span>
+                  </button>
                 </div>
 
                 <div className="space-y-2 text-sm">
