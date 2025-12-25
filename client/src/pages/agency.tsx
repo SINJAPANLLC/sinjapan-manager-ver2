@@ -358,6 +358,18 @@ export function AgencyPage() {
     }
   };
 
+  const handleUpdateSaleStatus = async (saleId: number, newStatus: string) => {
+    const res = await fetch(`/api/agency/sales/${saleId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ status: newStatus }),
+    });
+    if (res.ok) {
+      fetchMySales();
+    }
+  };
+
   const getPriorityLabel = (priority: string) => {
     switch (priority) {
       case 'high': return '高';
@@ -1140,7 +1152,6 @@ export function AgencyPage() {
                       return format(nextPayDate, 'yyyy/MM/dd');
                     })()}
                   </p>
-                  <p className="text-xs text-orange-600 mt-1">{paymentSettings.payoutDay}日が土日祝の場合は前営業日</p>
                 </div>
               </div>
 
@@ -1166,12 +1177,17 @@ export function AgencyPage() {
                             <td className="py-2 px-2">{sale.projectName || '-'}</td>
                             <td className="py-2 px-2 text-right font-medium text-green-600">¥{parseFloat(sale.commission || '0').toLocaleString()}</td>
                             <td className="py-2 px-2 text-center">
-                              <span className={cn(
-                                "px-2 py-0.5 text-xs rounded-full",
-                                sale.status === 'paid' ? "bg-blue-100 text-blue-700" : "bg-yellow-100 text-yellow-700"
-                              )}>
-                                {sale.status === 'paid' ? '支払済み' : '支払待ち'}
-                              </span>
+                              <select
+                                value={sale.status}
+                                onChange={(e) => handleUpdateSaleStatus(sale.id, e.target.value)}
+                                className={cn(
+                                  "text-xs px-2 py-1 rounded-lg border cursor-pointer",
+                                  sale.status === 'paid' ? "bg-blue-100 text-blue-700 border-blue-200" : "bg-yellow-100 text-yellow-700 border-yellow-200"
+                                )}
+                              >
+                                <option value="approved">支払待ち</option>
+                                <option value="paid">支払済み</option>
+                              </select>
                             </td>
                           </tr>
                         ))}
