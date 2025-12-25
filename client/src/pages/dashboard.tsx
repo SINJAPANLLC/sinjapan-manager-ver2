@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/use-auth';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { Users, ClipboardList, Bell, Building2, TrendingUp, MessageSquare, Plus, ArrowUpRight, Sparkles, Calendar, Bot, FileText, DollarSign, TrendingDown, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
@@ -46,14 +46,19 @@ interface Stats {
 
 export function DashboardPage() {
   const { user } = useAuth();
+  const [, setLocation] = useLocation();
   const [stats, setStats] = useState<Stats | null>(null);
 
   useEffect(() => {
+    if (user?.role === 'client') {
+      setLocation('/communication');
+      return;
+    }
     fetch('/api/dashboard/stats')
       .then((res) => res.json())
       .then(setStats)
       .catch(console.error);
-  }, []);
+  }, [user, setLocation]);
 
   const getWelcomeMessage = () => {
     const hour = new Date().getHours();
