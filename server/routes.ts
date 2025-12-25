@@ -1100,6 +1100,40 @@ export function registerRoutes(app: Express) {
     }
   });
 
+  app.get('/api/agency/memos', requireRole('agency'), async (req: Request, res: Response) => {
+    try {
+      const memos = await storage.getAgencyMemos(req.session.userId!);
+      res.json(memos);
+    } catch (error) {
+      console.error('Get agency memos error:', error);
+      res.status(500).json({ error: 'メモの取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/agency/memos', requireRole('agency'), async (req: Request, res: Response) => {
+    try {
+      const memo = await storage.createAgencyMemo({
+        agencyId: req.session.userId!,
+        content: req.body.content,
+        companyId: getCompanyId(req),
+      });
+      res.json(memo);
+    } catch (error) {
+      console.error('Create agency memo error:', error);
+      res.status(500).json({ error: 'メモの作成に失敗しました' });
+    }
+  });
+
+  app.delete('/api/agency/memos/:id', requireRole('agency'), async (req: Request, res: Response) => {
+    try {
+      await storage.deleteAgencyMemo(parseInt(req.params.id));
+      res.json({ message: '削除しました' });
+    } catch (error) {
+      console.error('Delete agency memo error:', error);
+      res.status(500).json({ error: 'メモの削除に失敗しました' });
+    }
+  });
+
   app.get('/api/dashboard/stats', requireAuth, async (req: Request, res: Response) => {
     const user = await storage.getUser(req.session.userId!);
     if (!user) {

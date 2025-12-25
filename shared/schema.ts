@@ -219,6 +219,14 @@ export const agencyIncentives = pgTable("agency_incentives", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const agencyMemos = pgTable("agency_memos", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  agencyId: integer("agency_id").references(() => users.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const usersRelations = relations(users, ({ many, one }) => ({
   tasks: many(tasks, { relationName: "assignedTasks" }),
   createdTasks: many(tasks, { relationName: "createdTasks" }),
@@ -261,6 +269,8 @@ export type AgencySale = typeof agencySales.$inferSelect;
 export type InsertAgencySale = typeof agencySales.$inferInsert;
 export type AgencyIncentive = typeof agencyIncentives.$inferSelect;
 export type InsertAgencyIncentive = typeof agencyIncentives.$inferInsert;
+export type AgencyMemo = typeof agencyMemos.$inferSelect;
+export type InsertAgencyMemo = typeof agencyMemos.$inferInsert;
 export type Business = typeof businesses.$inferSelect;
 export type InsertBusiness = typeof businesses.$inferInsert;
 export type BusinessSale = typeof businessSales.$inferSelect;

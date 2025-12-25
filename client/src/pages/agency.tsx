@@ -18,7 +18,10 @@ import {
   Save,
   CreditCard,
   ToggleLeft,
-  ToggleRight
+  ToggleRight,
+  ClipboardList,
+  Settings,
+  FileText
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
@@ -87,8 +90,21 @@ export function AgencyPage() {
   const [editingAgency, setEditingAgency] = useState<Agency | null>(null);
   const [selectedAgency, setSelectedAgency] = useState<Agency | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'incentive' | 'sales'>('list');
-  const [selfTab, setSelfTab] = useState<'profile' | 'sales' | 'incentives'>('profile');
+  const [selfTab, setSelfTab] = useState<'profile' | 'sales' | 'incentives' | 'tasks' | 'system' | 'memo'>('profile');
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [showSelfSaleModal, setShowSelfSaleModal] = useState(false);
+  const [agencyTasks, setAgencyTasks] = useState<any[]>([]);
+  const [agencyMemos, setAgencyMemos] = useState<any[]>([]);
+  const [showMemoForm, setShowMemoForm] = useState(false);
+  const [memoContent, setMemoContent] = useState('');
+  const [isEditingSystem, setIsEditingSystem] = useState(false);
+  const [selfSaleForm, setSelfSaleForm] = useState({
+    clientName: '',
+    projectName: '',
+    amount: '',
+    commission: '',
+    saleDate: format(new Date(), 'yyyy-MM-dd'),
+  });
   const [profileForm, setProfileForm] = useState({
     phone: '',
     bankName: '',
@@ -201,6 +217,78 @@ export function AgencyPage() {
 
   const mySales = isAgencyUser && user ? sales.filter(s => s.agencyId === user.id) : [];
   const myIncentives = isAgencyUser && user ? incentives.filter(i => !i.targetAgencyId || i.targetAgencyId === user.id) : [];
+
+  const fetchAgencyTasks = async () => {
+    if (!user) return;
+    const res = await fetch('/api/tasks', { credentials: 'include' });
+    if (res.ok) {
+      const tasks = await res.json();
+      setAgencyTasks(tasks.filter((t: any) => t.assignedTo === user.id || t.createdBy === user.id));
+    }
+  };
+
+  const fetchAgencyMemos = async () => {
+    if (!user) return;
+    const res = await fetch('/api/agency/memos', { credentials: 'include' });
+    if (res.ok) {
+      setAgencyMemos(await res.json());
+    }
+  };
+
+  useEffect(() => {
+    if (isAgencyUser && user) {
+      fetchAgencyTasks();
+      fetchAgencyMemos();
+    }
+  }, [isAgencyUser, user]);
+
+  const handleSelfSaleSubmit = async () => {
+    if (!user || !selfSaleForm.clientName || !selfSaleForm.amount) {
+      alert('顧客名と売上額は必須です');
+      return;
+    }
+    const res = await fetch('/api/agency/sales', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        ...selfSaleForm,
+        agencyId: user.id,
+        status: 'pending',
+      }),
+    });
+    if (res.ok) {
+      fetchSales();
+      setShowSelfSaleModal(false);
+      setSelfSaleForm({ clientName: '', projectName: '', amount: '', commission: '', saleDate: format(new Date(), 'yyyy-MM-dd') });
+    }
+  };
+
+  const handleAddMemo = async () => {
+    if (!user || !memoContent.trim()) return;
+    const res = await fetch('/api/agency/memos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ content: memoContent }),
+    });
+    if (res.ok) {
+      fetchAgencyMemos();
+      setMemoContent('');
+      setShowMemoForm(false);
+    }
+  };
+
+  const handleDeleteMemo = async (memoId: number) => {
+    if (!confirm('このメモを削除しますか？')) return;
+    const res = await fetch(`/api/agency/memos/${memoId}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    if (res.ok) {
+      fetchAgencyMemos();
+    }
+  };
 
   const handleSubmit = async () => {
     if (!form.name || !form.email) {
@@ -414,11 +502,14 @@ export function AgencyPage() {
           </div>
         </div>
 
-        <div className="flex gap-2 bg-white rounded-xl p-1 border border-slate-200 w-fit">
+        <div className="flex flex-wrap gap-2 bg-white rounded-xl p-1 border border-slate-200 w-fit">
           {[
             { id: 'profile' as const, label: '基本情報', icon: Users },
             { id: 'sales' as const, label: '売上履歴', icon: TrendingUp },
             { id: 'incentives' as const, label: 'インセンティブ', icon: Gift },
+            { id: 'tasks' as const, label: 'タスク', icon: ClipboardList },
+            { id: 'system' as const, label: 'システム', icon: Settings },
+            { id: 'memo' as const, label: 'メモ', icon: FileText },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -573,7 +664,16 @@ export function AgencyPage() {
 
         {selfTab === 'sales' && (
           <div className="card p-6">
-            <h2 className="text-lg font-bold text-slate-800 mb-4">売上履歴</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold text-slate-800">売上履歴</h2>
+              <button
+                onClick={() => setShowSelfSaleModal(true)}
+                className="btn-primary flex items-center gap-2 text-sm"
+              >
+                <Plus size={16} />
+                売上追加
+              </button>
+            </div>
             {mySales.length === 0 ? (
               <p className="text-slate-500 text-center py-8">売上データがありません</p>
             ) : (
@@ -652,6 +752,196 @@ export function AgencyPage() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {selfTab === 'tasks' && (
+          <div className="card p-6">
+            <h2 className="text-lg font-bold text-slate-800 mb-4">タスク</h2>
+            {agencyTasks.length === 0 ? (
+              <p className="text-slate-500 text-center py-8">タスクがありません</p>
+            ) : (
+              <div className="space-y-3">
+                {agencyTasks.map((task) => (
+                  <div key={task.id} className="border border-slate-200 rounded-xl p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-semibold text-slate-800">{task.title}</h3>
+                        {task.description && <p className="text-sm text-slate-500 mt-1">{task.description}</p>}
+                      </div>
+                      <span className={cn(
+                        "px-2 py-1 text-xs rounded-full",
+                        task.status === 'completed' ? "bg-green-100 text-green-700" :
+                        task.status === 'in_progress' ? "bg-yellow-100 text-yellow-700" :
+                        "bg-slate-100 text-slate-600"
+                      )}>
+                        {task.status === 'completed' ? '完了' : task.status === 'in_progress' ? '進行中' : '未着手'}
+                      </span>
+                    </div>
+                    {task.dueDate && (
+                      <p className="text-xs text-slate-400 mt-2">
+                        期限: {format(new Date(task.dueDate), 'yyyy/MM/dd')}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {selfTab === 'system' && (
+          <div className="card p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-bold text-slate-800">システム設定</h2>
+            </div>
+            <div className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-slate-500">メールアドレス</p>
+                  <p className="text-slate-800">{user?.email}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">ユーザー名</p>
+                  <p className="text-slate-800">{user?.name}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">登録日</p>
+                  <p className="text-slate-800">{user?.createdAt ? format(new Date(user.createdAt), 'yyyy/MM/dd') : '-'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">ステータス</p>
+                  <p className={cn("font-medium", user?.isActive ? "text-green-600" : "text-red-600")}>
+                    {user?.isActive ? '有効' : '無効'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selfTab === 'memo' && (
+          <div className="card p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold text-slate-800">メモ</h2>
+              <button
+                onClick={() => setShowMemoForm(!showMemoForm)}
+                className="btn-primary flex items-center gap-2 text-sm"
+              >
+                <Plus size={16} />
+                メモ追加
+              </button>
+            </div>
+            {showMemoForm && (
+              <div className="mb-4 p-4 bg-slate-50 rounded-xl">
+                <textarea
+                  className="input-field w-full min-h-[100px]"
+                  placeholder="メモを入力..."
+                  value={memoContent}
+                  onChange={(e) => setMemoContent(e.target.value)}
+                />
+                <div className="flex justify-end gap-2 mt-2">
+                  <button onClick={() => { setShowMemoForm(false); setMemoContent(''); }} className="btn-secondary text-sm">
+                    キャンセル
+                  </button>
+                  <button onClick={handleAddMemo} className="btn-primary text-sm">
+                    保存
+                  </button>
+                </div>
+              </div>
+            )}
+            {agencyMemos.length === 0 ? (
+              <p className="text-slate-500 text-center py-8">メモがありません</p>
+            ) : (
+              <div className="space-y-3">
+                {agencyMemos.map((memo: any) => (
+                  <div key={memo.id} className="border border-slate-200 rounded-xl p-4">
+                    <div className="flex justify-between items-start">
+                      <p className="text-slate-800 whitespace-pre-wrap">{memo.content}</p>
+                      <button
+                        onClick={() => handleDeleteMemo(memo.id)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-2">
+                      {format(new Date(memo.createdAt), 'yyyy/MM/dd HH:mm')}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {showSelfSaleModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-bold text-slate-800">売上追加</h2>
+                <button onClick={() => setShowSelfSaleModal(false)} className="text-slate-400 hover:text-slate-600">
+                  <X size={24} />
+                </button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm text-slate-600">顧客名 *</label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={selfSaleForm.clientName}
+                    onChange={(e) => setSelfSaleForm({ ...selfSaleForm, clientName: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-slate-600">案件名</label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={selfSaleForm.projectName}
+                    onChange={(e) => setSelfSaleForm({ ...selfSaleForm, projectName: e.target.value })}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm text-slate-600">売上額 *</label>
+                    <input
+                      type="number"
+                      className="input-field"
+                      value={selfSaleForm.amount}
+                      onChange={(e) => setSelfSaleForm({ ...selfSaleForm, amount: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-slate-600">コミッション</label>
+                    <input
+                      type="number"
+                      className="input-field"
+                      value={selfSaleForm.commission}
+                      onChange={(e) => setSelfSaleForm({ ...selfSaleForm, commission: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm text-slate-600">売上日</label>
+                  <input
+                    type="date"
+                    className="input-field"
+                    value={selfSaleForm.saleDate}
+                    onChange={(e) => setSelfSaleForm({ ...selfSaleForm, saleDate: e.target.value })}
+                  />
+                </div>
+                <div className="flex gap-2 pt-4">
+                  <button onClick={() => setShowSelfSaleModal(false)} className="btn-secondary flex-1">
+                    キャンセル
+                  </button>
+                  <button onClick={handleSelfSaleSubmit} className="btn-primary flex-1">
+                    追加
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>

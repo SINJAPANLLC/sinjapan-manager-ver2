@@ -1,8 +1,8 @@
 import { db } from './db';
-import { users, customers, tasks, notifications, chatMessages, chatGroups, chatGroupMembers, employees, agencySales, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, systemSettings, leads, leadActivities, clientProjects, clientInvoices, companies, quickNotes, investments, staffAffiliates, financialEntries } from '../shared/schema';
+import { users, customers, tasks, notifications, chatMessages, chatGroups, chatGroupMembers, employees, agencySales, agencyMemos, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, systemSettings, leads, leadActivities, clientProjects, clientInvoices, companies, quickNotes, investments, staffAffiliates, financialEntries } from '../shared/schema';
 import { eq, and, or, desc, sql, isNull, gte, lte, like, ilike, inArray } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, ChatGroup, InsertChatGroup, ChatGroupMember, InsertChatGroupMember, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, SystemSetting, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Company, InsertCompany, QuickNote, InsertQuickNote, Investment, InsertInvestment, FinancialEntry, InsertFinancialEntry } from '../shared/schema';
+import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, ChatGroup, InsertChatGroup, ChatGroupMember, InsertChatGroupMember, Employee, InsertEmployee, AgencySale, InsertAgencySale, AgencyMemo, InsertAgencyMemo, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, SystemSetting, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Company, InsertCompany, QuickNote, InsertQuickNote, Investment, InsertInvestment, FinancialEntry, InsertFinancialEntry } from '../shared/schema';
 
 export const storage = {
   async getUser(id: number): Promise<User | undefined> {
@@ -328,6 +328,19 @@ export const storage = {
 
   async deleteAgencySale(id: number): Promise<void> {
     await db.delete(agencySales).where(eq(agencySales.id, id));
+  },
+
+  async getAgencyMemos(agencyId: number): Promise<AgencyMemo[]> {
+    return db.select().from(agencyMemos).where(eq(agencyMemos.agencyId, agencyId)).orderBy(desc(agencyMemos.createdAt));
+  },
+
+  async createAgencyMemo(data: InsertAgencyMemo): Promise<AgencyMemo> {
+    const [memo] = await db.insert(agencyMemos).values(data).returning();
+    return memo;
+  },
+
+  async deleteAgencyMemo(id: number): Promise<void> {
+    await db.delete(agencyMemos).where(eq(agencyMemos.id, id));
   },
 
   async getDashboardStats(userId: number, role: string) {
