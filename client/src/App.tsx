@@ -29,7 +29,7 @@ import { Loader2 } from 'lucide-react';
 import { useLocation } from 'wouter';
 
 function StaffRedirect() {
-  return <Redirect to="/tasks" />;
+  return <Redirect to="/communication" />;
 }
 
 function AppRoutes() {

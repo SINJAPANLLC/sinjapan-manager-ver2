@@ -91,10 +91,9 @@ export function Layout({ children }: LayoutProps) {
 
   const allMenuItems = [
     { href: '/', label: 'ホーム', icon: Home, roles: ['admin', 'ceo', 'manager', 'agency', 'client'] },
-    { href: '/tasks', label: 'タスク', icon: ClipboardList, roles: ['admin', 'ceo', 'manager', 'staff', 'agency', 'client'] },
-    { href: '/calendar', label: 'カレンダー', icon: Calendar, roles: ['admin', 'ceo', 'manager', 'staff', 'agency', 'client'] },
+    { href: '/tasks', label: 'タスク', icon: ClipboardList, roles: ['admin', 'ceo', 'manager', 'agency', 'client'] },
+    { href: '/calendar', label: 'カレンダー', icon: Calendar, roles: ['admin', 'ceo', 'manager', 'agency', 'client'] },
     { href: '/communication', label: 'コミュニケーション', icon: MessageSquare, roles: ['admin', 'ceo', 'manager', 'staff', 'agency', 'client'] },
-    { href: '/customers', label: '顧客', icon: Building2, roles: ['staff'] },
     { href: '/business', label: '事業', icon: Briefcase, roles: ['admin', 'ceo', 'manager', 'agency', 'client'] },
     { href: '/designs', label: '設計', icon: Compass, roles: ['admin', 'ceo', 'manager', 'agency', 'client'] },
     { href: '/marketing', label: 'マーケティング', icon: TrendingUp, roles: ['admin', 'ceo', 'manager', 'agency', 'client'] },
