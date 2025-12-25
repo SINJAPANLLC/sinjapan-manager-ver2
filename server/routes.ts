@@ -783,14 +783,15 @@ export function registerRoutes(app: Express) {
       if (!req.file) {
         return res.status(400).json({ message: 'ファイルが必要です' });
       }
-      const { receiverId, content } = req.body;
+      const { receiverId, groupId, content } = req.body;
       const attachmentUrl = `/uploads/${req.file.filename}`;
       const attachmentName = req.file.originalname;
       
       const message = await storage.createChatMessage({
         content: content || '',
         senderId: req.session.userId,
-        receiverId: parseInt(receiverId),
+        receiverId: receiverId ? parseInt(receiverId) : null,
+        groupId: groupId ? parseInt(groupId) : null,
         attachmentUrl,
         attachmentName,
       });
@@ -798,6 +799,158 @@ export function registerRoutes(app: Express) {
     } catch (error) {
       console.error('Upload error:', error);
       res.status(500).json({ message: 'アップロードに失敗しました' });
+    }
+  });
+
+  app.get('/api/chat/groups', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const groups = await storage.getUserChatGroups(req.session.userId!);
+      res.json(groups);
+    } catch (err) {
+      console.error('Get groups error:', err);
+      res.status(500).json({ message: 'グループの取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/chat/groups', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { name, description, memberIds } = req.body;
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      const group = await storage.createChatGroup({
+        companyId: getCompanyId(req),
+        name,
+        description,
+        createdBy: req.session.userId,
+      });
+      
+      await storage.addChatGroupMember(group.id, req.session.userId!, 'admin');
+      
+      if (memberIds && Array.isArray(memberIds)) {
+        for (const memberId of memberIds) {
+          if (memberId !== req.session.userId) {
+            await storage.addChatGroupMember(group.id, memberId, 'member');
+          }
+        }
+      }
+      
+      res.json(group);
+    } catch (err) {
+      console.error('Create group error:', err);
+      res.status(500).json({ message: 'グループの作成に失敗しました' });
+    }
+  });
+
+  app.get('/api/chat/groups/:groupId', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const groupId = parseInt(req.params.groupId);
+      const isMember = await storage.isGroupMember(groupId, req.session.userId!);
+      if (!isMember) {
+        return res.status(403).json({ message: 'このグループのメンバーではありません' });
+      }
+      const group = await storage.getChatGroup(groupId);
+      const members = await storage.getChatGroupMembers(groupId);
+      res.json({ ...group, members: members.map(m => ({ ...m, user: m.user ? { ...m.user, password: undefined } : null })) });
+    } catch (err) {
+      console.error('Get group error:', err);
+      res.status(500).json({ message: 'グループの取得に失敗しました' });
+    }
+  });
+
+  app.patch('/api/chat/groups/:groupId', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const groupId = parseInt(req.params.groupId);
+      const isMember = await storage.isGroupMember(groupId, req.session.userId!);
+      if (!isMember) {
+        return res.status(403).json({ message: 'このグループのメンバーではありません' });
+      }
+      const group = await storage.updateChatGroup(groupId, req.body);
+      res.json(group);
+    } catch (err) {
+      console.error('Update group error:', err);
+      res.status(500).json({ message: 'グループの更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/chat/groups/:groupId', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const groupId = parseInt(req.params.groupId);
+      const group = await storage.getChatGroup(groupId);
+      if (group?.createdBy !== req.session.userId) {
+        return res.status(403).json({ message: 'グループの作成者のみ削除できます' });
+      }
+      await storage.deleteChatGroup(groupId);
+      res.json({ success: true });
+    } catch (err) {
+      console.error('Delete group error:', err);
+      res.status(500).json({ message: 'グループの削除に失敗しました' });
+    }
+  });
+
+  app.post('/api/chat/groups/:groupId/members', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const groupId = parseInt(req.params.groupId);
+      const { userId } = req.body;
+      const isMember = await storage.isGroupMember(groupId, req.session.userId!);
+      if (!isMember) {
+        return res.status(403).json({ message: 'このグループのメンバーではありません' });
+      }
+      const member = await storage.addChatGroupMember(groupId, userId, 'member');
+      res.json(member);
+    } catch (err) {
+      console.error('Add member error:', err);
+      res.status(500).json({ message: 'メンバーの追加に失敗しました' });
+    }
+  });
+
+  app.delete('/api/chat/groups/:groupId/members/:userId', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const groupId = parseInt(req.params.groupId);
+      const userId = parseInt(req.params.userId);
+      const group = await storage.getChatGroup(groupId);
+      if (group?.createdBy !== req.session.userId && userId !== req.session.userId) {
+        return res.status(403).json({ message: 'メンバーを削除する権限がありません' });
+      }
+      await storage.removeChatGroupMember(groupId, userId);
+      res.json({ success: true });
+    } catch (err) {
+      console.error('Remove member error:', err);
+      res.status(500).json({ message: 'メンバーの削除に失敗しました' });
+    }
+  });
+
+  app.get('/api/chat/groups/:groupId/messages', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const groupId = parseInt(req.params.groupId);
+      const isMember = await storage.isGroupMember(groupId, req.session.userId!);
+      if (!isMember) {
+        return res.status(403).json({ message: 'このグループのメンバーではありません' });
+      }
+      const messages = await storage.getGroupMessages(groupId);
+      res.json(messages);
+    } catch (err) {
+      console.error('Get group messages error:', err);
+      res.status(500).json({ message: 'メッセージの取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/chat/groups/:groupId/messages', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const groupId = parseInt(req.params.groupId);
+      const isMember = await storage.isGroupMember(groupId, req.session.userId!);
+      if (!isMember) {
+        return res.status(403).json({ message: 'このグループのメンバーではありません' });
+      }
+      const message = await storage.createChatMessage({
+        ...req.body,
+        senderId: req.session.userId,
+        groupId,
+        receiverId: null,
+      });
+      await storage.updateChatGroup(groupId, {});
+      res.json(message);
+    } catch (err) {
+      console.error('Send group message error:', err);
+      res.status(500).json({ message: 'メッセージの送信に失敗しました' });
     }
   });
 

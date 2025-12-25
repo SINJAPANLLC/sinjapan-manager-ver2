@@ -115,12 +115,32 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const chatGroups = pgTable("chat_groups", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  name: text("name").notNull(),
+  description: text("description"),
+  avatarUrl: text("avatar_url"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const chatGroupMembers = pgTable("chat_group_members", {
+  id: serial("id").primaryKey(),
+  groupId: integer("group_id").references(() => chatGroups.id, { onDelete: "cascade" }).notNull(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  role: text("role").default("member"),
+  joinedAt: timestamp("joined_at").defaultNow().notNull(),
+});
+
 export const chatMessages = pgTable("chat_messages", {
   id: serial("id").primaryKey(),
   companyId: varchar("company_id", { length: 255 }),
   content: text("content").notNull(),
   senderId: integer("sender_id").references(() => users.id, { onDelete: "set null" }),
   receiverId: integer("receiver_id").references(() => users.id, { onDelete: "set null" }),
+  groupId: integer("group_id").references(() => chatGroups.id, { onDelete: "cascade" }),
   attachmentUrl: text("attachment_url"),
   attachmentName: text("attachment_name"),
   isRead: boolean("is_read").notNull().default(false),
@@ -231,6 +251,10 @@ export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = typeof notifications.$inferInsert;
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type InsertChatMessage = typeof chatMessages.$inferInsert;
+export type ChatGroup = typeof chatGroups.$inferSelect;
+export type InsertChatGroup = typeof chatGroups.$inferInsert;
+export type ChatGroupMember = typeof chatGroupMembers.$inferSelect;
+export type InsertChatGroupMember = typeof chatGroupMembers.$inferInsert;
 export type Employee = typeof employees.$inferSelect;
 export type InsertEmployee = typeof employees.$inferInsert;
 export type AgencySale = typeof agencySales.$inferSelect;

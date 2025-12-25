@@ -1,8 +1,8 @@
 import { db } from './db';
-import { users, customers, tasks, notifications, chatMessages, employees, agencySales, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, systemSettings, leads, leadActivities, clientProjects, clientInvoices, companies, quickNotes, investments, staffAffiliates, financialEntries } from '../shared/schema';
-import { eq, and, or, desc, sql, isNull, gte, lte, like, ilike } from 'drizzle-orm';
+import { users, customers, tasks, notifications, chatMessages, chatGroups, chatGroupMembers, employees, agencySales, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, systemSettings, leads, leadActivities, clientProjects, clientInvoices, companies, quickNotes, investments, staffAffiliates, financialEntries } from '../shared/schema';
+import { eq, and, or, desc, sql, isNull, gte, lte, like, ilike, inArray } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, SystemSetting, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Company, InsertCompany, QuickNote, InsertQuickNote, Investment, InsertInvestment, FinancialEntry, InsertFinancialEntry } from '../shared/schema';
+import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, ChatGroup, InsertChatGroup, ChatGroupMember, InsertChatGroupMember, Employee, InsertEmployee, AgencySale, InsertAgencySale, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, SystemSetting, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Company, InsertCompany, QuickNote, InsertQuickNote, Investment, InsertInvestment, FinancialEntry, InsertFinancialEntry } from '../shared/schema';
 
 export const storage = {
   async getUser(id: number): Promise<User | undefined> {
@@ -218,6 +218,71 @@ export const storage = {
       }
     }
     return countBySender;
+  },
+
+  async createChatGroup(data: InsertChatGroup): Promise<ChatGroup> {
+    const [group] = await db.insert(chatGroups).values(data).returning();
+    return group;
+  },
+
+  async getChatGroup(id: number): Promise<ChatGroup | undefined> {
+    const [group] = await db.select().from(chatGroups).where(eq(chatGroups.id, id));
+    return group;
+  },
+
+  async getUserChatGroups(userId: number): Promise<(ChatGroup & { memberCount: number })[]> {
+    const memberGroups = await db.select({ groupId: chatGroupMembers.groupId })
+      .from(chatGroupMembers)
+      .where(eq(chatGroupMembers.userId, userId));
+    
+    if (memberGroups.length === 0) return [];
+    
+    const groupIds = memberGroups.map(m => m.groupId);
+    const groups = await db.select().from(chatGroups).where(inArray(chatGroups.id, groupIds)).orderBy(desc(chatGroups.updatedAt));
+    
+    const groupsWithCount = await Promise.all(groups.map(async (group) => {
+      const countResult = await db.select({ count: sql<number>`count(*)` }).from(chatGroupMembers).where(eq(chatGroupMembers.groupId, group.id));
+      return { ...group, memberCount: Number(countResult[0]?.count || 0) };
+    }));
+    
+    return groupsWithCount;
+  },
+
+  async updateChatGroup(id: number, data: Partial<InsertChatGroup>): Promise<ChatGroup | undefined> {
+    const [group] = await db.update(chatGroups).set({ ...data, updatedAt: new Date() }).where(eq(chatGroups.id, id)).returning();
+    return group;
+  },
+
+  async deleteChatGroup(id: number): Promise<boolean> {
+    await db.delete(chatGroups).where(eq(chatGroups.id, id));
+    return true;
+  },
+
+  async addChatGroupMember(groupId: number, userId: number, role: string = 'member'): Promise<ChatGroupMember> {
+    const [member] = await db.insert(chatGroupMembers).values({ groupId, userId, role }).returning();
+    return member;
+  },
+
+  async removeChatGroupMember(groupId: number, userId: number): Promise<boolean> {
+    await db.delete(chatGroupMembers).where(and(eq(chatGroupMembers.groupId, groupId), eq(chatGroupMembers.userId, userId)));
+    return true;
+  },
+
+  async getChatGroupMembers(groupId: number): Promise<(ChatGroupMember & { user: User | null })[]> {
+    const members = await db.select().from(chatGroupMembers)
+      .leftJoin(users, eq(chatGroupMembers.userId, users.id))
+      .where(eq(chatGroupMembers.groupId, groupId));
+    return members.map(m => ({ ...m.chat_group_members, user: m.users }));
+  },
+
+  async isGroupMember(groupId: number, userId: number): Promise<boolean> {
+    const [member] = await db.select().from(chatGroupMembers)
+      .where(and(eq(chatGroupMembers.groupId, groupId), eq(chatGroupMembers.userId, userId)));
+    return !!member;
+  },
+
+  async getGroupMessages(groupId: number): Promise<ChatMessage[]> {
+    return db.select().from(chatMessages).where(eq(chatMessages.groupId, groupId)).orderBy(chatMessages.createdAt);
   },
 
   async getEmployee(userId: number): Promise<Employee | undefined> {
