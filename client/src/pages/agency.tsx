@@ -21,7 +21,8 @@ import {
   ToggleRight,
   ClipboardList,
   Settings,
-  FileText
+  FileText,
+  Eye
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
@@ -1435,6 +1436,16 @@ export function AgencyPage() {
                   </button>
                   <button
                     onClick={() => {
+                      setSelectedAgency(a);
+                      fetchAgencyPaymentSettings(a.id);
+                    }}
+                    className="btn-secondary text-sm py-1.5"
+                    title="詳細を見る"
+                  >
+                    <Eye size={14} />
+                  </button>
+                  <button
+                    onClick={() => {
                       setEditingAgency(a);
                       setForm({ email: a.email, name: a.name, password: '', phone: a.phone || '', bankName: a.bankName || '', bankBranch: a.bankBranch || '', bankAccountType: a.bankAccountType || '普通', bankAccountNumber: a.bankAccountNumber || '', bankAccountHolder: a.bankAccountHolder || '' });
                       fetchAgencyPaymentSettings(a.id);
@@ -1999,6 +2010,214 @@ export function AgencyPage() {
                 </button>
                 <button onClick={handleIncentiveSubmit} className="flex-1 btn-primary">
                   登録
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedAgency && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto animate-slide-up">
+            <div className="sticky top-0 bg-white border-b border-slate-100 p-4 flex justify-between items-center">
+              <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                <Building2 className="text-primary-500" size={20} />
+                {selectedAgency.name}の詳細
+              </h2>
+              <button onClick={() => setSelectedAgency(null)} className="text-slate-400 hover:text-slate-600">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="card p-4 bg-slate-50">
+                  <h3 className="font-medium text-slate-700 mb-3 flex items-center gap-2">
+                    <Users size={16} />
+                    基本情報
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">名前</span>
+                      <span className="font-medium">{selectedAgency.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">メール</span>
+                      <span className="font-medium">{selectedAgency.email}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">電話</span>
+                      <span className="font-medium">{selectedAgency.phone || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">ステータス</span>
+                      <span className={cn(
+                        "px-2 py-0.5 text-xs rounded-full",
+                        selectedAgency.isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                      )}>
+                        {selectedAgency.isActive ? '有効' : '無効'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">登録日</span>
+                      <span className="font-medium">{format(new Date(selectedAgency.createdAt), 'yyyy/MM/dd')}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="card p-4 bg-slate-50">
+                  <h3 className="font-medium text-slate-700 mb-3 flex items-center gap-2">
+                    <CreditCard size={16} />
+                    口座情報
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">銀行名</span>
+                      <span className="font-medium">{selectedAgency.bankName || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">支店名</span>
+                      <span className="font-medium">{selectedAgency.bankBranch || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">口座種別</span>
+                      <span className="font-medium">{selectedAgency.bankAccountType || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">口座番号</span>
+                      <span className="font-medium">{selectedAgency.bankAccountNumber || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">名義</span>
+                      <span className="font-medium">{selectedAgency.bankAccountHolder || '-'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="card p-4 bg-blue-50 border border-blue-200">
+                <h3 className="font-medium text-blue-800 mb-3 flex items-center gap-2">
+                  <Settings size={16} />
+                  支払いスケジュール
+                </h3>
+                {paymentSettings ? (
+                  <div className="grid md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-blue-600">締め日</p>
+                      <p className="text-blue-900 font-medium">
+                        {paymentSettings.closingDay === 'end_of_month' ? '月末' : `${paymentSettings.closingDay}日`}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-blue-600">支払日</p>
+                      <p className="text-blue-900 font-medium">
+                        {paymentSettings.payoutOffsetMonths === 1 ? '翌月' : paymentSettings.payoutOffsetMonths === 2 ? '翌々月' : `${paymentSettings.payoutOffsetMonths}ヶ月後`}{paymentSettings.payoutDay}日
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-blue-600">振込手数料</p>
+                      <p className="text-blue-900 font-medium">¥{parseInt(paymentSettings.transferFee || '330').toLocaleString()}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-blue-600 text-sm">読み込み中...</p>
+                )}
+              </div>
+
+              <div className="card p-4 bg-green-50 border border-green-200">
+                <h3 className="font-medium text-green-800 mb-3 flex items-center gap-2">
+                  <TrendingUp size={16} />
+                  売上情報
+                </h3>
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <p className="text-xs text-green-600">総売上件数</p>
+                    <p className="text-xl font-bold text-green-700">{getAgencySales(selectedAgency.id).length}件</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-green-600">総売上金額</p>
+                    <p className="text-xl font-bold text-green-700">¥{getAgencyTotalSales(selectedAgency.id).toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-green-600">総コミッション</p>
+                    <p className="text-xl font-bold text-green-700">¥{getAgencySales(selectedAgency.id).reduce((sum, s) => sum + parseFloat(s.commission || '0'), 0).toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h3 className="font-medium text-slate-700 mb-3">売上履歴（最新10件）</h3>
+                {getAgencySales(selectedAgency.id).length === 0 ? (
+                  <p className="text-slate-500 text-center py-4">売上データがありません</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-slate-200 text-left">
+                          <th className="py-2 px-2 text-slate-500 font-medium">日付</th>
+                          <th className="py-2 px-2 text-slate-500 font-medium">案件</th>
+                          <th className="py-2 px-2 text-right text-slate-500 font-medium">売上</th>
+                          <th className="py-2 px-2 text-right text-slate-500 font-medium">コミッション</th>
+                          <th className="py-2 px-2 text-center text-slate-500 font-medium">ステータス</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {getAgencySales(selectedAgency.id).slice(0, 10).map((sale) => (
+                          <tr key={sale.id} className="border-b border-slate-100">
+                            <td className="py-2 px-2">{sale.saleDate ? format(new Date(sale.saleDate), 'yyyy/MM/dd') : '-'}</td>
+                            <td className="py-2 px-2">{sale.projectName || sale.clientName}</td>
+                            <td className="py-2 px-2 text-right">¥{parseFloat(sale.amount || '0').toLocaleString()}</td>
+                            <td className="py-2 px-2 text-right text-green-600 font-medium">¥{parseFloat(sale.commission || '0').toLocaleString()}</td>
+                            <td className="py-2 px-2 text-center">
+                              <span className={cn(
+                                "px-2 py-0.5 text-xs rounded-full",
+                                sale.status === 'approved' ? "bg-green-100 text-green-700" :
+                                sale.status === 'paid' ? "bg-blue-100 text-blue-700" :
+                                sale.status === 'rejected' ? "bg-red-100 text-red-700" :
+                                "bg-yellow-100 text-yellow-700"
+                              )}>
+                                {sale.status === 'approved' ? '承認済み' :
+                                 sale.status === 'paid' ? '支払済み' :
+                                 sale.status === 'rejected' ? '却下' : '承認待ち'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <button
+                  onClick={() => {
+                    setEditingAgency(selectedAgency);
+                    setForm({ 
+                      email: selectedAgency.email, 
+                      name: selectedAgency.name, 
+                      password: '', 
+                      phone: selectedAgency.phone || '', 
+                      bankName: selectedAgency.bankName || '', 
+                      bankBranch: selectedAgency.bankBranch || '', 
+                      bankAccountType: selectedAgency.bankAccountType || '普通', 
+                      bankAccountNumber: selectedAgency.bankAccountNumber || '', 
+                      bankAccountHolder: selectedAgency.bankAccountHolder || '' 
+                    });
+                    setSelectedAgency(null);
+                    setShowModal(true);
+                  }}
+                  className="btn-primary flex items-center gap-2"
+                >
+                  <Edit size={16} />
+                  編集
+                </button>
+                <button
+                  onClick={() => setSelectedAgency(null)}
+                  className="btn-secondary"
+                >
+                  閉じる
                 </button>
               </div>
             </div>
