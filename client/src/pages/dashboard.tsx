@@ -111,6 +111,10 @@ export function DashboardPage() {
   };
 
   const canViewSales = user && ['admin', 'ceo', 'manager'].includes(user.role);
+  const canViewAllStats = user && ['admin', 'ceo', 'manager'].includes(user.role);
+  const isStaff = user?.role === 'staff';
+  const isAgency = user?.role === 'agency';
+  const isClient = user?.role === 'client';
 
   const getQuickActions = () => {
     if (!user) return [];
@@ -174,32 +178,39 @@ export function DashboardPage() {
 
       {stats && (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            <Link href="/customers" className="stat-card group">
-              <div className="flex items-center justify-between">
-                <div className="p-2.5 bg-gradient-to-br from-primary-50 to-primary-100/50 rounded-xl group-hover:scale-110 transition-transform duration-300">
-                  <Building2 className="text-primary-600" size={20} />
+          <div className={cn("grid gap-4", 
+            canViewAllStats ? "grid-cols-2 md:grid-cols-4 lg:grid-cols-6" : 
+            isClient ? "grid-cols-2 md:grid-cols-3" : "grid-cols-2 md:grid-cols-4"
+          )}>
+            {!isClient && (
+              <Link href="/customers" className="stat-card group">
+                <div className="flex items-center justify-between">
+                  <div className="p-2.5 bg-gradient-to-br from-primary-50 to-primary-100/50 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                    <Building2 className="text-primary-600" size={20} />
+                  </div>
+                  <ArrowUpRight size={16} className="text-slate-300 group-hover:text-primary-400 transition-colors" />
                 </div>
-                <ArrowUpRight size={16} className="text-slate-300 group-hover:text-primary-400 transition-colors" />
-              </div>
-              <div className="mt-3">
-                <p className="text-2xl font-bold text-slate-800">{stats.customers}</p>
-                <p className="text-slate-500 text-xs font-medium mt-0.5">顧客数</p>
-              </div>
-            </Link>
+                <div className="mt-3">
+                  <p className="text-2xl font-bold text-slate-800">{stats.customers}</p>
+                  <p className="text-slate-500 text-xs font-medium mt-0.5">{isStaff ? '担当顧客' : '顧客数'}</p>
+                </div>
+              </Link>
+            )}
 
-            <Link href="/tasks" className="stat-card group">
-              <div className="flex items-center justify-between">
-                <div className="p-2.5 bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-xl group-hover:scale-110 transition-transform duration-300">
-                  <ClipboardList className="text-amber-600" size={20} />
+            {!isClient && !isAgency && (
+              <Link href="/tasks" className="stat-card group">
+                <div className="flex items-center justify-between">
+                  <div className="p-2.5 bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                    <ClipboardList className="text-amber-600" size={20} />
+                  </div>
+                  <ArrowUpRight size={16} className="text-slate-300 group-hover:text-amber-400 transition-colors" />
                 </div>
-                <ArrowUpRight size={16} className="text-slate-300 group-hover:text-amber-400 transition-colors" />
-              </div>
-              <div className="mt-3">
-                <p className="text-2xl font-bold text-slate-800">{stats.pendingTasks}</p>
-                <p className="text-slate-500 text-xs font-medium mt-0.5">未完了タスク</p>
-              </div>
-            </Link>
+                <div className="mt-3">
+                  <p className="text-2xl font-bold text-slate-800">{stats.pendingTasks}</p>
+                  <p className="text-slate-500 text-xs font-medium mt-0.5">{isStaff ? 'マイタスク' : '未完了タスク'}</p>
+                </div>
+              </Link>
+            )}
 
             <Link href="/notifications" className="stat-card group">
               <div className="flex items-center justify-between">
@@ -214,44 +225,50 @@ export function DashboardPage() {
               </div>
             </Link>
 
-            <Link href="/calendar" className="stat-card group">
-              <div className="flex items-center justify-between">
-                <div className="p-2.5 bg-gradient-to-br from-rose-50 to-rose-100/50 rounded-xl group-hover:scale-110 transition-transform duration-300">
-                  <Calendar className="text-rose-600" size={20} />
+            {!isAgency && (
+              <Link href="/calendar" className="stat-card group">
+                <div className="flex items-center justify-between">
+                  <div className="p-2.5 bg-gradient-to-br from-rose-50 to-rose-100/50 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                    <Calendar className="text-rose-600" size={20} />
+                  </div>
+                  <ArrowUpRight size={16} className="text-slate-300 group-hover:text-rose-400 transition-colors" />
                 </div>
-                <ArrowUpRight size={16} className="text-slate-300 group-hover:text-rose-400 transition-colors" />
-              </div>
-              <div className="mt-3">
-                <p className="text-2xl font-bold text-slate-800">{stats.todayMemos?.length || 0}</p>
-                <p className="text-slate-500 text-xs font-medium mt-0.5">今日の予定</p>
-              </div>
-            </Link>
+                <div className="mt-3">
+                  <p className="text-2xl font-bold text-slate-800">{stats.todayMemos?.length || 0}</p>
+                  <p className="text-slate-500 text-xs font-medium mt-0.5">今日の予定</p>
+                </div>
+              </Link>
+            )}
 
-            <Link href="/ai" className="stat-card group">
-              <div className="flex items-center justify-between">
-                <div className="p-2.5 bg-gradient-to-br from-cyan-50 to-cyan-100/50 rounded-xl group-hover:scale-110 transition-transform duration-300">
-                  <Bot className="text-cyan-600" size={20} />
-                </div>
-                <ArrowUpRight size={16} className="text-slate-300 group-hover:text-cyan-400 transition-colors" />
-              </div>
-              <div className="mt-3">
-                <p className="text-2xl font-bold text-slate-800">{stats.aiLogCount}</p>
-                <p className="text-slate-500 text-xs font-medium mt-0.5">AI利用回数</p>
-              </div>
-            </Link>
+            {canViewAllStats && (
+              <>
+                <Link href="/ai" className="stat-card group">
+                  <div className="flex items-center justify-between">
+                    <div className="p-2.5 bg-gradient-to-br from-cyan-50 to-cyan-100/50 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                      <Bot className="text-cyan-600" size={20} />
+                    </div>
+                    <ArrowUpRight size={16} className="text-slate-300 group-hover:text-cyan-400 transition-colors" />
+                  </div>
+                  <div className="mt-3">
+                    <p className="text-2xl font-bold text-slate-800">{stats.aiLogCount}</p>
+                    <p className="text-slate-500 text-xs font-medium mt-0.5">AI利用回数</p>
+                  </div>
+                </Link>
 
-            <Link href="/ai" className="stat-card group">
-              <div className="flex items-center justify-between">
-                <div className="p-2.5 bg-gradient-to-br from-teal-50 to-teal-100/50 rounded-xl group-hover:scale-110 transition-transform duration-300">
-                  <FileText className="text-teal-600" size={20} />
-                </div>
-                <ArrowUpRight size={16} className="text-slate-300 group-hover:text-teal-400 transition-colors" />
-              </div>
-              <div className="mt-3">
-                <p className="text-2xl font-bold text-slate-800">{stats.publishedArticleCount}/{stats.seoArticleCount}</p>
-                <p className="text-slate-500 text-xs font-medium mt-0.5">SEO記事</p>
-              </div>
-            </Link>
+                <Link href="/ai" className="stat-card group">
+                  <div className="flex items-center justify-between">
+                    <div className="p-2.5 bg-gradient-to-br from-teal-50 to-teal-100/50 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                      <FileText className="text-teal-600" size={20} />
+                    </div>
+                    <ArrowUpRight size={16} className="text-slate-300 group-hover:text-teal-400 transition-colors" />
+                  </div>
+                  <div className="mt-3">
+                    <p className="text-2xl font-bold text-slate-800">{stats.publishedArticleCount}/{stats.seoArticleCount}</p>
+                    <p className="text-slate-500 text-xs font-medium mt-0.5">SEO記事</p>
+                  </div>
+                </Link>
+              </>
+            )}
           </div>
 
           {canViewSales && (
