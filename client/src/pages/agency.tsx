@@ -16,7 +16,9 @@ import {
   Gift,
   Users,
   Save,
-  CreditCard
+  CreditCard,
+  ToggleLeft,
+  ToggleRight
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
@@ -266,6 +268,19 @@ export function AgencyPage() {
   const handleDelete = async (id: number) => {
     if (!confirm('この代理店を削除しますか？')) return;
     const res = await fetch(`/api/users/${id}`, { method: 'DELETE', credentials: 'include' });
+    if (res.ok) {
+      fetchAgencies();
+    }
+  };
+
+  const handleToggleAgencyStatus = async (agency: Agency) => {
+    const newStatus = !agency.isActive;
+    const res = await fetch(`/api/users/${agency.id}/approve`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ isActive: newStatus }),
+    });
     if (res.ok) {
       fetchAgencies();
     }
@@ -732,12 +747,27 @@ export function AgencyPage() {
                       <p className="text-sm text-slate-500">代理店</p>
                     </div>
                   </div>
-                  <span className={cn(
-                    "px-2 py-1 text-xs rounded-full",
-                    a.isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                  )}>
-                    {a.isActive ? '有効' : '無効'}
-                  </span>
+                  {canManage && (
+                    <button
+                      onClick={() => handleToggleAgencyStatus(a)}
+                      className={cn(
+                        "flex items-center gap-1 px-2 py-1 text-xs rounded-full cursor-pointer hover:opacity-80 transition-opacity",
+                        a.isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                      )}
+                      title={a.isActive ? 'クリックで無効化' : 'クリックで有効化'}
+                    >
+                      {a.isActive ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
+                      {a.isActive ? '有効' : '無効'}
+                    </button>
+                  )}
+                  {!canManage && (
+                    <span className={cn(
+                      "px-2 py-1 text-xs rounded-full",
+                      a.isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                    )}>
+                      {a.isActive ? '有効' : '無効'}
+                    </span>
+                  )}
                 </div>
 
                 <div className="space-y-2 text-sm">
