@@ -547,6 +547,11 @@ export function AgencyPage() {
   const myTotalSales = approvedSales.reduce((sum, s) => sum + parseFloat(s.amount || '0'), 0);
   const myTotalCommission = approvedSales.reduce((sum, s) => sum + parseFloat(s.commission || '0'), 0);
   const myApprovedSalesCount = approvedSales.length;
+  
+  // Calculate approved task rewards
+  const approvedTaskRewards = agencyTasks
+    .filter(t => t.rewardApprovedAt && t.rewardAmount)
+    .reduce((sum, t) => sum + parseFloat(t.rewardAmount || '0'), 0);
 
   if (isAgencyUser && user) {
     return (
@@ -561,7 +566,7 @@ export function AgencyPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="card p-4">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-blue-100">
@@ -581,6 +586,17 @@ export function AgencyPage() {
               <div>
                 <p className="text-sm text-slate-500">総コミッション</p>
                 <p className="text-xl font-bold text-slate-800">¥{myTotalCommission.toLocaleString()}</p>
+              </div>
+            </div>
+          </div>
+          <div className="card p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-purple-100">
+                <ClipboardList className="text-purple-600" size={24} />
+              </div>
+              <div>
+                <p className="text-sm text-slate-500">タスク報酬</p>
+                <p className="text-xl font-bold text-slate-800">¥{approvedTaskRewards.toLocaleString()}</p>
               </div>
             </div>
           </div>
@@ -868,12 +884,22 @@ export function AgencyPage() {
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3 p-3 bg-slate-50 rounded-lg">
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3 p-3 bg-slate-50 rounded-lg">
                       <div>
                         <p className="text-xs text-slate-500">報酬</p>
                         <p className="font-bold text-green-600">
                           {task.rewardAmount ? `¥${parseFloat(task.rewardAmount).toLocaleString()}` : '-'}
                         </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500">報酬承認</p>
+                        {task.rewardApprovedAt ? (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">承認済み</span>
+                        ) : task.status === 'completed' && task.rewardAmount ? (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">承認待ち</span>
+                        ) : (
+                          <span className="text-xs text-slate-400">-</span>
+                        )}
                       </div>
                       <div>
                         <p className="text-xs text-slate-500">優先度</p>
