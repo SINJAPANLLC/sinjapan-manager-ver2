@@ -290,6 +290,36 @@ export function AgencyPage() {
     }
   };
 
+  const handleUpdateTaskStatus = async (taskId: number, newStatus: string) => {
+    const res = await fetch(`/api/tasks/${taskId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ status: newStatus }),
+    });
+    if (res.ok) {
+      fetchAgencyTasks();
+    }
+  };
+
+  const getPriorityLabel = (priority: string) => {
+    switch (priority) {
+      case 'high': return '高';
+      case 'medium': return '中';
+      case 'low': return '低';
+      default: return '-';
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'text-red-600';
+      case 'medium': return 'text-yellow-600';
+      case 'low': return 'text-green-600';
+      default: return 'text-slate-500';
+    }
+  };
+
   const handleSubmit = async () => {
     if (!form.name || !form.email) {
       alert('名前とメールアドレスは必須です');
@@ -761,28 +791,69 @@ export function AgencyPage() {
             {agencyTasks.length === 0 ? (
               <p className="text-slate-500 text-center py-8">タスクがありません</p>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {agencyTasks.map((task) => (
-                  <div key={task.id} className="border border-slate-200 rounded-xl p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-semibold text-slate-800">{task.title}</h3>
-                        {task.description && <p className="text-sm text-slate-500 mt-1">{task.description}</p>}
+                  <div key={task.id} className="border border-slate-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-slate-800 text-lg">{task.title}</h3>
+                        {task.description && (
+                          <p className="text-sm text-slate-500 mt-1 whitespace-pre-wrap">{task.description}</p>
+                        )}
                       </div>
-                      <span className={cn(
-                        "px-2 py-1 text-xs rounded-full",
-                        task.status === 'completed' ? "bg-green-100 text-green-700" :
-                        task.status === 'in_progress' ? "bg-yellow-100 text-yellow-700" :
-                        "bg-slate-100 text-slate-600"
-                      )}>
-                        {task.status === 'completed' ? '完了' : task.status === 'in_progress' ? '進行中' : '未着手'}
-                      </span>
                     </div>
-                    {task.dueDate && (
-                      <p className="text-xs text-slate-400 mt-2">
-                        期限: {format(new Date(task.dueDate), 'yyyy/MM/dd')}
-                      </p>
-                    )}
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3 p-3 bg-slate-50 rounded-lg">
+                      <div>
+                        <p className="text-xs text-slate-500">報酬</p>
+                        <p className="font-bold text-green-600">
+                          {task.reward ? `¥${parseFloat(task.reward).toLocaleString()}` : '-'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500">優先度</p>
+                        <p className={cn("font-medium", getPriorityColor(task.priority || ''))}>
+                          {getPriorityLabel(task.priority || '')}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500">期限</p>
+                        <p className="text-slate-800">
+                          {task.dueDate ? format(new Date(task.dueDate), 'yyyy/MM/dd') : '-'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500">作成日</p>
+                        <p className="text-slate-800">
+                          {task.createdAt ? format(new Date(task.createdAt), 'yyyy/MM/dd') : '-'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-slate-500">ステータス:</span>
+                        <select
+                          value={task.status}
+                          onChange={(e) => handleUpdateTaskStatus(task.id, e.target.value)}
+                          className={cn(
+                            "text-sm px-3 py-1 rounded-lg border cursor-pointer",
+                            task.status === 'completed' ? "bg-green-100 text-green-700 border-green-200" :
+                            task.status === 'in_progress' ? "bg-yellow-100 text-yellow-700 border-yellow-200" :
+                            "bg-slate-100 text-slate-600 border-slate-200"
+                          )}
+                        >
+                          <option value="pending">未着手</option>
+                          <option value="in_progress">進行中</option>
+                          <option value="completed">完了</option>
+                        </select>
+                      </div>
+                      {task.customer && (
+                        <span className="text-xs text-slate-500">
+                          顧客: {task.customer.companyName || task.customer.contactName}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
