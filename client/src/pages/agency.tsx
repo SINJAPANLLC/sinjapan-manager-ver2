@@ -730,12 +730,12 @@ export function AgencyPage() {
                         <td className="py-3 px-2 text-center">
                           <span className={cn(
                             "px-2 py-1 text-xs rounded-full",
-                            sale.status === 'approved' && "bg-green-100 text-green-700",
+                            (sale.status === 'approved' || sale.status === 'completed') && "bg-green-100 text-green-700",
                             sale.status === 'paid' && "bg-blue-100 text-blue-700",
                             sale.status === 'pending' && "bg-yellow-100 text-yellow-700",
                             sale.status === 'rejected' && "bg-red-100 text-red-700"
                           )}>
-                            {sale.status === 'approved' ? '承認済み' : sale.status === 'paid' ? '支払済み' : sale.status === 'pending' ? '保留中' : '却下'}
+                            {sale.status === 'approved' ? '承認済み' : sale.status === 'completed' ? '完了' : sale.status === 'paid' ? '支払済み' : sale.status === 'pending' ? '保留中' : '却下'}
                           </span>
                         </td>
                       </tr>
