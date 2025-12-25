@@ -532,52 +532,44 @@ export function FinancialsPage() {
 
       {activeTab === 'pl' && (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white rounded-2xl p-6 shadow-soft border border-slate-100">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-3 bg-emerald-100 rounded-xl">
-                  <TrendingUp size={24} className="text-emerald-600" />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-soft border border-slate-100">
+              <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                <div className="p-2 sm:p-3 bg-emerald-100 rounded-xl">
+                  <TrendingUp size={18} className="text-emerald-600 sm:w-6 sm:h-6" />
                 </div>
-                <div>
-                  <p className="text-sm text-slate-500">売上高</p>
-                  <p className="text-2xl font-bold text-emerald-600">{formatCurrency(selectedBusiness === 'all' ? totalRevenue : periodRevenue)}</p>
-                </div>
+                <p className="text-xs sm:text-sm text-slate-500">売上高</p>
               </div>
+              <p className="text-lg sm:text-2xl font-bold text-emerald-600 truncate">{formatCurrency(selectedBusiness === 'all' ? totalRevenue : periodRevenue)}</p>
             </div>
-            <div className="bg-white rounded-2xl p-6 shadow-soft border border-slate-100">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-3 bg-orange-100 rounded-xl">
-                  <TrendingDown size={24} className="text-orange-600" />
+            <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-soft border border-slate-100">
+              <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                <div className="p-2 sm:p-3 bg-orange-100 rounded-xl">
+                  <TrendingDown size={18} className="text-orange-600 sm:w-6 sm:h-6" />
                 </div>
-                <div>
-                  <p className="text-sm text-slate-500">売上原価</p>
-                  <p className="text-2xl font-bold text-orange-600">{formatCurrency(totalCostOfSales)}</p>
-                </div>
+                <p className="text-xs sm:text-sm text-slate-500">売上原価</p>
               </div>
+              <p className="text-lg sm:text-2xl font-bold text-orange-600 truncate">{formatCurrency(totalCostOfSales)}</p>
             </div>
-            <div className="bg-white rounded-2xl p-6 shadow-soft border border-slate-100">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-3 bg-red-100 rounded-xl">
-                  <TrendingDown size={24} className="text-red-600" />
+            <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-soft border border-slate-100">
+              <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                <div className="p-2 sm:p-3 bg-red-100 rounded-xl">
+                  <TrendingDown size={18} className="text-red-600 sm:w-6 sm:h-6" />
                 </div>
-                <div>
-                  <p className="text-sm text-slate-500">販管費</p>
-                  <p className="text-2xl font-bold text-red-600">{formatCurrency(selectedBusiness === 'all' ? totalSga : periodExpenses)}</p>
-                </div>
+                <p className="text-xs sm:text-sm text-slate-500">販管費</p>
               </div>
+              <p className="text-lg sm:text-2xl font-bold text-red-600 truncate">{formatCurrency(selectedBusiness === 'all' ? totalSga : periodExpenses)}</p>
             </div>
-            <div className="bg-white rounded-2xl p-6 shadow-soft border border-slate-100">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-3 bg-primary-100 rounded-xl">
-                  <DollarSign size={24} className="text-primary-600" />
+            <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-soft border border-slate-100">
+              <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                <div className="p-2 sm:p-3 bg-primary-100 rounded-xl">
+                  <DollarSign size={18} className="text-primary-600 sm:w-6 sm:h-6" />
                 </div>
-                <div>
-                  <p className="text-sm text-slate-500">当期純利益</p>
-                  <p className={cn("text-2xl font-bold", netProfit >= 0 ? "text-primary-600" : "text-red-600")}>
-                    {formatCurrency(netProfit)}
-                  </p>
-                </div>
+                <p className="text-xs sm:text-sm text-slate-500">当期純利益</p>
               </div>
+              <p className={cn("text-lg sm:text-2xl font-bold truncate", netProfit >= 0 ? "text-primary-600" : "text-red-600")}>
+                {formatCurrency(netProfit)}
+              </p>
             </div>
           </div>
 
