@@ -869,30 +869,127 @@ export function AgencyPage() {
         {selfTab === 'system' && (
           <div className="card p-6">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-bold text-slate-800">システム設定</h2>
+              <h2 className="text-lg font-bold text-slate-800">支払い設定</h2>
+              {!isEditingProfile && (
+                <button
+                  onClick={() => setIsEditingProfile(true)}
+                  className="btn-secondary text-sm flex items-center gap-1"
+                >
+                  <Edit size={14} />
+                  編集
+                </button>
+              )}
             </div>
-            <div className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-slate-500">メールアドレス</p>
-                  <p className="text-slate-800">{user?.email}</p>
+            {isEditingProfile ? (
+              <div className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs text-slate-500 block mb-1">銀行名</label>
+                    <input
+                      type="text"
+                      value={profileForm.bankName}
+                      onChange={(e) => setProfileForm({ ...profileForm, bankName: e.target.value })}
+                      className="input w-full"
+                      placeholder="例: 三菱UFJ銀行"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500 block mb-1">支店名</label>
+                    <input
+                      type="text"
+                      value={profileForm.bankBranch}
+                      onChange={(e) => setProfileForm({ ...profileForm, bankBranch: e.target.value })}
+                      className="input w-full"
+                      placeholder="例: 渋谷支店"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500 block mb-1">口座種別</label>
+                    <select
+                      value={profileForm.bankAccountType}
+                      onChange={(e) => setProfileForm({ ...profileForm, bankAccountType: e.target.value })}
+                      className="input w-full"
+                    >
+                      <option value="">選択してください</option>
+                      <option value="普通">普通</option>
+                      <option value="当座">当座</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500 block mb-1">口座番号</label>
+                    <input
+                      type="text"
+                      value={profileForm.bankAccountNumber}
+                      onChange={(e) => setProfileForm({ ...profileForm, bankAccountNumber: e.target.value })}
+                      className="input w-full"
+                      placeholder="例: 1234567"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="text-xs text-slate-500 block mb-1">口座名義（カナ）</label>
+                    <input
+                      type="text"
+                      value={profileForm.bankAccountHolder}
+                      onChange={(e) => setProfileForm({ ...profileForm, bankAccountHolder: e.target.value })}
+                      className="input w-full"
+                      placeholder="例: カブシキガイシャ サンプル"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs text-slate-500">ユーザー名</p>
-                  <p className="text-slate-800">{user?.name}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500">登録日</p>
-                  <p className="text-slate-800">{user?.createdAt ? format(new Date(user.createdAt), 'yyyy/MM/dd') : '-'}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500">ステータス</p>
-                  <p className={cn("font-medium", user?.isActive ? "text-green-600" : "text-red-600")}>
-                    {user?.isActive ? '有効' : '無効'}
-                  </p>
+                <div className="flex justify-end gap-2 pt-4">
+                  <button onClick={() => setIsEditingProfile(false)} className="btn-secondary">
+                    キャンセル
+                  </button>
+                  <button onClick={handleProfileSave} className="btn-primary">
+                    保存
+                  </button>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-slate-500">銀行名</p>
+                    <p className="text-slate-800">{user?.bankName || '未設定'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">支店名</p>
+                    <p className="text-slate-800">{user?.bankBranch || '未設定'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">口座種別</p>
+                    <p className="text-slate-800">{user?.bankAccountType || '未設定'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">口座番号</p>
+                    <p className="text-slate-800">{user?.bankAccountNumber || '未設定'}</p>
+                  </div>
+                  <div className="md:col-span-2">
+                    <p className="text-xs text-slate-500">口座名義</p>
+                    <p className="text-slate-800">{user?.bankAccountHolder || '未設定'}</p>
+                  </div>
+                </div>
+                <div className="border-t pt-4 mt-4">
+                  <h3 className="text-sm font-medium text-slate-700 mb-3">アカウント情報</h3>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-slate-500">メールアドレス</p>
+                      <p className="text-slate-800">{user?.email}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500">登録日</p>
+                      <p className="text-slate-800">{user?.createdAt ? format(new Date(user.createdAt), 'yyyy/MM/dd') : '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500">ステータス</p>
+                      <p className={cn("font-medium", user?.isActive ? "text-green-600" : "text-red-600")}>
+                        {user?.isActive ? '有効' : '無効'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
