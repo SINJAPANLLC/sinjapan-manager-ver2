@@ -553,55 +553,70 @@ export function registerRoutes(app: Express) {
       const allEmployees = await tenantStorage.getEmployees();
       const employee = allEmployees.find(e => e.userId === task.assignedTo);
       
-      if (!employee) {
-        return res.status(400).json({ message: '担当者のスタッフ情報が見つかりません' });
-      }
-      
       const now = new Date();
       const currentYear = now.getFullYear();
       const currentMonth = now.getMonth() + 1;
       
-      const salaries = await tenantStorage.getStaffSalaries(employee.id);
-      let currentSalary = salaries.find(s => s.year === currentYear && s.month === currentMonth);
-      
-      if (!currentSalary) {
-        const employeeBaseSalary = employee.salary ? String(employee.salary) : "0";
-        currentSalary = await tenantStorage.createStaffSalary({
-          employeeId: employee.id,
-          year: currentYear,
-          month: currentMonth,
-          baseSalary: employeeBaseSalary,
-          overtime: "0",
-          bonus: "0",
-          deductions: "0",
-          netSalary: employeeBaseSalary,
-          status: "pending",
-          createdBy: req.session.userId,
+      if (employee) {
+        const salaries = await tenantStorage.getStaffSalaries(employee.id);
+        let currentSalary = salaries.find(s => s.year === currentYear && s.month === currentMonth);
+        
+        if (!currentSalary) {
+          const employeeBaseSalary = employee.salary ? String(employee.salary) : "0";
+          currentSalary = await tenantStorage.createStaffSalary({
+            employeeId: employee.id,
+            year: currentYear,
+            month: currentMonth,
+            baseSalary: employeeBaseSalary,
+            overtime: "0",
+            bonus: "0",
+            deductions: "0",
+            netSalary: employeeBaseSalary,
+            status: "pending",
+            createdBy: req.session.userId,
+          });
+        }
+        
+        const rewardAmount = parseFloat(String(task.rewardAmount || 0));
+        const currentBonus = parseFloat(String(currentSalary.bonus || 0)) || 0;
+        const newBonus = (currentBonus + rewardAmount).toFixed(2);
+        
+        const baseSalaryValue = parseFloat(String(currentSalary.baseSalary || 0)) || 0;
+        const overtimeValue = parseFloat(String(currentSalary.overtime || 0)) || 0;
+        const deductionsValue = parseFloat(String(currentSalary.deductions || 0)) || 0;
+        const newNetSalary = (baseSalaryValue + overtimeValue + parseFloat(newBonus) - deductionsValue).toFixed(2);
+        
+        await tenantStorage.updateStaffSalary(currentSalary.id, {
+          bonus: newBonus,
+          netSalary: newNetSalary,
         });
+        
+        await storage.updateTask(parseInt(req.params.id), { 
+          rewardApprovedAt: now,
+          rewardApprovedBy: req.session.userId,
+          rewardPaidAt: now 
+        });
+        
+        const updatedTask = await storage.getTask(parseInt(req.params.id));
+        res.json({ message: '報酬を承認し、給料に反映しました', task: updatedTask });
+      } else {
+        const assignedUser = await storage.getUser(task.assignedTo);
+        if (!assignedUser) {
+          return res.status(400).json({ message: '担当者のユーザー情報が見つかりません' });
+        }
+        
+        if (assignedUser.role === 'agency') {
+          await storage.updateTask(parseInt(req.params.id), { 
+            rewardApprovedAt: now,
+            rewardApprovedBy: req.session.userId,
+          });
+          
+          const updatedTask = await storage.getTask(parseInt(req.params.id));
+          res.json({ message: '代理店タスクの報酬を承認しました', task: updatedTask });
+        } else {
+          return res.status(400).json({ message: '担当者のスタッフ情報が見つかりません' });
+        }
       }
-      
-      const rewardAmount = parseFloat(String(task.rewardAmount || 0));
-      const currentBonus = parseFloat(String(currentSalary.bonus || 0)) || 0;
-      const newBonus = (currentBonus + rewardAmount).toFixed(2);
-      
-      const baseSalaryValue = parseFloat(String(currentSalary.baseSalary || 0)) || 0;
-      const overtimeValue = parseFloat(String(currentSalary.overtime || 0)) || 0;
-      const deductionsValue = parseFloat(String(currentSalary.deductions || 0)) || 0;
-      const newNetSalary = (baseSalaryValue + overtimeValue + parseFloat(newBonus) - deductionsValue).toFixed(2);
-      
-      await tenantStorage.updateStaffSalary(currentSalary.id, {
-        bonus: newBonus,
-        netSalary: newNetSalary,
-      });
-      
-      await storage.updateTask(parseInt(req.params.id), { 
-        rewardApprovedAt: now,
-        rewardApprovedBy: req.session.userId,
-        rewardPaidAt: now 
-      });
-      
-      const updatedTask = await storage.getTask(parseInt(req.params.id));
-      res.json({ message: '報酬を承認し、給料に反映しました', task: updatedTask });
     } catch (err) {
       console.error('報酬承認エラー:', err);
       res.status(500).json({ message: '報酬承認に失敗しました' });
