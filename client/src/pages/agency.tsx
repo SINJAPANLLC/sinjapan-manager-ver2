@@ -967,10 +967,113 @@ export function AgencyPage() {
 
         {selfTab === 'system' && (
           <div className="card p-6">
-            <h2 className="text-lg font-bold text-slate-800 mb-6">支払いスケジュール</h2>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-bold text-slate-800">支払いスケジュール</h2>
+              {!isEditingSystem && (
+                <button
+                  onClick={() => {
+                    if (paymentSettings) {
+                      setEditAgencyPaymentSettings({
+                        closingDay: paymentSettings.closingDay,
+                        payoutOffsetMonths: paymentSettings.payoutOffsetMonths,
+                        payoutDay: paymentSettings.payoutDay,
+                        transferFee: paymentSettings.transferFee,
+                      });
+                    }
+                    setIsEditingSystem(true);
+                  }}
+                  className="btn-secondary flex items-center gap-2 text-sm"
+                >
+                  <Edit size={14} />
+                  編集
+                </button>
+              )}
+            </div>
             
             {!paymentSettings ? (
               <div className="text-center py-8 text-slate-500">読み込み中...</div>
+            ) : isEditingSystem ? (
+              <div className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">締め日</label>
+                    <select
+                      className="input-field w-full"
+                      value={editAgencyPaymentSettings.closingDay}
+                      onChange={(e) => setEditAgencyPaymentSettings({...editAgencyPaymentSettings, closingDay: e.target.value})}
+                    >
+                      <option value="end_of_month">月末</option>
+                      <option value="15">15日</option>
+                      <option value="20">20日</option>
+                      <option value="25">25日</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">支払月</label>
+                    <select
+                      className="input-field w-full"
+                      value={editAgencyPaymentSettings.payoutOffsetMonths}
+                      onChange={(e) => setEditAgencyPaymentSettings({...editAgencyPaymentSettings, payoutOffsetMonths: parseInt(e.target.value)})}
+                    >
+                      <option value={1}>翌月</option>
+                      <option value={2}>翌々月</option>
+                      <option value={3}>3ヶ月後</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">支払日</label>
+                    <select
+                      className="input-field w-full"
+                      value={editAgencyPaymentSettings.payoutDay}
+                      onChange={(e) => setEditAgencyPaymentSettings({...editAgencyPaymentSettings, payoutDay: parseInt(e.target.value)})}
+                    >
+                      {[1,5,10,15,20,25,28,30].map(d => (
+                        <option key={d} value={d}>{d}日</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">振込手数料（税込）</label>
+                    <input
+                      type="number"
+                      className="input-field w-full"
+                      value={editAgencyPaymentSettings.transferFee}
+                      onChange={(e) => setEditAgencyPaymentSettings({...editAgencyPaymentSettings, transferFee: e.target.value})}
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 mt-4">
+                  <button
+                    onClick={() => setIsEditingSystem(false)}
+                    className="btn-secondary"
+                  >
+                    キャンセル
+                  </button>
+                  <button
+                    onClick={async () => {
+                      const res = await fetch(`/api/agency/payment-settings/${user?.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify(editAgencyPaymentSettings),
+                      });
+                      if (res.ok) {
+                        setPaymentSettings({
+                          ...editAgencyPaymentSettings,
+                          notes: paymentSettings.notes,
+                        });
+                        setIsEditingSystem(false);
+                        alert('支払いスケジュールを更新しました');
+                      } else {
+                        alert('更新に失敗しました');
+                      }
+                    }}
+                    className="btn-primary"
+                  >
+                    保存
+                  </button>
+                </div>
+              </div>
             ) : (
             <div className="space-y-6">
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
