@@ -1085,7 +1085,7 @@ export function StaffPage() {
           </button>
         </div>
 
-        <div className="flex gap-2 bg-white rounded-xl p-1 border border-slate-200 w-fit sticky top-0 z-10 shadow-sm">
+        <div className="flex gap-2 bg-white rounded-xl p-1 border border-slate-200 sticky top-0 z-10 shadow-sm overflow-x-auto max-w-full">
           {[
             { id: 'info' as DetailTab, label: '基本情報', icon: UserCheck, badge: 0 },
             { id: 'salary' as DetailTab, label: '給料', icon: DollarSign, badge: 0 },
@@ -1099,7 +1099,7 @@ export function StaffPage() {
               key={tab.id}
               onClick={() => setDetailTab(tab.id)}
               className={cn(
-                "px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2",
+                "px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap flex-shrink-0",
                 detailTab === tab.id ? "bg-primary-500 text-white" : "text-slate-600 hover:bg-slate-100"
               )}
             >
