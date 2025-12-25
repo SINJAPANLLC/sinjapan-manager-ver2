@@ -1276,12 +1276,13 @@ export function SettingsPage() {
   };
 
   const isStaff = user?.role === 'staff';
+  const isAgency = user?.role === 'agency';
   const tabs = [
     { id: 'profile' as TabType, label: 'プロフィール', icon: User },
     ...(canManageUsers ? [{ id: 'users' as TabType, label: 'ユーザー管理', icon: Users }] : []),
     ...(canViewCompanies ? [{ id: 'companies' as TabType, label: '会社情報', icon: Building2 }] : []),
-    ...(!isStaff ? [{ id: 'payment' as TabType, label: '決済管理', icon: CreditCard }] : []),
-    ...(!isStaff ? [{ id: 'credentials' as TabType, label: 'サイト情報', icon: Key }] : []),
+    ...(!isStaff && !isAgency ? [{ id: 'payment' as TabType, label: '決済管理', icon: CreditCard }] : []),
+    ...(!isStaff && !isAgency ? [{ id: 'credentials' as TabType, label: 'サイト情報', icon: Key }] : []),
   ];
 
   return (
