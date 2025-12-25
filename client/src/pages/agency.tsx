@@ -472,7 +472,9 @@ export function AgencyPage() {
   };
 
   const getAgencyTotalSales = (agencyId: number) => {
-    return getAgencySales(agencyId).reduce((sum, s) => sum + parseFloat(s.amount || '0'), 0);
+    return getAgencySales(agencyId)
+      .filter(s => s.status === 'approved' || s.status === 'completed')
+      .reduce((sum, s) => sum + parseFloat(s.amount || '0'), 0);
   };
 
   const filteredAgencies = agencies.filter(a =>
@@ -480,8 +482,11 @@ export function AgencyPage() {
     a.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const myTotalSales = mySales.reduce((sum, s) => sum + parseFloat(s.amount || '0'), 0);
-  const myTotalCommission = mySales.reduce((sum, s) => sum + parseFloat(s.commission || '0'), 0);
+  // Only count approved/completed sales for totals
+  const approvedSales = mySales.filter(s => s.status === 'approved' || s.status === 'completed');
+  const myTotalSales = approvedSales.reduce((sum, s) => sum + parseFloat(s.amount || '0'), 0);
+  const myTotalCommission = approvedSales.reduce((sum, s) => sum + parseFloat(s.commission || '0'), 0);
+  const myApprovedSalesCount = approvedSales.length;
 
   if (isAgencyUser && user) {
     return (
@@ -525,8 +530,8 @@ export function AgencyPage() {
                 <BarChart3 className="text-orange-600" size={24} />
               </div>
               <div>
-                <p className="text-sm text-slate-500">売上件数</p>
-                <p className="text-xl font-bold text-slate-800">{mySales.length}件</p>
+                <p className="text-sm text-slate-500">承認済み件数</p>
+                <p className="text-xl font-bold text-slate-800">{myApprovedSalesCount}件</p>
               </div>
             </div>
           </div>
