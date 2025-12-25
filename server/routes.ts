@@ -954,8 +954,18 @@ export function registerRoutes(app: Express) {
     }
   });
 
-  app.get('/api/employees', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
+  app.get('/api/employees', requireAuth, async (req: Request, res: Response) => {
     const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+    const currentUser = await storage.getUser(req.session.userId!);
+    
+    // Staff can only see their own employee record
+    if (currentUser?.role === 'staff') {
+      const allEmployees = await tenantStorage.getEmployees();
+      const ownEmployee = allEmployees.filter((e: any) => e.userId === currentUser.id);
+      return res.json(ownEmployee);
+    }
+    
+    // Managers and above can see all employees
     const employees = await tenantStorage.getEmployees();
     res.json(employees);
   });
