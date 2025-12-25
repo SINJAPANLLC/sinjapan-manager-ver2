@@ -492,15 +492,27 @@ export function registerRoutes(app: Express) {
     res.json(task);
   });
 
-  app.patch('/api/tasks/:id', requireRole('admin', 'ceo', 'manager', 'staff'), async (req: Request, res: Response) => {
+  app.patch('/api/tasks/:id', requireRole('admin', 'ceo', 'manager', 'staff', 'agency'), async (req: Request, res: Response) => {
     const currentUser = (req as any).currentUser;
     const task = await storage.getTask(parseInt(req.params.id));
     if (!task) {
       return res.status(404).json({ message: 'タスクが見つかりません' });
     }
-    if (currentUser.role === 'staff') {
+    // Staff and agency can only update their assigned or created tasks
+    if (currentUser.role === 'staff' || currentUser.role === 'agency') {
       if (task.assignedTo !== req.session.userId && task.createdBy !== req.session.userId) {
         return res.status(403).json({ message: '担当タスクのみ編集できます' });
+      }
+      // Agency can only update status and evidence, not other fields
+      if (currentUser.role === 'agency') {
+        const allowedFields = ['status', 'evidence', 'evidenceUrl'];
+        const updateData: any = {};
+        for (const field of allowedFields) {
+          if (req.body[field] !== undefined) {
+            updateData[field] = req.body[field];
+          }
+        }
+        req.body = updateData;
       }
     }
     

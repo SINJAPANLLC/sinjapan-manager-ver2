@@ -812,7 +812,7 @@ export function AgencyPage() {
                       <div>
                         <p className="text-xs text-slate-500">報酬</p>
                         <p className="font-bold text-green-600">
-                          {task.reward ? `¥${parseFloat(task.reward).toLocaleString()}` : '-'}
+                          {task.rewardAmount ? `¥${parseFloat(task.rewardAmount).toLocaleString()}` : '-'}
                         </p>
                       </div>
                       <div>
@@ -835,7 +835,7 @@ export function AgencyPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-slate-500">ステータス:</span>
                         <select
@@ -859,6 +859,46 @@ export function AgencyPage() {
                         </span>
                       )}
                     </div>
+
+                    <div className="border-t pt-3">
+                      <p className="text-xs text-slate-500 mb-2">エビデンス提出</p>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="file"
+                          id={`evidence-${task.id}`}
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const formData = new FormData();
+                            formData.append('file', file);
+                            const res = await fetch(`/api/tasks/${task.id}/evidence`, {
+                              method: 'POST',
+                              credentials: 'include',
+                              body: formData,
+                            });
+                            if (res.ok) {
+                              alert('エビデンスを提出しました');
+                              fetchAgencyTasks();
+                            } else {
+                              alert('エビデンスの提出に失敗しました');
+                            }
+                          }}
+                        />
+                        <label
+                          htmlFor={`evidence-${task.id}`}
+                          className="btn-secondary text-sm cursor-pointer flex items-center gap-1"
+                        >
+                          <Plus size={14} />
+                          ファイルを追加
+                        </label>
+                        {task.evidenceCount && task.evidenceCount > 0 && (
+                          <span className="text-xs text-green-600">
+                            {task.evidenceCount}件提出済み
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -868,128 +908,82 @@ export function AgencyPage() {
 
         {selfTab === 'system' && (
           <div className="card p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-bold text-slate-800">支払い設定</h2>
-              {!isEditingProfile && (
-                <button
-                  onClick={() => setIsEditingProfile(true)}
-                  className="btn-secondary text-sm flex items-center gap-1"
-                >
-                  <Edit size={14} />
-                  編集
-                </button>
-              )}
+            <h2 className="text-lg font-bold text-slate-800 mb-6">支払いスケジュール</h2>
+            
+            <div className="space-y-6">
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <h3 className="font-medium text-blue-800 mb-2">支払い規定</h3>
+                <div className="grid md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-blue-600">支払い日</p>
+                    <p className="text-blue-900 font-medium">毎月末締め / 翌月25日払い</p>
+                  </div>
+                  <div>
+                    <p className="text-blue-600">振込手数料</p>
+                    <p className="text-blue-900 font-medium">¥330（税込）</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                  <p className="text-xs text-green-600 mb-1">承認済み未払いコミッション</p>
+                  <p className="text-2xl font-bold text-green-700">¥{myTotalCommission.toLocaleString()}</p>
+                  <p className="text-xs text-green-600 mt-1">{myApprovedSalesCount}件の承認済み売上</p>
+                </div>
+                <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
+                  <p className="text-xs text-orange-600 mb-1">次回支払い予定日</p>
+                  <p className="text-2xl font-bold text-orange-700">
+                    {(() => {
+                      const now = new Date();
+                      const nextPayDate = new Date(now.getFullYear(), now.getMonth() + 1, 25);
+                      if (now.getDate() > 25) {
+                        nextPayDate.setMonth(nextPayDate.getMonth() + 1);
+                      }
+                      return format(nextPayDate, 'yyyy/MM/dd');
+                    })()}
+                  </p>
+                  <p className="text-xs text-orange-600 mt-1">25日が土日祝の場合は前営業日</p>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h3 className="text-sm font-medium text-slate-700 mb-3">月別支払い履歴</h3>
+                {approvedSales.length === 0 ? (
+                  <p className="text-slate-500 text-center py-4">支払い履歴がありません</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-slate-200">
+                          <th className="text-left py-2 px-2 text-slate-500 font-medium">売上日</th>
+                          <th className="text-left py-2 px-2 text-slate-500 font-medium">案件名</th>
+                          <th className="text-right py-2 px-2 text-slate-500 font-medium">コミッション</th>
+                          <th className="text-center py-2 px-2 text-slate-500 font-medium">ステータス</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {approvedSales.slice(0, 10).map((sale) => (
+                          <tr key={sale.id} className="border-b border-slate-100">
+                            <td className="py-2 px-2">{sale.saleDate ? format(new Date(sale.saleDate), 'yyyy/MM/dd') : '-'}</td>
+                            <td className="py-2 px-2">{sale.projectName || '-'}</td>
+                            <td className="py-2 px-2 text-right font-medium text-green-600">¥{parseFloat(sale.commission || '0').toLocaleString()}</td>
+                            <td className="py-2 px-2 text-center">
+                              <span className={cn(
+                                "px-2 py-0.5 text-xs rounded-full",
+                                sale.status === 'paid' ? "bg-blue-100 text-blue-700" : "bg-yellow-100 text-yellow-700"
+                              )}>
+                                {sale.status === 'paid' ? '支払済み' : '支払待ち'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </div>
-            {isEditingProfile ? (
-              <div className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs text-slate-500 block mb-1">銀行名</label>
-                    <input
-                      type="text"
-                      value={profileForm.bankName}
-                      onChange={(e) => setProfileForm({ ...profileForm, bankName: e.target.value })}
-                      className="input w-full"
-                      placeholder="例: 三菱UFJ銀行"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-slate-500 block mb-1">支店名</label>
-                    <input
-                      type="text"
-                      value={profileForm.bankBranch}
-                      onChange={(e) => setProfileForm({ ...profileForm, bankBranch: e.target.value })}
-                      className="input w-full"
-                      placeholder="例: 渋谷支店"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-slate-500 block mb-1">口座種別</label>
-                    <select
-                      value={profileForm.bankAccountType}
-                      onChange={(e) => setProfileForm({ ...profileForm, bankAccountType: e.target.value })}
-                      className="input w-full"
-                    >
-                      <option value="">選択してください</option>
-                      <option value="普通">普通</option>
-                      <option value="当座">当座</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs text-slate-500 block mb-1">口座番号</label>
-                    <input
-                      type="text"
-                      value={profileForm.bankAccountNumber}
-                      onChange={(e) => setProfileForm({ ...profileForm, bankAccountNumber: e.target.value })}
-                      className="input w-full"
-                      placeholder="例: 1234567"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="text-xs text-slate-500 block mb-1">口座名義（カナ）</label>
-                    <input
-                      type="text"
-                      value={profileForm.bankAccountHolder}
-                      onChange={(e) => setProfileForm({ ...profileForm, bankAccountHolder: e.target.value })}
-                      className="input w-full"
-                      placeholder="例: カブシキガイシャ サンプル"
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end gap-2 pt-4">
-                  <button onClick={() => setIsEditingProfile(false)} className="btn-secondary">
-                    キャンセル
-                  </button>
-                  <button onClick={handleProfileSave} className="btn-primary">
-                    保存
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-slate-500">銀行名</p>
-                    <p className="text-slate-800">{user?.bankName || '未設定'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500">支店名</p>
-                    <p className="text-slate-800">{user?.bankBranch || '未設定'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500">口座種別</p>
-                    <p className="text-slate-800">{user?.bankAccountType || '未設定'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500">口座番号</p>
-                    <p className="text-slate-800">{user?.bankAccountNumber || '未設定'}</p>
-                  </div>
-                  <div className="md:col-span-2">
-                    <p className="text-xs text-slate-500">口座名義</p>
-                    <p className="text-slate-800">{user?.bankAccountHolder || '未設定'}</p>
-                  </div>
-                </div>
-                <div className="border-t pt-4 mt-4">
-                  <h3 className="text-sm font-medium text-slate-700 mb-3">アカウント情報</h3>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-xs text-slate-500">メールアドレス</p>
-                      <p className="text-slate-800">{user?.email}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500">登録日</p>
-                      <p className="text-slate-800">{user?.createdAt ? format(new Date(user.createdAt), 'yyyy/MM/dd') : '-'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500">ステータス</p>
-                      <p className={cn("font-medium", user?.isActive ? "text-green-600" : "text-red-600")}>
-                        {user?.isActive ? '有効' : '無効'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
