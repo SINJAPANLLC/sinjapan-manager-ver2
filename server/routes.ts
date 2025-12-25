@@ -961,20 +961,34 @@ export function registerRoutes(app: Express) {
   });
 
   app.post('/api/employees', requireAuth, async (req: Request, res: Response) => {
-    const currentUser = await storage.getUser(req.session.userId!);
-    if (!currentUser) {
-      return res.status(401).json({ message: '認証が必要です' });
-    }
-    if (currentUser.role === 'staff') {
-      if (req.body.userId !== currentUser.id) {
-        return res.status(403).json({ message: '自分の従業員データのみ登録できます' });
+    try {
+      const currentUser = await storage.getUser(req.session.userId!);
+      if (!currentUser) {
+        return res.status(401).json({ message: '認証が必要です' });
       }
-    } else if (!['admin', 'ceo', 'manager'].includes(currentUser.role)) {
-      return res.status(403).json({ message: '権限がありません' });
+      if (currentUser.role === 'staff') {
+        if (req.body.userId !== currentUser.id) {
+          return res.status(403).json({ message: '自分の従業員データのみ登録できます' });
+        }
+      } else if (!['admin', 'ceo', 'manager'].includes(currentUser.role)) {
+        return res.status(403).json({ message: '権限がありません' });
+      }
+      const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
+      
+      if (!req.body.employeeNumber || req.body.employeeNumber.trim() === '') {
+        const timestamp = Date.now().toString(36).toUpperCase();
+        req.body.employeeNumber = `EMP${timestamp}`;
+      }
+      
+      const employee = await tenantStorage.createEmployee(req.body);
+      res.json(employee);
+    } catch (error: any) {
+      console.error('Employee creation error:', error);
+      if (error.cause?.code === '23505') {
+        return res.status(400).json({ message: '従業員番号が重複しています。別の番号を使用してください。' });
+      }
+      res.status(500).json({ message: '従業員レコードの作成に失敗しました' });
     }
-    const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });
-    const employee = await tenantStorage.createEmployee(req.body);
-    res.json(employee);
   });
 
   app.patch('/api/employees/:id', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
