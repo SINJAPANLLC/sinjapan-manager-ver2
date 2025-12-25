@@ -97,6 +97,7 @@ export function TasksPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
   const [selectedCategory, setSelectedCategory] = useState<string>('direct');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
@@ -570,6 +571,29 @@ export function TasksPage() {
     fetchTasks();
   };
 
+  const toggleTaskSelection = (id: number) => {
+    setSelectedTasks(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedTasks.size === 0) return;
+    if (!confirm(`選択した${selectedTasks.size}件のタスクを削除しますか？`)) return;
+    
+    for (const id of selectedTasks) {
+      await fetch(`/api/tasks/${id}`, { method: 'DELETE', credentials: 'include' });
+    }
+    setSelectedTasks(new Set());
+    fetchTasks();
+  };
+
   const handleStatusChange = async (id: number, status: string) => {
     await fetch(`/api/tasks/${id}`, {
       method: 'PATCH',
@@ -739,6 +763,15 @@ export function TasksPage() {
           )}
         </div>
         <div className="flex gap-2">
+          {selectedTasks.size > 0 && (
+            <button
+              onClick={handleDeleteSelected}
+              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-medium rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all duration-300 shadow-button"
+            >
+              <Trash2 size={18} />
+              選択削除 ({selectedTasks.size})
+            </button>
+          )}
           {user?.role === 'admin' && (
             <button
               onClick={async () => {
@@ -748,6 +781,7 @@ export function TasksPage() {
                   const data = await res.json();
                   alert(data.message);
                   fetchTasks();
+                  setSelectedTasks(new Set());
                 }
               }}
               className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white font-medium rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-300 shadow-button"
@@ -828,8 +862,15 @@ export function TasksPage() {
                           className="p-3 bg-white rounded-lg border border-slate-100 shadow-soft hover:shadow-card transition-all duration-200"
                         >
                           <div className="flex justify-between items-start mb-1.5">
-                            <div className="flex-1">
-                              <h3 className="font-medium text-slate-800 text-sm">{task.title}</h3>
+                            <div className="flex items-start gap-2 flex-1">
+                              <input
+                                type="checkbox"
+                                checked={selectedTasks.has(task.id)}
+                                onChange={() => toggleTaskSelection(task.id)}
+                                className="mt-1 w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+                              />
+                              <div className="flex-1">
+                                <h3 className="font-medium text-slate-800 text-sm">{task.title}</h3>
                               <div className="flex gap-1 mt-1 flex-wrap">
                                 {task.isRecurring && (
                                   <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-violet-50 text-violet-600 rounded text-xs">
@@ -865,6 +906,7 @@ export function TasksPage() {
                                     {!task.rewardApprovedAt && task.status === 'completed' && " (承認待ち)"}
                                   </span>
                                 )}
+                              </div>
                               </div>
                             </div>
                             <span className={cn('px-1.5 py-0.5 rounded text-xs font-medium', getPriorityBadge(task.priority))}>
@@ -1080,21 +1122,29 @@ export function TasksPage() {
                         className="p-3 bg-white rounded-lg border border-slate-100 shadow-soft hover:shadow-card transition-all duration-200"
                       >
                         <div className="flex justify-between items-start mb-1.5">
-                          <div className="flex-1">
-                            <h3 className="font-medium text-slate-800 text-sm">{task.title}</h3>
-                            <div className="flex gap-1 mt-1 flex-wrap">
-                              {task.isRecurring && (
-                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-violet-50 text-violet-600 rounded text-xs">
-                                  <Repeat size={10} />
-                                  {task.recurringFrequency === 'daily' ? '毎日' : task.recurringFrequency === 'weekly' ? '毎週' : '毎月'}
-                                </span>
-                              )}
-                              {task.assignmentType && task.assignmentType !== 'individual' && (
-                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-cyan-50 text-cyan-600 rounded text-xs">
-                                  <Users2 size={10} />
-                                  {task.assignmentType === 'all_staff' ? '全スタッフ' : task.assignmentType === 'all_agency' ? '全代理店' : '全クライアント'}
-                                </span>
-                              )}
+                          <div className="flex items-start gap-2 flex-1">
+                            <input
+                              type="checkbox"
+                              checked={selectedTasks.has(task.id)}
+                              onChange={() => toggleTaskSelection(task.id)}
+                              className="mt-1 w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+                            />
+                            <div className="flex-1">
+                              <h3 className="font-medium text-slate-800 text-sm">{task.title}</h3>
+                              <div className="flex gap-1 mt-1 flex-wrap">
+                                {task.isRecurring && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-violet-50 text-violet-600 rounded text-xs">
+                                    <Repeat size={10} />
+                                    {task.recurringFrequency === 'daily' ? '毎日' : task.recurringFrequency === 'weekly' ? '毎週' : '毎月'}
+                                  </span>
+                                )}
+                                {task.assignmentType && task.assignmentType !== 'individual' && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-cyan-50 text-cyan-600 rounded text-xs">
+                                    <Users2 size={10} />
+                                    {task.assignmentType === 'all_staff' ? '全スタッフ' : task.assignmentType === 'all_agency' ? '全代理店' : '全クライアント'}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                           <span className={cn('px-1.5 py-0.5 rounded text-xs font-medium', getPriorityBadge(task.priority))}>
