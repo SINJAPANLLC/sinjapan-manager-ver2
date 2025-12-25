@@ -739,6 +739,23 @@ export function TasksPage() {
           )}
         </div>
         <div className="flex gap-2">
+          {user?.role === 'admin' && (
+            <button
+              onClick={async () => {
+                if (!confirm('すべてのタスクを削除しますか？この操作は取り消せません。')) return;
+                const res = await fetch('/api/tasks', { method: 'DELETE', credentials: 'include' });
+                if (res.ok) {
+                  const data = await res.json();
+                  alert(data.message);
+                  fetchTasks();
+                }
+              }}
+              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white font-medium rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-300 shadow-button"
+            >
+              <Trash2 size={18} />
+              全削除
+            </button>
+          )}
           <button
             onClick={() => setIsAIModalOpen(true)}
             className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white font-medium rounded-xl hover:from-violet-700 hover:to-purple-700 transition-all duration-300 shadow-button"

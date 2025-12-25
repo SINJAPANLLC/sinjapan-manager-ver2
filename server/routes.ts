@@ -640,6 +640,11 @@ export function registerRoutes(app: Express) {
     res.json({ message: '削除しました' });
   });
 
+  app.delete('/api/tasks', requireRole('admin'), async (req: Request, res: Response) => {
+    const count = await storage.deleteAllTasks();
+    res.json({ message: `${count}件のタスクを削除しました`, count });
+  });
+
   app.post('/api/tasks/generate-recurring', requireRole('admin', 'ceo', 'manager'), async (req: Request, res: Response) => {
     try {
       const tenantStorage = createTenantStorage(getCompanyId(req), { allowGlobal: true });

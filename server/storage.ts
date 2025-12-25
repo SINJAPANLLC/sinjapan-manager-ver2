@@ -117,6 +117,11 @@ export const storage = {
     return true;
   },
 
+  async deleteAllTasks(): Promise<number> {
+    const result = await db.delete(tasks).returning();
+    return result.length;
+  },
+
   async getNotifications(userId: number): Promise<Notification[]> {
     return db.select().from(notifications).where(eq(notifications.userId, userId)).orderBy(desc(notifications.createdAt));
   },
