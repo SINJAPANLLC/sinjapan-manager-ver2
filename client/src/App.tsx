@@ -1,4 +1,4 @@
-import { Route, Switch } from 'wouter';
+import { Route, Switch, Redirect } from 'wouter';
 import { AuthProvider, useAuth } from './hooks/use-auth';
 import { TenantProvider } from './hooks/use-tenant';
 import { Layout } from './components/layout';
@@ -28,6 +28,10 @@ import { PrivacyPage } from './pages/privacy';
 import { Loader2 } from 'lucide-react';
 import { useLocation } from 'wouter';
 
+function StaffRedirect() {
+  return <Redirect to="/tasks" />;
+}
+
 function AppRoutes() {
   const { user, isLoading } = useAuth();
   const [location] = useLocation();
@@ -56,10 +60,12 @@ function AppRoutes() {
     return <LoginPage />;
   }
 
+  const isStaff = user?.role === 'staff';
+
   return (
     <Layout>
       <Switch>
-        <Route path="/" component={DashboardPage} />
+        <Route path="/" component={isStaff ? StaffRedirect : DashboardPage} />
         <Route path="/customers" component={CustomersPage} />
         <Route path="/tasks" component={TasksPage} />
         <Route path="/calendar" component={CalendarPage} />
