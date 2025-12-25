@@ -1423,26 +1423,26 @@ export function AgencyPage() {
                   </div>
                 </div>
 
-                <div className="flex gap-2 mt-4 pt-3 border-t border-slate-100">
+                <div className="flex items-center gap-2 mt-4 pt-3 border-t border-slate-100">
                   <button
                     onClick={() => {
                       setSaleForm({ ...saleForm, agencyId: a.id });
                       setShowSaleModal(true);
                     }}
-                    className="flex-1 btn-primary text-sm py-1.5"
+                    className="flex-1 btn-primary text-sm py-2 flex items-center justify-center gap-1"
                   >
-                    <DollarSign size={14} className="inline mr-1" />
-                    売上追加
+                    <DollarSign size={14} />
+                    <span>売上追加</span>
                   </button>
                   <button
                     onClick={() => {
                       setSelectedAgency(a);
                       fetchAgencyPaymentSettings(a.id);
                     }}
-                    className="btn-secondary text-sm py-1.5"
+                    className="btn-secondary text-sm p-2 flex items-center justify-center"
                     title="詳細を見る"
                   >
-                    <Eye size={14} />
+                    <Eye size={16} />
                   </button>
                   <button
                     onClick={() => {
@@ -1451,15 +1451,17 @@ export function AgencyPage() {
                       fetchAgencyPaymentSettings(a.id);
                       setShowModal(true);
                     }}
-                    className="btn-secondary text-sm py-1.5"
+                    className="btn-secondary text-sm p-2 flex items-center justify-center"
+                    title="編集"
                   >
-                    <Edit size={14} />
+                    <Edit size={16} />
                   </button>
                   <button
                     onClick={() => handleDelete(a.id)}
-                    className="btn-secondary text-sm py-1.5 text-red-600 border-red-200 hover:bg-red-50"
+                    className="btn-secondary text-sm p-2 flex items-center justify-center text-red-600 border-red-200 hover:bg-red-50"
+                    title="削除"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={16} />
                   </button>
                 </div>
               </div>
