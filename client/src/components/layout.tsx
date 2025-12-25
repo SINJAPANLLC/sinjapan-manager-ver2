@@ -90,18 +90,18 @@ export function Layout({ children }: LayoutProps) {
   };
 
   const allMenuItems = [
-    { href: '/', label: 'ホーム', icon: Home, roles: ['admin', 'ceo', 'manager', 'agency', 'client'] },
-    { href: '/tasks', label: 'タスク', icon: ClipboardList, roles: ['admin', 'ceo', 'manager', 'agency', 'client'] },
-    { href: '/calendar', label: 'カレンダー', icon: Calendar, roles: ['admin', 'ceo', 'manager', 'agency', 'client'] },
+    { href: '/', label: 'ホーム', icon: Home, roles: ['admin', 'ceo', 'manager', 'client'] },
+    { href: '/tasks', label: 'タスク', icon: ClipboardList, roles: ['admin', 'ceo', 'manager', 'client'] },
+    { href: '/calendar', label: 'カレンダー', icon: Calendar, roles: ['admin', 'ceo', 'manager', 'client'] },
     { href: '/communication', label: 'コミュニケーション', icon: MessageSquare, roles: ['admin', 'ceo', 'manager', 'staff', 'agency', 'client'] },
-    { href: '/business', label: '事業', icon: Briefcase, roles: ['admin', 'ceo', 'manager', 'agency', 'client'] },
-    { href: '/designs', label: '設計', icon: Compass, roles: ['admin', 'ceo', 'manager', 'agency', 'client'] },
-    { href: '/marketing', label: 'マーケティング', icon: TrendingUp, roles: ['admin', 'ceo', 'manager', 'agency', 'client'] },
-    { href: '/financials', label: 'PL BS CF', icon: FileSpreadsheet, roles: ['admin', 'ceo', 'manager', 'agency', 'client'] },
-    { href: '/ai', label: 'AI', icon: Bot, roles: ['admin', 'ceo', 'manager', 'agency', 'client'] },
-    { href: '/staff', label: 'スタッフ', icon: UserCheck, roles: ['admin', 'ceo', 'manager', 'staff', 'agency', 'client'] },
+    { href: '/business', label: '事業', icon: Briefcase, roles: ['admin', 'ceo', 'manager', 'client'] },
+    { href: '/designs', label: '設計', icon: Compass, roles: ['admin', 'ceo', 'manager', 'client'] },
+    { href: '/marketing', label: 'マーケティング', icon: TrendingUp, roles: ['admin', 'ceo', 'manager', 'client'] },
+    { href: '/financials', label: 'PL BS CF', icon: FileSpreadsheet, roles: ['admin', 'ceo', 'manager', 'client'] },
+    { href: '/ai', label: 'AI', icon: Bot, roles: ['admin', 'ceo', 'manager', 'client'] },
+    { href: '/staff', label: 'スタッフ', icon: UserCheck, roles: ['admin', 'ceo', 'manager', 'staff', 'client'] },
     { href: '/agency', label: '代理店', icon: Building2, roles: ['admin', 'ceo', 'manager', 'agency', 'client'] },
-    { href: '/clients', label: 'クライアント', icon: Users, roles: ['admin', 'ceo', 'manager', 'agency', 'client'] },
+    { href: '/clients', label: 'クライアント', icon: Users, roles: ['admin', 'ceo', 'manager', 'client'] },
     { href: '/notifications', label: '通知', icon: Bell, roles: ['admin', 'ceo', 'manager', 'staff', 'agency', 'client'] },
     { href: '/settings', label: '設定', icon: Settings, roles: ['admin', 'ceo', 'manager', 'staff', 'agency', 'client'] },
   ];

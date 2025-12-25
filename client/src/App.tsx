@@ -32,6 +32,10 @@ function StaffRedirect() {
   return <Redirect to="/communication" />;
 }
 
+function AgencyRedirect() {
+  return <Redirect to="/agency" />;
+}
+
 function AppRoutes() {
   const { user, isLoading } = useAuth();
   const [location] = useLocation();
@@ -61,11 +65,18 @@ function AppRoutes() {
   }
 
   const isStaff = user?.role === 'staff';
+  const isAgency = user?.role === 'agency';
+
+  const getHomeComponent = () => {
+    if (isStaff) return StaffRedirect;
+    if (isAgency) return AgencyRedirect;
+    return DashboardPage;
+  };
 
   return (
     <Layout>
       <Switch>
-        <Route path="/" component={isStaff ? StaffRedirect : DashboardPage} />
+        <Route path="/" component={getHomeComponent()} />
         <Route path="/customers" component={CustomersPage} />
         <Route path="/tasks" component={TasksPage} />
         <Route path="/calendar" component={CalendarPage} />
