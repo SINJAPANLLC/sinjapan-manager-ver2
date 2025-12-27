@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Layout } from '../components/layout';
 import { 
   Users2, 
   FileText, 
@@ -1044,7 +1043,7 @@ export default function HRPage() {
   };
 
   return (
-    <Layout>
+    <>
       <div className="page-header">
         <h1 className="page-title flex items-center gap-3">
           <Users2 className="text-primary-500" size={28} />
@@ -1075,6 +1074,6 @@ export default function HRPage() {
       <div className="glass-card p-6">
         {renderTabContent()}
       </div>
-    </Layout>
+    </>
   );
 }
