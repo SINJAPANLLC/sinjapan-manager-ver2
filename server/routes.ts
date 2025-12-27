@@ -279,10 +279,11 @@ export function registerRoutes(app: Express) {
       // Auto-create employee record for staff users
       if (user.role === 'staff') {
         try {
+          const employeeNumber = `EMP${user.id.toString().padStart(6, '0')}`;
           await storage.createEmployee({
             userId: user.id,
             companyId: user.companyId || undefined,
-            employeeNumber: '',
+            employeeNumber,
             salary: '0',
             bankName: user.bankName || '',
             bankBranch: user.bankBranch || '',
