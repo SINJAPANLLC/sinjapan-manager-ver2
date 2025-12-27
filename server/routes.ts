@@ -5736,6 +5736,335 @@ URL/名前: ${url || '未指定'}
       res.status(500).json({ error: '入出金の削除に失敗しました' });
     }
   });
+
+  // ============================================
+  // Staffing/Recruitment Module API
+  // ============================================
+
+  // Jobs
+  app.get('/api/staffing/jobs', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const jobs = await storage.getStaffingJobs();
+      res.json(jobs);
+    } catch (error) {
+      console.error('Get staffing jobs error:', error);
+      res.status(500).json({ error: '案件の取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/staffing/jobs', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const job = await storage.createStaffingJob({
+        ...req.body,
+        createdBy: req.session.userId,
+      });
+      res.json(job);
+    } catch (error) {
+      console.error('Create staffing job error:', error);
+      res.status(500).json({ error: '案件の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/staffing/jobs/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const job = await storage.updateStaffingJob(parseInt(req.params.id), req.body);
+      if (!job) {
+        return res.status(404).json({ error: '案件が見つかりません' });
+      }
+      res.json(job);
+    } catch (error) {
+      console.error('Update staffing job error:', error);
+      res.status(500).json({ error: '案件の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/staffing/jobs/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteStaffingJob(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete staffing job error:', error);
+      res.status(500).json({ error: '案件の削除に失敗しました' });
+    }
+  });
+
+  // Candidates
+  app.get('/api/staffing/candidates', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const candidates = await storage.getStaffingCandidates();
+      res.json(candidates);
+    } catch (error) {
+      console.error('Get candidates error:', error);
+      res.status(500).json({ error: '求職者の取得に失敗しました' });
+    }
+  });
+
+  app.get('/api/staffing/candidates/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const candidate = await storage.getStaffingCandidate(parseInt(req.params.id));
+      if (!candidate) {
+        return res.status(404).json({ error: '求職者が見つかりません' });
+      }
+      res.json(candidate);
+    } catch (error) {
+      console.error('Get candidate error:', error);
+      res.status(500).json({ error: '求職者の取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/staffing/candidates', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const candidate = await storage.createStaffingCandidate({
+        ...req.body,
+        createdBy: req.session.userId,
+      });
+      res.json(candidate);
+    } catch (error) {
+      console.error('Create candidate error:', error);
+      res.status(500).json({ error: '求職者の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/staffing/candidates/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const candidate = await storage.updateStaffingCandidate(parseInt(req.params.id), req.body);
+      if (!candidate) {
+        return res.status(404).json({ error: '求職者が見つかりません' });
+      }
+      res.json(candidate);
+    } catch (error) {
+      console.error('Update candidate error:', error);
+      res.status(500).json({ error: '求職者の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/staffing/candidates/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteStaffingCandidate(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete candidate error:', error);
+      res.status(500).json({ error: '求職者の削除に失敗しました' });
+    }
+  });
+
+  // Applications
+  app.get('/api/staffing/applications', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const applications = await storage.getStaffingApplications();
+      res.json(applications);
+    } catch (error) {
+      console.error('Get applications error:', error);
+      res.status(500).json({ error: '応募の取得に失敗しました' });
+    }
+  });
+
+  app.get('/api/staffing/applications/candidate/:candidateId', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const applications = await storage.getStaffingApplicationsByCandidate(parseInt(req.params.candidateId));
+      res.json(applications);
+    } catch (error) {
+      console.error('Get candidate applications error:', error);
+      res.status(500).json({ error: '応募の取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/staffing/applications', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const application = await storage.createStaffingApplication({
+        ...req.body,
+        createdBy: req.session.userId,
+      });
+      res.json(application);
+    } catch (error) {
+      console.error('Create application error:', error);
+      res.status(500).json({ error: '応募の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/staffing/applications/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const application = await storage.updateStaffingApplication(parseInt(req.params.id), req.body);
+      if (!application) {
+        return res.status(404).json({ error: '応募が見つかりません' });
+      }
+      res.json(application);
+    } catch (error) {
+      console.error('Update application error:', error);
+      res.status(500).json({ error: '応募の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/staffing/applications/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteStaffingApplication(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete application error:', error);
+      res.status(500).json({ error: '応募の削除に失敗しました' });
+    }
+  });
+
+  // Resumes
+  app.get('/api/staffing/resumes', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const resumes = await storage.getStaffingResumes();
+      res.json(resumes);
+    } catch (error) {
+      console.error('Get resumes error:', error);
+      res.status(500).json({ error: '職務経歴書の取得に失敗しました' });
+    }
+  });
+
+  app.get('/api/staffing/resumes/candidate/:candidateId', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const resumes = await storage.getStaffingResumesByCandidate(parseInt(req.params.candidateId));
+      res.json(resumes);
+    } catch (error) {
+      console.error('Get candidate resumes error:', error);
+      res.status(500).json({ error: '職務経歴書の取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/staffing/resumes', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const resume = await storage.createStaffingResume({
+        ...req.body,
+        createdBy: req.session.userId,
+      });
+      res.json(resume);
+    } catch (error) {
+      console.error('Create resume error:', error);
+      res.status(500).json({ error: '職務経歴書の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/staffing/resumes/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const resume = await storage.updateStaffingResume(parseInt(req.params.id), req.body);
+      if (!resume) {
+        return res.status(404).json({ error: '職務経歴書が見つかりません' });
+      }
+      res.json(resume);
+    } catch (error) {
+      console.error('Update resume error:', error);
+      res.status(500).json({ error: '職務経歴書の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/staffing/resumes/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteStaffingResume(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete resume error:', error);
+      res.status(500).json({ error: '職務経歴書の削除に失敗しました' });
+    }
+  });
+
+  // Invoices
+  app.get('/api/staffing/invoices', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const invoices = await storage.getStaffingInvoices();
+      res.json(invoices);
+    } catch (error) {
+      console.error('Get staffing invoices error:', error);
+      res.status(500).json({ error: '請求書の取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/staffing/invoices', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const invoice = await storage.createStaffingInvoice({
+        ...req.body,
+        createdBy: req.session.userId,
+      });
+      res.json(invoice);
+    } catch (error) {
+      console.error('Create staffing invoice error:', error);
+      res.status(500).json({ error: '請求書の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/staffing/invoices/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const invoice = await storage.updateStaffingInvoice(parseInt(req.params.id), req.body);
+      if (!invoice) {
+        return res.status(404).json({ error: '請求書が見つかりません' });
+      }
+      res.json(invoice);
+    } catch (error) {
+      console.error('Update staffing invoice error:', error);
+      res.status(500).json({ error: '請求書の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/staffing/invoices/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteStaffingInvoice(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete staffing invoice error:', error);
+      res.status(500).json({ error: '請求書の削除に失敗しました' });
+    }
+  });
+
+  // Sales
+  app.get('/api/staffing/sales', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const sales = await storage.getStaffingSales();
+      res.json(sales);
+    } catch (error) {
+      console.error('Get staffing sales error:', error);
+      res.status(500).json({ error: '売上の取得に失敗しました' });
+    }
+  });
+
+  app.get('/api/staffing/sales/summary', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const summary = await storage.getStaffingSalesSummary();
+      res.json(summary);
+    } catch (error) {
+      console.error('Get staffing sales summary error:', error);
+      res.status(500).json({ error: '売上サマリーの取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/staffing/sales', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const sale = await storage.createStaffingSale({
+        ...req.body,
+        createdBy: req.session.userId,
+      });
+      res.json(sale);
+    } catch (error) {
+      console.error('Create staffing sale error:', error);
+      res.status(500).json({ error: '売上の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/staffing/sales/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const sale = await storage.updateStaffingSale(parseInt(req.params.id), req.body);
+      if (!sale) {
+        return res.status(404).json({ error: '売上が見つかりません' });
+      }
+      res.json(sale);
+    } catch (error) {
+      console.error('Update staffing sale error:', error);
+      res.status(500).json({ error: '売上の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/staffing/sales/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteStaffingSale(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete staffing sale error:', error);
+      res.status(500).json({ error: '売上の削除に失敗しました' });
+    }
+  });
 }
 
 export async function runRecurringTaskGeneration(): Promise<number> {

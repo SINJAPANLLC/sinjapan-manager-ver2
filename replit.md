@@ -41,6 +41,12 @@ The application features a refined white-based theme with blue gradient accents,
 -   **SEO Management**: Advanced SEO article management with categorization, bulk generation, AI-powered internal linking, and an indexing monitoring dashboard.
 -   **Self-Registration**: Two-step self-registration for Staff, Agency, and Client roles.
 -   **Square Payment Integration**: API integration for creating payment links, managing customer payments, and handling invoices, with environment switching.
+-   **Staffing/Recruitment Module (人材)**: Complete staffing management with 5 tabs:
+    - 案件一覧: Job listings with employment type, salary, requirements, and status tracking
+    - 求職者一覧・詳細・進捗: Candidate management with applications pipeline (applied → screening → interview → offer → hired)
+    - 職務経歴書: Resume/CV management linked to candidates
+    - 請求書: Invoice generation and tracking for placements
+    - 売上: Sales tracking with summary statistics (total sales, monthly revenue, placement count)
 
 ## External Dependencies
 -   **Database**: PostgreSQL (Neon)

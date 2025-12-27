@@ -1,8 +1,8 @@
 import { db } from './db';
-import { users, customers, tasks, notifications, chatMessages, chatGroups, chatGroupMembers, employees, agencySales, agencyMemos, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, systemSettings, leads, leadActivities, clientProjects, clientInvoices, companies, quickNotes, investments, staffAffiliates, financialEntries, agencyPaymentSettings, logisticsShippers, logisticsCompanies, logisticsVehicles, logisticsProjects, logisticsDispatch, logisticsMasterCards, logisticsQuotations, logisticsInstructions, logisticsInvoices, logisticsReceipts, logisticsPayments, logisticsCashflow } from '../shared/schema';
+import { users, customers, tasks, notifications, chatMessages, chatGroups, chatGroupMembers, employees, agencySales, agencyMemos, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, systemSettings, leads, leadActivities, clientProjects, clientInvoices, companies, quickNotes, investments, staffAffiliates, financialEntries, agencyPaymentSettings, logisticsShippers, logisticsCompanies, logisticsVehicles, logisticsProjects, logisticsDispatch, logisticsMasterCards, logisticsQuotations, logisticsInstructions, logisticsInvoices, logisticsReceipts, logisticsPayments, logisticsCashflow, staffingJobs, staffingCandidates, staffingApplications, staffingResumes, staffingInvoices, staffingSales } from '../shared/schema';
 import { eq, and, or, desc, sql, isNull, gte, lte, like, ilike, inArray } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, ChatGroup, InsertChatGroup, ChatGroupMember, InsertChatGroupMember, Employee, InsertEmployee, AgencySale, InsertAgencySale, AgencyMemo, InsertAgencyMemo, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, SystemSetting, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Company, InsertCompany, QuickNote, InsertQuickNote, Investment, InsertInvestment, FinancialEntry, InsertFinancialEntry, AgencyPaymentSettings, InsertAgencyPaymentSettings, LogisticsShipper, InsertLogisticsShipper, LogisticsCompany, InsertLogisticsCompany, LogisticsVehicle, InsertLogisticsVehicle, LogisticsProject, InsertLogisticsProject, LogisticsDispatch, InsertLogisticsDispatch, LogisticsMasterCard, InsertLogisticsMasterCard, LogisticsQuotation, InsertLogisticsQuotation, LogisticsInstruction, InsertLogisticsInstruction, LogisticsInvoice, InsertLogisticsInvoice, LogisticsReceipt, InsertLogisticsReceipt, LogisticsPayment, InsertLogisticsPayment, LogisticsCashflow, InsertLogisticsCashflow } from '../shared/schema';
+import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, ChatGroup, InsertChatGroup, ChatGroupMember, InsertChatGroupMember, Employee, InsertEmployee, AgencySale, InsertAgencySale, AgencyMemo, InsertAgencyMemo, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, SystemSetting, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Company, InsertCompany, QuickNote, InsertQuickNote, Investment, InsertInvestment, FinancialEntry, InsertFinancialEntry, AgencyPaymentSettings, InsertAgencyPaymentSettings, LogisticsShipper, InsertLogisticsShipper, LogisticsCompany, InsertLogisticsCompany, LogisticsVehicle, InsertLogisticsVehicle, LogisticsProject, InsertLogisticsProject, LogisticsDispatch, InsertLogisticsDispatch, LogisticsMasterCard, InsertLogisticsMasterCard, LogisticsQuotation, InsertLogisticsQuotation, LogisticsInstruction, InsertLogisticsInstruction, LogisticsInvoice, InsertLogisticsInvoice, LogisticsReceipt, InsertLogisticsReceipt, LogisticsPayment, InsertLogisticsPayment, LogisticsCashflow, InsertLogisticsCashflow, StaffingJob, InsertStaffingJob, StaffingCandidate, InsertStaffingCandidate, StaffingApplication, InsertStaffingApplication, StaffingResume, InsertStaffingResume, StaffingInvoice, InsertStaffingInvoice, StaffingSale, InsertStaffingSale } from '../shared/schema';
 
 export const storage = {
   async getUser(id: number): Promise<User | undefined> {
@@ -1362,5 +1362,186 @@ export const storage = {
     const expense = parseFloat(String(expenseResult[0]?.total || 0));
     
     return { income, expense, balance: income - expense };
+  },
+
+  // ============================================
+  // Staffing/Recruitment Module
+  // ============================================
+
+  // Jobs
+  async getStaffingJobs(): Promise<StaffingJob[]> {
+    return db.select().from(staffingJobs).orderBy(desc(staffingJobs.createdAt));
+  },
+
+  async getStaffingJob(id: number): Promise<StaffingJob | undefined> {
+    const [job] = await db.select().from(staffingJobs).where(eq(staffingJobs.id, id));
+    return job;
+  },
+
+  async createStaffingJob(data: InsertStaffingJob): Promise<StaffingJob> {
+    const [job] = await db.insert(staffingJobs).values(data).returning();
+    return job;
+  },
+
+  async updateStaffingJob(id: number, data: Partial<InsertStaffingJob>): Promise<StaffingJob | undefined> {
+    const [job] = await db.update(staffingJobs).set({ ...data, updatedAt: new Date() }).where(eq(staffingJobs.id, id)).returning();
+    return job;
+  },
+
+  async deleteStaffingJob(id: number): Promise<boolean> {
+    await db.delete(staffingJobs).where(eq(staffingJobs.id, id));
+    return true;
+  },
+
+  // Candidates
+  async getStaffingCandidates(): Promise<StaffingCandidate[]> {
+    return db.select().from(staffingCandidates).orderBy(desc(staffingCandidates.createdAt));
+  },
+
+  async getStaffingCandidate(id: number): Promise<StaffingCandidate | undefined> {
+    const [candidate] = await db.select().from(staffingCandidates).where(eq(staffingCandidates.id, id));
+    return candidate;
+  },
+
+  async createStaffingCandidate(data: InsertStaffingCandidate): Promise<StaffingCandidate> {
+    const [candidate] = await db.insert(staffingCandidates).values(data).returning();
+    return candidate;
+  },
+
+  async updateStaffingCandidate(id: number, data: Partial<InsertStaffingCandidate>): Promise<StaffingCandidate | undefined> {
+    const [candidate] = await db.update(staffingCandidates).set({ ...data, updatedAt: new Date() }).where(eq(staffingCandidates.id, id)).returning();
+    return candidate;
+  },
+
+  async deleteStaffingCandidate(id: number): Promise<boolean> {
+    await db.delete(staffingCandidates).where(eq(staffingCandidates.id, id));
+    return true;
+  },
+
+  // Applications
+  async getStaffingApplications(): Promise<StaffingApplication[]> {
+    return db.select().from(staffingApplications).orderBy(desc(staffingApplications.createdAt));
+  },
+
+  async getStaffingApplicationsByCandidate(candidateId: number): Promise<StaffingApplication[]> {
+    return db.select().from(staffingApplications).where(eq(staffingApplications.candidateId, candidateId)).orderBy(desc(staffingApplications.createdAt));
+  },
+
+  async getStaffingApplication(id: number): Promise<StaffingApplication | undefined> {
+    const [application] = await db.select().from(staffingApplications).where(eq(staffingApplications.id, id));
+    return application;
+  },
+
+  async createStaffingApplication(data: InsertStaffingApplication): Promise<StaffingApplication> {
+    const [application] = await db.insert(staffingApplications).values(data).returning();
+    return application;
+  },
+
+  async updateStaffingApplication(id: number, data: Partial<InsertStaffingApplication>): Promise<StaffingApplication | undefined> {
+    const [application] = await db.update(staffingApplications).set({ ...data, updatedAt: new Date() }).where(eq(staffingApplications.id, id)).returning();
+    return application;
+  },
+
+  async deleteStaffingApplication(id: number): Promise<boolean> {
+    await db.delete(staffingApplications).where(eq(staffingApplications.id, id));
+    return true;
+  },
+
+  // Resumes
+  async getStaffingResumes(): Promise<StaffingResume[]> {
+    return db.select().from(staffingResumes).orderBy(desc(staffingResumes.createdAt));
+  },
+
+  async getStaffingResumesByCandidate(candidateId: number): Promise<StaffingResume[]> {
+    return db.select().from(staffingResumes).where(eq(staffingResumes.candidateId, candidateId)).orderBy(desc(staffingResumes.createdAt));
+  },
+
+  async getStaffingResume(id: number): Promise<StaffingResume | undefined> {
+    const [resume] = await db.select().from(staffingResumes).where(eq(staffingResumes.id, id));
+    return resume;
+  },
+
+  async createStaffingResume(data: InsertStaffingResume): Promise<StaffingResume> {
+    const [resume] = await db.insert(staffingResumes).values(data).returning();
+    return resume;
+  },
+
+  async updateStaffingResume(id: number, data: Partial<InsertStaffingResume>): Promise<StaffingResume | undefined> {
+    const [resume] = await db.update(staffingResumes).set({ ...data, updatedAt: new Date() }).where(eq(staffingResumes.id, id)).returning();
+    return resume;
+  },
+
+  async deleteStaffingResume(id: number): Promise<boolean> {
+    await db.delete(staffingResumes).where(eq(staffingResumes.id, id));
+    return true;
+  },
+
+  // Invoices
+  async getStaffingInvoices(): Promise<StaffingInvoice[]> {
+    return db.select().from(staffingInvoices).orderBy(desc(staffingInvoices.createdAt));
+  },
+
+  async getStaffingInvoice(id: number): Promise<StaffingInvoice | undefined> {
+    const [invoice] = await db.select().from(staffingInvoices).where(eq(staffingInvoices.id, id));
+    return invoice;
+  },
+
+  async createStaffingInvoice(data: InsertStaffingInvoice): Promise<StaffingInvoice> {
+    const [invoice] = await db.insert(staffingInvoices).values(data).returning();
+    return invoice;
+  },
+
+  async updateStaffingInvoice(id: number, data: Partial<InsertStaffingInvoice>): Promise<StaffingInvoice | undefined> {
+    const [invoice] = await db.update(staffingInvoices).set({ ...data, updatedAt: new Date() }).where(eq(staffingInvoices.id, id)).returning();
+    return invoice;
+  },
+
+  async deleteStaffingInvoice(id: number): Promise<boolean> {
+    await db.delete(staffingInvoices).where(eq(staffingInvoices.id, id));
+    return true;
+  },
+
+  // Sales
+  async getStaffingSales(): Promise<StaffingSale[]> {
+    return db.select().from(staffingSales).orderBy(desc(staffingSales.saleDate));
+  },
+
+  async getStaffingSale(id: number): Promise<StaffingSale | undefined> {
+    const [sale] = await db.select().from(staffingSales).where(eq(staffingSales.id, id));
+    return sale;
+  },
+
+  async createStaffingSale(data: InsertStaffingSale): Promise<StaffingSale> {
+    const [sale] = await db.insert(staffingSales).values(data).returning();
+    return sale;
+  },
+
+  async updateStaffingSale(id: number, data: Partial<InsertStaffingSale>): Promise<StaffingSale | undefined> {
+    const [sale] = await db.update(staffingSales).set({ ...data, updatedAt: new Date() }).where(eq(staffingSales.id, id)).returning();
+    return sale;
+  },
+
+  async deleteStaffingSale(id: number): Promise<boolean> {
+    await db.delete(staffingSales).where(eq(staffingSales.id, id));
+    return true;
+  },
+
+  async getStaffingSalesSummary(): Promise<{ totalSales: number; placementCount: number; monthlyRevenue: number }> {
+    const result = await db.select({
+      totalSales: sql<number>`COALESCE(SUM(${staffingSales.amount}), 0)`,
+      placementCount: sql<number>`COUNT(*)`,
+    }).from(staffingSales);
+    
+    const monthlyResult = await db.select({
+      total: sql<number>`COALESCE(SUM(${staffingSales.amount}), 0)`,
+    }).from(staffingSales).where(
+      gte(staffingSales.saleDate, sql`DATE_TRUNC('month', CURRENT_DATE)`)
+    );
+    
+    return {
+      totalSales: parseFloat(String(result[0]?.totalSales || 0)),
+      placementCount: Number(result[0]?.placementCount || 0),
+      monthlyRevenue: parseFloat(String(monthlyResult[0]?.total || 0)),
+    };
   },
 };

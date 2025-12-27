@@ -978,3 +978,155 @@ export const logisticsCashflow = pgTable("logistics_cashflow", {
 
 export type LogisticsCashflow = typeof logisticsCashflow.$inferSelect;
 export type InsertLogisticsCashflow = typeof logisticsCashflow.$inferInsert;
+
+// ============================================
+// 人材 (Staffing/Recruitment) Module
+// ============================================
+
+// 案件一覧 (Job listings)
+export const staffingJobs = pgTable("staffing_jobs", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  title: text("title").notNull(),
+  clientName: text("client_name"),
+  location: text("location"),
+  employmentType: text("employment_type").default("fulltime"), // fulltime, parttime, contract, dispatch
+  salary: text("salary"),
+  salaryMin: decimal("salary_min", { precision: 15, scale: 2 }),
+  salaryMax: decimal("salary_max", { precision: 15, scale: 2 }),
+  description: text("description"),
+  requirements: text("requirements"),
+  benefits: text("benefits"),
+  positions: integer("positions").default(1),
+  status: text("status").notNull().default("open"), // open, closed, filled, cancelled
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type StaffingJob = typeof staffingJobs.$inferSelect;
+export type InsertStaffingJob = typeof staffingJobs.$inferInsert;
+
+// 求職者 (Job seekers/Candidates)
+export const staffingCandidates = pgTable("staffing_candidates", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  name: text("name").notNull(),
+  email: text("email"),
+  phone: text("phone"),
+  dateOfBirth: timestamp("date_of_birth"),
+  gender: text("gender"),
+  address: text("address"),
+  nationality: text("nationality"),
+  visaStatus: text("visa_status"),
+  currentStatus: text("current_status").default("seeking"), // seeking, employed, not_seeking
+  desiredEmploymentType: text("desired_employment_type"),
+  desiredSalary: text("desired_salary"),
+  availableFrom: timestamp("available_from"),
+  skills: text("skills"),
+  experience: text("experience"),
+  education: text("education"),
+  languages: text("languages"),
+  notes: text("notes"),
+  status: text("status").notNull().default("active"), // active, inactive, placed
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type StaffingCandidate = typeof staffingCandidates.$inferSelect;
+export type InsertStaffingCandidate = typeof staffingCandidates.$inferInsert;
+
+// 求職者進捗 (Candidate applications/progress)
+export const staffingApplications = pgTable("staffing_applications", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  candidateId: integer("candidate_id").references(() => staffingCandidates.id, { onDelete: "cascade" }),
+  jobId: integer("job_id").references(() => staffingJobs.id, { onDelete: "cascade" }),
+  stage: text("stage").notNull().default("applied"), // applied, screening, interview1, interview2, offer, hired, rejected
+  appliedDate: timestamp("applied_date").defaultNow().notNull(),
+  interviewDate: timestamp("interview_date"),
+  offerDate: timestamp("offer_date"),
+  hiredDate: timestamp("hired_date"),
+  rejectedDate: timestamp("rejected_date"),
+  rejectionReason: text("rejection_reason"),
+  notes: text("notes"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type StaffingApplication = typeof staffingApplications.$inferSelect;
+export type InsertStaffingApplication = typeof staffingApplications.$inferInsert;
+
+// 職務経歴書 (Resumes)
+export const staffingResumes = pgTable("staffing_resumes", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  candidateId: integer("candidate_id").references(() => staffingCandidates.id, { onDelete: "cascade" }),
+  title: text("title"),
+  summary: text("summary"),
+  workHistory: text("work_history"),
+  education: text("education"),
+  certifications: text("certifications"),
+  skills: text("skills"),
+  fileUrl: text("file_url"),
+  version: integer("version").default(1),
+  isActive: boolean("is_active").default(true),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type StaffingResume = typeof staffingResumes.$inferSelect;
+export type InsertStaffingResume = typeof staffingResumes.$inferInsert;
+
+// 請求書 (Staffing Invoices)
+export const staffingInvoices = pgTable("staffing_invoices", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  invoiceNumber: text("invoice_number").notNull(),
+  clientName: text("client_name").notNull(),
+  candidateId: integer("candidate_id").references(() => staffingCandidates.id, { onDelete: "set null" }),
+  jobId: integer("job_id").references(() => staffingJobs.id, { onDelete: "set null" }),
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+  tax: decimal("tax", { precision: 15, scale: 2 }).default("0"),
+  totalAmount: decimal("total_amount", { precision: 15, scale: 2 }).notNull(),
+  issueDate: timestamp("issue_date").defaultNow().notNull(),
+  dueDate: timestamp("due_date"),
+  paidDate: timestamp("paid_date"),
+  status: text("status").notNull().default("draft"), // draft, sent, paid, overdue, cancelled
+  description: text("description"),
+  notes: text("notes"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type StaffingInvoice = typeof staffingInvoices.$inferSelect;
+export type InsertStaffingInvoice = typeof staffingInvoices.$inferInsert;
+
+// 売上 (Staffing Sales)
+export const staffingSales = pgTable("staffing_sales", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  type: text("type").notNull().default("placement"), // placement, monthly, referral
+  clientName: text("client_name").notNull(),
+  candidateId: integer("candidate_id").references(() => staffingCandidates.id, { onDelete: "set null" }),
+  jobId: integer("job_id").references(() => staffingJobs.id, { onDelete: "set null" }),
+  invoiceId: integer("invoice_id").references(() => staffingInvoices.id, { onDelete: "set null" }),
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+  fee: decimal("fee", { precision: 15, scale: 2 }),
+  feePercentage: decimal("fee_percentage", { precision: 5, scale: 2 }),
+  saleDate: timestamp("sale_date").defaultNow().notNull(),
+  description: text("description"),
+  notes: text("notes"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type StaffingSale = typeof staffingSales.$inferSelect;
+export type InsertStaffingSale = typeof staffingSales.$inferInsert;
