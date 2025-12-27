@@ -629,28 +629,28 @@ export default function LogisticsPage() {
 
   return (
     <Layout>
-      <div className="page-header">
-        <h1 className="page-title flex items-center gap-3">
-          <Truck className="text-primary-500" size={28} />
-          物流管理
-        </h1>
-        <p className="text-slate-500 mt-1">物流業務の総合管理</p>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <Truck className="text-primary-500" size={24} />
+          <h1 className="text-xl font-bold text-slate-800">物流管理</h1>
+        </div>
+        <span className="text-sm text-slate-500 hidden sm:block">物流業務の総合管理</span>
       </div>
 
-      <div className="mb-6 -mx-4 px-4 overflow-x-auto scrollbar-hide">
+      <div className="mb-4 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 overflow-x-auto scrollbar-hide">
         <div className="inline-flex gap-1 bg-slate-100 p-1 rounded-xl">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+              className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
                 activeTab === tab.id
                   ? 'bg-white text-primary-600 shadow-sm'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
               {tab.icon}
-              <span className="hidden sm:inline">{tab.label}</span>
+              {tab.label}
             </button>
           ))}
         </div>
