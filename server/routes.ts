@@ -5710,9 +5710,11 @@ URL/名前: ${url || '未指定'}
       
       // 財務レポート連携: PL/CFに自動記帳
       const amount = parseFloat(req.body.amount) || 0;
+      const companyId = getCompanyId(req);
       if (amount !== 0) {
         const isIncome = req.body.type === 'income' || req.body.type === '入金';
         await storage.createFinancialEntry({
+          companyId,
           statementType: 'PL',
           category: isIncome ? '売上高' : '売上原価',
           subCategory: `物流_${req.body.category || 'その他'}`,
@@ -5722,6 +5724,7 @@ URL/名前: ${url || '未指定'}
           createdBy: req.session.userId,
         });
         await storage.createFinancialEntry({
+          companyId,
           statementType: 'CF',
           category: '営業活動',
           subCategory: isIncome ? '売上収入' : '仕入支出',
@@ -6064,8 +6067,10 @@ URL/名前: ${url || '未指定'}
       
       // 財務レポート連携: PL/CFに自動記帳
       const amount = parseFloat(req.body.amount) || 0;
+      const companyId = getCompanyId(req);
       if (amount !== 0) {
         await storage.createFinancialEntry({
+          companyId,
           statementType: 'PL',
           category: '売上高',
           subCategory: `人材_${req.body.type || 'その他'}`,
@@ -6075,6 +6080,7 @@ URL/名前: ${url || '未指定'}
           createdBy: req.session.userId,
         });
         await storage.createFinancialEntry({
+          companyId,
           statementType: 'CF',
           category: '営業活動',
           subCategory: '売上収入',
@@ -6374,8 +6380,10 @@ URL/名前: ${url || '未指定'}
       
       // 財務レポート連携: PL/CFに自動記帳
       const amount = parseFloat(req.body.amount) || 0;
+      const companyId = getCompanyId(req);
       if (amount !== 0) {
         await storage.createFinancialEntry({
+          companyId,
           statementType: 'PL',
           category: '売上高',
           subCategory: `IT_${req.body.type || 'その他'}`,
@@ -6385,6 +6393,7 @@ URL/名前: ${url || '未指定'}
           createdBy: req.session.userId,
         });
         await storage.createFinancialEntry({
+          companyId,
           statementType: 'CF',
           category: '営業活動',
           subCategory: '売上収入',
@@ -6662,8 +6671,10 @@ URL/名前: ${url || '未指定'}
       
       // 財務レポート連携: PL/CFに自動記帳
       const amount = parseFloat(req.body.amount) || 0;
+      const companyId = getCompanyId(req);
       if (amount !== 0) {
         await storage.createFinancialEntry({
+          companyId,
           statementType: 'PL',
           category: '売上高',
           subCategory: `BPO_${req.body.type || 'その他'}`,
@@ -6673,6 +6684,7 @@ URL/名前: ${url || '未指定'}
           createdBy: req.session.userId,
         });
         await storage.createFinancialEntry({
+          companyId,
           statementType: 'CF',
           category: '営業活動',
           subCategory: '売上収入',
