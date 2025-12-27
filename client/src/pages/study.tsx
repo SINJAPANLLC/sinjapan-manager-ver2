@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GraduationCap, BookOpen, Brain, Lightbulb, Loader2, ChevronDown, ChevronUp, RefreshCw, DollarSign, Users, Scale, Megaphone, Settings, AlertTriangle, Code, Cpu, Briefcase, Languages } from 'lucide-react';
+import { GraduationCap, BookOpen, Brain, Lightbulb, Loader2, ChevronDown, ChevronUp, RefreshCw, DollarSign, Users, Scale, Megaphone, Settings, AlertTriangle, Code, Cpu, Briefcase, Languages, Heart } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 
 const CATEGORIES = [
@@ -151,6 +151,21 @@ const CATEGORIES = [
       'フランス語入門', 'ドイツ語入門', '第二言語習得理論', '言語学習メソッド比較',
       '異文化コミュニケーション', 'ビジネス日本語（外国人向け）', '通訳・翻訳スキル',
       'マルチリンガル戦略',
+    ],
+  },
+  {
+    id: 'wellbeing',
+    name: '健康・幸福・自分磨き',
+    icon: Heart,
+    color: 'from-rose-500 to-rose-600',
+    bgColor: 'bg-rose-50',
+    topics: [
+      'マインドフルネス・瞑想', 'ストレスマネジメント', '睡眠の科学', '栄養学・食事管理',
+      '運動習慣・フィットネス', 'メンタルヘルスケア', 'ウェルビーイング理論', '習慣形成・行動変容',
+      'タイムマネジメント', '目標設定・自己実現', 'エモーショナルインテリジェンス（EQ）',
+      'レジリエンス（回復力）', 'ワークライフバランス', 'セルフコンパッション', 'ポジティブ心理学実践',
+      'パーソナルブランディング', 'コーチング・メンタリング', '人間関係構築', 'アンガーマネジメント',
+      '自己投資戦略',
     ],
   },
 ];
