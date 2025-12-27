@@ -6065,6 +6065,290 @@ URL/名前: ${url || '未指定'}
       res.status(500).json({ error: '売上の削除に失敗しました' });
     }
   });
+
+  // ============================================
+  // IT Module Routes
+  // ============================================
+
+  // IT Systems
+  app.get('/api/it/systems', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const systems = await storage.getItSystems();
+      res.json(systems);
+    } catch (error) {
+      console.error('Get IT systems error:', error);
+      res.status(500).json({ error: 'システム一覧の取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/it/systems', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const system = await storage.createItSystem({
+        ...req.body,
+        createdBy: req.session.userId,
+      });
+      res.json(system);
+    } catch (error) {
+      console.error('Create IT system error:', error);
+      res.status(500).json({ error: 'システムの作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/it/systems/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const system = await storage.updateItSystem(parseInt(req.params.id), req.body);
+      if (!system) return res.status(404).json({ error: 'システムが見つかりません' });
+      res.json(system);
+    } catch (error) {
+      console.error('Update IT system error:', error);
+      res.status(500).json({ error: 'システムの更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/it/systems/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteItSystem(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete IT system error:', error);
+      res.status(500).json({ error: 'システムの削除に失敗しました' });
+    }
+  });
+
+  // IT Projects
+  app.get('/api/it/projects', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const projects = await storage.getItProjects();
+      res.json(projects);
+    } catch (error) {
+      console.error('Get IT projects error:', error);
+      res.status(500).json({ error: '案件一覧の取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/it/projects', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const project = await storage.createItProject({
+        ...req.body,
+        createdBy: req.session.userId,
+      });
+      res.json(project);
+    } catch (error) {
+      console.error('Create IT project error:', error);
+      res.status(500).json({ error: '案件の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/it/projects/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const project = await storage.updateItProject(parseInt(req.params.id), req.body);
+      if (!project) return res.status(404).json({ error: '案件が見つかりません' });
+      res.json(project);
+    } catch (error) {
+      console.error('Update IT project error:', error);
+      res.status(500).json({ error: '案件の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/it/projects/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteItProject(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete IT project error:', error);
+      res.status(500).json({ error: '案件の削除に失敗しました' });
+    }
+  });
+
+  // IT Clients
+  app.get('/api/it/clients', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const clients = await storage.getItClients();
+      res.json(clients);
+    } catch (error) {
+      console.error('Get IT clients error:', error);
+      res.status(500).json({ error: 'クライアント一覧の取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/it/clients', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const client = await storage.createItClient({
+        ...req.body,
+        createdBy: req.session.userId,
+      });
+      res.json(client);
+    } catch (error) {
+      console.error('Create IT client error:', error);
+      res.status(500).json({ error: 'クライアントの作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/it/clients/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const client = await storage.updateItClient(parseInt(req.params.id), req.body);
+      if (!client) return res.status(404).json({ error: 'クライアントが見つかりません' });
+      res.json(client);
+    } catch (error) {
+      console.error('Update IT client error:', error);
+      res.status(500).json({ error: 'クライアントの更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/it/clients/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteItClient(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete IT client error:', error);
+      res.status(500).json({ error: 'クライアントの削除に失敗しました' });
+    }
+  });
+
+  // IT Vendors
+  app.get('/api/it/vendors', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const vendors = await storage.getItVendors();
+      res.json(vendors);
+    } catch (error) {
+      console.error('Get IT vendors error:', error);
+      res.status(500).json({ error: '外注一覧の取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/it/vendors', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const vendor = await storage.createItVendor({
+        ...req.body,
+        createdBy: req.session.userId,
+      });
+      res.json(vendor);
+    } catch (error) {
+      console.error('Create IT vendor error:', error);
+      res.status(500).json({ error: '外注の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/it/vendors/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const vendor = await storage.updateItVendor(parseInt(req.params.id), req.body);
+      if (!vendor) return res.status(404).json({ error: '外注が見つかりません' });
+      res.json(vendor);
+    } catch (error) {
+      console.error('Update IT vendor error:', error);
+      res.status(500).json({ error: '外注の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/it/vendors/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteItVendor(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete IT vendor error:', error);
+      res.status(500).json({ error: '外注の削除に失敗しました' });
+    }
+  });
+
+  // IT Invoices
+  app.get('/api/it/invoices', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const invoices = await storage.getItInvoices();
+      res.json(invoices);
+    } catch (error) {
+      console.error('Get IT invoices error:', error);
+      res.status(500).json({ error: '請求書一覧の取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/it/invoices', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const invoice = await storage.createItInvoice({
+        ...req.body,
+        createdBy: req.session.userId,
+      });
+      res.json(invoice);
+    } catch (error) {
+      console.error('Create IT invoice error:', error);
+      res.status(500).json({ error: '請求書の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/it/invoices/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const invoice = await storage.updateItInvoice(parseInt(req.params.id), req.body);
+      if (!invoice) return res.status(404).json({ error: '請求書が見つかりません' });
+      res.json(invoice);
+    } catch (error) {
+      console.error('Update IT invoice error:', error);
+      res.status(500).json({ error: '請求書の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/it/invoices/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteItInvoice(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete IT invoice error:', error);
+      res.status(500).json({ error: '請求書の削除に失敗しました' });
+    }
+  });
+
+  // IT Sales
+  app.get('/api/it/sales', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const sales = await storage.getItSales();
+      res.json(sales);
+    } catch (error) {
+      console.error('Get IT sales error:', error);
+      res.status(500).json({ error: '売上一覧の取得に失敗しました' });
+    }
+  });
+
+  app.get('/api/it/sales/summary', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const summary = await storage.getItSalesSummary();
+      res.json(summary);
+    } catch (error) {
+      console.error('Get IT sales summary error:', error);
+      res.status(500).json({ error: '売上サマリーの取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/it/sales', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const sale = await storage.createItSale({
+        ...req.body,
+        createdBy: req.session.userId,
+      });
+      res.json(sale);
+    } catch (error) {
+      console.error('Create IT sale error:', error);
+      res.status(500).json({ error: '売上の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/it/sales/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const sale = await storage.updateItSale(parseInt(req.params.id), req.body);
+      if (!sale) return res.status(404).json({ error: '売上が見つかりません' });
+      res.json(sale);
+    } catch (error) {
+      console.error('Update IT sale error:', error);
+      res.status(500).json({ error: '売上の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/it/sales/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteItSale(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete IT sale error:', error);
+      res.status(500).json({ error: '売上の削除に失敗しました' });
+    }
+  });
 }
 
 export async function runRecurringTaskGeneration(): Promise<number> {

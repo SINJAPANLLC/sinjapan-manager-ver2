@@ -1,8 +1,8 @@
 import { db } from './db';
-import { users, customers, tasks, notifications, chatMessages, chatGroups, chatGroupMembers, employees, agencySales, agencyMemos, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, systemSettings, leads, leadActivities, clientProjects, clientInvoices, companies, quickNotes, investments, staffAffiliates, financialEntries, agencyPaymentSettings, logisticsShippers, logisticsCompanies, logisticsVehicles, logisticsProjects, logisticsDispatch, logisticsMasterCards, logisticsQuotations, logisticsInstructions, logisticsInvoices, logisticsReceipts, logisticsPayments, logisticsCashflow, staffingJobs, staffingCandidates, staffingApplications, staffingResumes, staffingInvoices, staffingSales } from '../shared/schema';
+import { users, customers, tasks, notifications, chatMessages, chatGroups, chatGroupMembers, employees, agencySales, agencyMemos, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, systemSettings, leads, leadActivities, clientProjects, clientInvoices, companies, quickNotes, investments, staffAffiliates, financialEntries, agencyPaymentSettings, logisticsShippers, logisticsCompanies, logisticsVehicles, logisticsProjects, logisticsDispatch, logisticsMasterCards, logisticsQuotations, logisticsInstructions, logisticsInvoices, logisticsReceipts, logisticsPayments, logisticsCashflow, staffingJobs, staffingCandidates, staffingApplications, staffingResumes, staffingInvoices, staffingSales, itSystems, itProjects, itClients, itVendors, itInvoices, itSales } from '../shared/schema';
 import { eq, and, or, desc, sql, isNull, gte, lte, like, ilike, inArray } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, ChatGroup, InsertChatGroup, ChatGroupMember, InsertChatGroupMember, Employee, InsertEmployee, AgencySale, InsertAgencySale, AgencyMemo, InsertAgencyMemo, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, SystemSetting, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Company, InsertCompany, QuickNote, InsertQuickNote, Investment, InsertInvestment, FinancialEntry, InsertFinancialEntry, AgencyPaymentSettings, InsertAgencyPaymentSettings, LogisticsShipper, InsertLogisticsShipper, LogisticsCompany, InsertLogisticsCompany, LogisticsVehicle, InsertLogisticsVehicle, LogisticsProject, InsertLogisticsProject, LogisticsDispatch, InsertLogisticsDispatch, LogisticsMasterCard, InsertLogisticsMasterCard, LogisticsQuotation, InsertLogisticsQuotation, LogisticsInstruction, InsertLogisticsInstruction, LogisticsInvoice, InsertLogisticsInvoice, LogisticsReceipt, InsertLogisticsReceipt, LogisticsPayment, InsertLogisticsPayment, LogisticsCashflow, InsertLogisticsCashflow, StaffingJob, InsertStaffingJob, StaffingCandidate, InsertStaffingCandidate, StaffingApplication, InsertStaffingApplication, StaffingResume, InsertStaffingResume, StaffingInvoice, InsertStaffingInvoice, StaffingSale, InsertStaffingSale } from '../shared/schema';
+import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, ChatGroup, InsertChatGroup, ChatGroupMember, InsertChatGroupMember, Employee, InsertEmployee, AgencySale, InsertAgencySale, AgencyMemo, InsertAgencyMemo, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, SystemSetting, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Company, InsertCompany, QuickNote, InsertQuickNote, Investment, InsertInvestment, FinancialEntry, InsertFinancialEntry, AgencyPaymentSettings, InsertAgencyPaymentSettings, LogisticsShipper, InsertLogisticsShipper, LogisticsCompany, InsertLogisticsCompany, LogisticsVehicle, InsertLogisticsVehicle, LogisticsProject, InsertLogisticsProject, LogisticsDispatch, InsertLogisticsDispatch, LogisticsMasterCard, InsertLogisticsMasterCard, LogisticsQuotation, InsertLogisticsQuotation, LogisticsInstruction, InsertLogisticsInstruction, LogisticsInvoice, InsertLogisticsInvoice, LogisticsReceipt, InsertLogisticsReceipt, LogisticsPayment, InsertLogisticsPayment, LogisticsCashflow, InsertLogisticsCashflow, StaffingJob, InsertStaffingJob, StaffingCandidate, InsertStaffingCandidate, StaffingApplication, InsertStaffingApplication, StaffingResume, InsertStaffingResume, StaffingInvoice, InsertStaffingInvoice, StaffingSale, InsertStaffingSale, ItSystem, InsertItSystem, ItProject, InsertItProject, ItClient, InsertItClient, ItVendor, InsertItVendor, ItInvoice, InsertItInvoice, ItSale, InsertItSale } from '../shared/schema';
 
 export const storage = {
   async getUser(id: number): Promise<User | undefined> {
@@ -1541,6 +1541,155 @@ export const storage = {
     return {
       totalSales: parseFloat(String(result[0]?.totalSales || 0)),
       placementCount: Number(result[0]?.placementCount || 0),
+      monthlyRevenue: parseFloat(String(monthlyResult[0]?.total || 0)),
+    };
+  },
+
+  // ============================================
+  // IT Module
+  // ============================================
+
+  // IT Systems
+  async getItSystems(): Promise<ItSystem[]> {
+    return db.select().from(itSystems).orderBy(desc(itSystems.createdAt));
+  },
+  async getItSystem(id: number): Promise<ItSystem | undefined> {
+    const [system] = await db.select().from(itSystems).where(eq(itSystems.id, id));
+    return system;
+  },
+  async createItSystem(data: InsertItSystem): Promise<ItSystem> {
+    const [system] = await db.insert(itSystems).values(data).returning();
+    return system;
+  },
+  async updateItSystem(id: number, data: Partial<InsertItSystem>): Promise<ItSystem | undefined> {
+    const [system] = await db.update(itSystems).set({ ...data, updatedAt: new Date() }).where(eq(itSystems.id, id)).returning();
+    return system;
+  },
+  async deleteItSystem(id: number): Promise<boolean> {
+    await db.delete(itSystems).where(eq(itSystems.id, id));
+    return true;
+  },
+
+  // IT Projects
+  async getItProjects(): Promise<ItProject[]> {
+    return db.select().from(itProjects).orderBy(desc(itProjects.createdAt));
+  },
+  async getItProject(id: number): Promise<ItProject | undefined> {
+    const [project] = await db.select().from(itProjects).where(eq(itProjects.id, id));
+    return project;
+  },
+  async createItProject(data: InsertItProject): Promise<ItProject> {
+    const [project] = await db.insert(itProjects).values(data).returning();
+    return project;
+  },
+  async updateItProject(id: number, data: Partial<InsertItProject>): Promise<ItProject | undefined> {
+    const [project] = await db.update(itProjects).set({ ...data, updatedAt: new Date() }).where(eq(itProjects.id, id)).returning();
+    return project;
+  },
+  async deleteItProject(id: number): Promise<boolean> {
+    await db.delete(itProjects).where(eq(itProjects.id, id));
+    return true;
+  },
+
+  // IT Clients
+  async getItClients(): Promise<ItClient[]> {
+    return db.select().from(itClients).orderBy(desc(itClients.createdAt));
+  },
+  async getItClient(id: number): Promise<ItClient | undefined> {
+    const [client] = await db.select().from(itClients).where(eq(itClients.id, id));
+    return client;
+  },
+  async createItClient(data: InsertItClient): Promise<ItClient> {
+    const [client] = await db.insert(itClients).values(data).returning();
+    return client;
+  },
+  async updateItClient(id: number, data: Partial<InsertItClient>): Promise<ItClient | undefined> {
+    const [client] = await db.update(itClients).set({ ...data, updatedAt: new Date() }).where(eq(itClients.id, id)).returning();
+    return client;
+  },
+  async deleteItClient(id: number): Promise<boolean> {
+    await db.delete(itClients).where(eq(itClients.id, id));
+    return true;
+  },
+
+  // IT Vendors
+  async getItVendors(): Promise<ItVendor[]> {
+    return db.select().from(itVendors).orderBy(desc(itVendors.createdAt));
+  },
+  async getItVendor(id: number): Promise<ItVendor | undefined> {
+    const [vendor] = await db.select().from(itVendors).where(eq(itVendors.id, id));
+    return vendor;
+  },
+  async createItVendor(data: InsertItVendor): Promise<ItVendor> {
+    const [vendor] = await db.insert(itVendors).values(data).returning();
+    return vendor;
+  },
+  async updateItVendor(id: number, data: Partial<InsertItVendor>): Promise<ItVendor | undefined> {
+    const [vendor] = await db.update(itVendors).set({ ...data, updatedAt: new Date() }).where(eq(itVendors.id, id)).returning();
+    return vendor;
+  },
+  async deleteItVendor(id: number): Promise<boolean> {
+    await db.delete(itVendors).where(eq(itVendors.id, id));
+    return true;
+  },
+
+  // IT Invoices
+  async getItInvoices(): Promise<ItInvoice[]> {
+    return db.select().from(itInvoices).orderBy(desc(itInvoices.issueDate));
+  },
+  async getItInvoice(id: number): Promise<ItInvoice | undefined> {
+    const [invoice] = await db.select().from(itInvoices).where(eq(itInvoices.id, id));
+    return invoice;
+  },
+  async createItInvoice(data: InsertItInvoice): Promise<ItInvoice> {
+    const [invoice] = await db.insert(itInvoices).values(data).returning();
+    return invoice;
+  },
+  async updateItInvoice(id: number, data: Partial<InsertItInvoice>): Promise<ItInvoice | undefined> {
+    const [invoice] = await db.update(itInvoices).set({ ...data, updatedAt: new Date() }).where(eq(itInvoices.id, id)).returning();
+    return invoice;
+  },
+  async deleteItInvoice(id: number): Promise<boolean> {
+    await db.delete(itInvoices).where(eq(itInvoices.id, id));
+    return true;
+  },
+
+  // IT Sales
+  async getItSales(): Promise<ItSale[]> {
+    return db.select().from(itSales).orderBy(desc(itSales.saleDate));
+  },
+  async getItSale(id: number): Promise<ItSale | undefined> {
+    const [sale] = await db.select().from(itSales).where(eq(itSales.id, id));
+    return sale;
+  },
+  async createItSale(data: InsertItSale): Promise<ItSale> {
+    const [sale] = await db.insert(itSales).values(data).returning();
+    return sale;
+  },
+  async updateItSale(id: number, data: Partial<InsertItSale>): Promise<ItSale | undefined> {
+    const [sale] = await db.update(itSales).set({ ...data, updatedAt: new Date() }).where(eq(itSales.id, id)).returning();
+    return sale;
+  },
+  async deleteItSale(id: number): Promise<boolean> {
+    await db.delete(itSales).where(eq(itSales.id, id));
+    return true;
+  },
+
+  async getItSalesSummary(): Promise<{ totalSales: number; projectCount: number; monthlyRevenue: number }> {
+    const result = await db.select({
+      totalSales: sql<number>`COALESCE(SUM(${itSales.amount}), 0)`,
+      projectCount: sql<number>`COUNT(*)`,
+    }).from(itSales);
+    
+    const monthlyResult = await db.select({
+      total: sql<number>`COALESCE(SUM(${itSales.amount}), 0)`,
+    }).from(itSales).where(
+      gte(itSales.saleDate, sql`DATE_TRUNC('month', CURRENT_DATE)`)
+    );
+    
+    return {
+      totalSales: parseFloat(String(result[0]?.totalSales || 0)),
+      projectCount: Number(result[0]?.projectCount || 0),
       monthlyRevenue: parseFloat(String(monthlyResult[0]?.total || 0)),
     };
   },
