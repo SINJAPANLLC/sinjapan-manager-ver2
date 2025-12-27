@@ -722,3 +722,259 @@ export const agencyPaymentSettings = pgTable("agency_payment_settings", {
 
 export type AgencyPaymentSettings = typeof agencyPaymentSettings.$inferSelect;
 export type InsertAgencyPaymentSettings = typeof agencyPaymentSettings.$inferInsert;
+
+// ==================== LOGISTICS MODULE ====================
+
+// 荷主 (Shippers)
+export const logisticsShippers = pgTable("logistics_shippers", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  name: text("name").notNull(),
+  contactPerson: text("contact_person"),
+  phone: text("phone"),
+  email: text("email"),
+  address: text("address"),
+  postalCode: text("postal_code"),
+  notes: text("notes"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type LogisticsShipper = typeof logisticsShippers.$inferSelect;
+export type InsertLogisticsShipper = typeof logisticsShippers.$inferInsert;
+
+// 自社・協力会社 (Companies/Partners)
+export const logisticsCompanies = pgTable("logistics_companies", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  name: text("name").notNull(),
+  type: text("type").notNull().default("partner"), // 'own' or 'partner'
+  contactPerson: text("contact_person"),
+  phone: text("phone"),
+  email: text("email"),
+  address: text("address"),
+  postalCode: text("postal_code"),
+  bankName: text("bank_name"),
+  bankBranch: text("bank_branch"),
+  bankAccountType: text("bank_account_type"),
+  bankAccountNumber: text("bank_account_number"),
+  bankAccountHolder: text("bank_account_holder"),
+  notes: text("notes"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type LogisticsCompany = typeof logisticsCompanies.$inferSelect;
+export type InsertLogisticsCompany = typeof logisticsCompanies.$inferInsert;
+
+// 車両 (Vehicles)
+export const logisticsVehicles = pgTable("logistics_vehicles", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  vehicleNumber: text("vehicle_number").notNull(),
+  vehicleType: text("vehicle_type").notNull(), // トラック, バン, etc.
+  capacity: text("capacity"), // 積載量
+  ownerCompanyId: integer("owner_company_id").references(() => logisticsCompanies.id, { onDelete: "set null" }),
+  driverName: text("driver_name"),
+  driverPhone: text("driver_phone"),
+  inspectionDate: timestamp("inspection_date"),
+  insuranceExpiry: timestamp("insurance_expiry"),
+  notes: text("notes"),
+  status: text("status").notNull().default("active"), // active, maintenance, inactive
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type LogisticsVehicle = typeof logisticsVehicles.$inferSelect;
+export type InsertLogisticsVehicle = typeof logisticsVehicles.$inferInsert;
+
+// 案件 (Projects)
+export const logisticsProjects = pgTable("logistics_projects", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  projectNumber: text("project_number").notNull(),
+  shipperId: integer("shipper_id").references(() => logisticsShippers.id, { onDelete: "set null" }),
+  title: text("title").notNull(),
+  description: text("description"),
+  pickupAddress: text("pickup_address"),
+  deliveryAddress: text("delivery_address"),
+  scheduledDate: timestamp("scheduled_date"),
+  completedDate: timestamp("completed_date"),
+  status: text("status").notNull().default("pending"), // pending, in_progress, completed, cancelled
+  amount: decimal("amount", { precision: 15, scale: 2 }),
+  notes: text("notes"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type LogisticsProject = typeof logisticsProjects.$inferSelect;
+export type InsertLogisticsProject = typeof logisticsProjects.$inferInsert;
+
+// 配車・シフト (Dispatch/Shifts)
+export const logisticsDispatch = pgTable("logistics_dispatch", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  projectId: integer("project_id").references(() => logisticsProjects.id, { onDelete: "cascade" }),
+  vehicleId: integer("vehicle_id").references(() => logisticsVehicles.id, { onDelete: "set null" }),
+  driverName: text("driver_name"),
+  dispatchDate: timestamp("dispatch_date").notNull(),
+  startTime: text("start_time"),
+  endTime: text("end_time"),
+  status: text("status").notNull().default("scheduled"), // scheduled, dispatched, completed, cancelled
+  notes: text("notes"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type LogisticsDispatch = typeof logisticsDispatch.$inferSelect;
+export type InsertLogisticsDispatch = typeof logisticsDispatch.$inferInsert;
+
+// マスターカード (Master Cards - vehicle/driver compliance)
+export const logisticsMasterCards = pgTable("logistics_master_cards", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  vehicleId: integer("vehicle_id").references(() => logisticsVehicles.id, { onDelete: "cascade" }),
+  cardType: text("card_type").notNull(), // 車検証, 保険証, 免許証, etc.
+  cardNumber: text("card_number"),
+  issueDate: timestamp("issue_date"),
+  expiryDate: timestamp("expiry_date"),
+  fileUrl: text("file_url"),
+  notes: text("notes"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type LogisticsMasterCard = typeof logisticsMasterCards.$inferSelect;
+export type InsertLogisticsMasterCard = typeof logisticsMasterCards.$inferInsert;
+
+// 見積書 (Quotations)
+export const logisticsQuotations = pgTable("logistics_quotations", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  quotationNumber: text("quotation_number").notNull(),
+  projectId: integer("project_id").references(() => logisticsProjects.id, { onDelete: "set null" }),
+  shipperId: integer("shipper_id").references(() => logisticsShippers.id, { onDelete: "set null" }),
+  issueDate: timestamp("issue_date").defaultNow().notNull(),
+  validUntil: timestamp("valid_until"),
+  subtotal: decimal("subtotal", { precision: 15, scale: 2 }),
+  tax: decimal("tax", { precision: 15, scale: 2 }),
+  total: decimal("total", { precision: 15, scale: 2 }),
+  status: text("status").notNull().default("draft"), // draft, sent, accepted, rejected
+  notes: text("notes"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type LogisticsQuotation = typeof logisticsQuotations.$inferSelect;
+export type InsertLogisticsQuotation = typeof logisticsQuotations.$inferInsert;
+
+// 指示書 (Instructions)
+export const logisticsInstructions = pgTable("logistics_instructions", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  instructionNumber: text("instruction_number").notNull(),
+  projectId: integer("project_id").references(() => logisticsProjects.id, { onDelete: "set null" }),
+  dispatchId: integer("dispatch_id").references(() => logisticsDispatch.id, { onDelete: "set null" }),
+  issueDate: timestamp("issue_date").defaultNow().notNull(),
+  pickupLocation: text("pickup_location"),
+  deliveryLocation: text("delivery_location"),
+  cargoDetails: text("cargo_details"),
+  specialInstructions: text("special_instructions"),
+  status: text("status").notNull().default("issued"), // issued, acknowledged, completed
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type LogisticsInstruction = typeof logisticsInstructions.$inferSelect;
+export type InsertLogisticsInstruction = typeof logisticsInstructions.$inferInsert;
+
+// 請求書 (Invoices)
+export const logisticsInvoices = pgTable("logistics_invoices", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  invoiceNumber: text("invoice_number").notNull(),
+  projectId: integer("project_id").references(() => logisticsProjects.id, { onDelete: "set null" }),
+  shipperId: integer("shipper_id").references(() => logisticsShippers.id, { onDelete: "set null" }),
+  issueDate: timestamp("issue_date").defaultNow().notNull(),
+  dueDate: timestamp("due_date"),
+  subtotal: decimal("subtotal", { precision: 15, scale: 2 }),
+  tax: decimal("tax", { precision: 15, scale: 2 }),
+  total: decimal("total", { precision: 15, scale: 2 }),
+  status: text("status").notNull().default("draft"), // draft, sent, paid, overdue
+  paidAt: timestamp("paid_at"),
+  notes: text("notes"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type LogisticsInvoice = typeof logisticsInvoices.$inferSelect;
+export type InsertLogisticsInvoice = typeof logisticsInvoices.$inferInsert;
+
+// 受領書 (Receipts)
+export const logisticsReceipts = pgTable("logistics_receipts", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  receiptNumber: text("receipt_number").notNull(),
+  projectId: integer("project_id").references(() => logisticsProjects.id, { onDelete: "set null" }),
+  issueDate: timestamp("issue_date").defaultNow().notNull(),
+  receivedBy: text("received_by"),
+  deliveryConfirmed: boolean("delivery_confirmed").default(false),
+  notes: text("notes"),
+  signatureUrl: text("signature_url"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type LogisticsReceipt = typeof logisticsReceipts.$inferSelect;
+export type InsertLogisticsReceipt = typeof logisticsReceipts.$inferInsert;
+
+// 支払書 (Payments to partners)
+export const logisticsPayments = pgTable("logistics_payments", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  paymentNumber: text("payment_number").notNull(),
+  partnerCompanyId: integer("partner_company_id").references(() => logisticsCompanies.id, { onDelete: "set null" }),
+  projectId: integer("project_id").references(() => logisticsProjects.id, { onDelete: "set null" }),
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+  paymentDate: timestamp("payment_date"),
+  status: text("status").notNull().default("pending"), // pending, paid
+  notes: text("notes"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type LogisticsPayment = typeof logisticsPayments.$inferSelect;
+export type InsertLogisticsPayment = typeof logisticsPayments.$inferInsert;
+
+// 入出金 (Cashflow entries)
+export const logisticsCashflow = pgTable("logistics_cashflow", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  type: text("type").notNull(), // income, expense
+  category: text("category"), // 売上, 経費, etc.
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+  description: text("description"),
+  relatedProjectId: integer("related_project_id").references(() => logisticsProjects.id, { onDelete: "set null" }),
+  relatedInvoiceId: integer("related_invoice_id").references(() => logisticsInvoices.id, { onDelete: "set null" }),
+  relatedPaymentId: integer("related_payment_id").references(() => logisticsPayments.id, { onDelete: "set null" }),
+  transactionDate: timestamp("transaction_date").defaultNow().notNull(),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type LogisticsCashflow = typeof logisticsCashflow.$inferSelect;
+export type InsertLogisticsCashflow = typeof logisticsCashflow.$inferInsert;

@@ -1,8 +1,8 @@
 import { db } from './db';
-import { users, customers, tasks, notifications, chatMessages, chatGroups, chatGroupMembers, employees, agencySales, agencyMemos, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, systemSettings, leads, leadActivities, clientProjects, clientInvoices, companies, quickNotes, investments, staffAffiliates, financialEntries, agencyPaymentSettings } from '../shared/schema';
+import { users, customers, tasks, notifications, chatMessages, chatGroups, chatGroupMembers, employees, agencySales, agencyMemos, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, systemSettings, leads, leadActivities, clientProjects, clientInvoices, companies, quickNotes, investments, staffAffiliates, financialEntries, agencyPaymentSettings, logisticsShippers, logisticsCompanies, logisticsVehicles, logisticsProjects, logisticsDispatch, logisticsMasterCards, logisticsQuotations, logisticsInstructions, logisticsInvoices, logisticsReceipts, logisticsPayments, logisticsCashflow } from '../shared/schema';
 import { eq, and, or, desc, sql, isNull, gte, lte, like, ilike, inArray } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, ChatGroup, InsertChatGroup, ChatGroupMember, InsertChatGroupMember, Employee, InsertEmployee, AgencySale, InsertAgencySale, AgencyMemo, InsertAgencyMemo, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, SystemSetting, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Company, InsertCompany, QuickNote, InsertQuickNote, Investment, InsertInvestment, FinancialEntry, InsertFinancialEntry, AgencyPaymentSettings, InsertAgencyPaymentSettings } from '../shared/schema';
+import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, ChatGroup, InsertChatGroup, ChatGroupMember, InsertChatGroupMember, Employee, InsertEmployee, AgencySale, InsertAgencySale, AgencyMemo, InsertAgencyMemo, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, SystemSetting, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Company, InsertCompany, QuickNote, InsertQuickNote, Investment, InsertInvestment, FinancialEntry, InsertFinancialEntry, AgencyPaymentSettings, InsertAgencyPaymentSettings, LogisticsShipper, InsertLogisticsShipper, LogisticsCompany, InsertLogisticsCompany, LogisticsVehicle, InsertLogisticsVehicle, LogisticsProject, InsertLogisticsProject, LogisticsDispatch, InsertLogisticsDispatch, LogisticsMasterCard, InsertLogisticsMasterCard, LogisticsQuotation, InsertLogisticsQuotation, LogisticsInstruction, InsertLogisticsInstruction, LogisticsInvoice, InsertLogisticsInvoice, LogisticsReceipt, InsertLogisticsReceipt, LogisticsPayment, InsertLogisticsPayment, LogisticsCashflow, InsertLogisticsCashflow } from '../shared/schema';
 
 export const storage = {
   async getUser(id: number): Promise<User | undefined> {
@@ -1045,5 +1045,322 @@ export const storage = {
       subCategory: r.subCategory,
       total: parseFloat(String(r.total || 0)),
     }));
+  },
+
+  // ==================== LOGISTICS MODULE ====================
+
+  // Shippers
+  async getLogisticsShippers(): Promise<LogisticsShipper[]> {
+    return db.select().from(logisticsShippers).orderBy(desc(logisticsShippers.createdAt));
+  },
+
+  async getLogisticsShipper(id: number): Promise<LogisticsShipper | undefined> {
+    const [shipper] = await db.select().from(logisticsShippers).where(eq(logisticsShippers.id, id));
+    return shipper;
+  },
+
+  async createLogisticsShipper(data: InsertLogisticsShipper): Promise<LogisticsShipper> {
+    const [shipper] = await db.insert(logisticsShippers).values(data).returning();
+    return shipper;
+  },
+
+  async updateLogisticsShipper(id: number, data: Partial<InsertLogisticsShipper>): Promise<LogisticsShipper | undefined> {
+    const [shipper] = await db.update(logisticsShippers).set({ ...data, updatedAt: new Date() }).where(eq(logisticsShippers.id, id)).returning();
+    return shipper;
+  },
+
+  async deleteLogisticsShipper(id: number): Promise<boolean> {
+    await db.delete(logisticsShippers).where(eq(logisticsShippers.id, id));
+    return true;
+  },
+
+  // Companies
+  async getLogisticsCompanies(): Promise<LogisticsCompany[]> {
+    return db.select().from(logisticsCompanies).orderBy(desc(logisticsCompanies.createdAt));
+  },
+
+  async getLogisticsCompany(id: number): Promise<LogisticsCompany | undefined> {
+    const [company] = await db.select().from(logisticsCompanies).where(eq(logisticsCompanies.id, id));
+    return company;
+  },
+
+  async createLogisticsCompany(data: InsertLogisticsCompany): Promise<LogisticsCompany> {
+    const [company] = await db.insert(logisticsCompanies).values(data).returning();
+    return company;
+  },
+
+  async updateLogisticsCompany(id: number, data: Partial<InsertLogisticsCompany>): Promise<LogisticsCompany | undefined> {
+    const [company] = await db.update(logisticsCompanies).set({ ...data, updatedAt: new Date() }).where(eq(logisticsCompanies.id, id)).returning();
+    return company;
+  },
+
+  async deleteLogisticsCompany(id: number): Promise<boolean> {
+    await db.delete(logisticsCompanies).where(eq(logisticsCompanies.id, id));
+    return true;
+  },
+
+  // Vehicles
+  async getLogisticsVehicles(): Promise<LogisticsVehicle[]> {
+    return db.select().from(logisticsVehicles).orderBy(desc(logisticsVehicles.createdAt));
+  },
+
+  async getLogisticsVehicle(id: number): Promise<LogisticsVehicle | undefined> {
+    const [vehicle] = await db.select().from(logisticsVehicles).where(eq(logisticsVehicles.id, id));
+    return vehicle;
+  },
+
+  async createLogisticsVehicle(data: InsertLogisticsVehicle): Promise<LogisticsVehicle> {
+    const [vehicle] = await db.insert(logisticsVehicles).values(data).returning();
+    return vehicle;
+  },
+
+  async updateLogisticsVehicle(id: number, data: Partial<InsertLogisticsVehicle>): Promise<LogisticsVehicle | undefined> {
+    const [vehicle] = await db.update(logisticsVehicles).set({ ...data, updatedAt: new Date() }).where(eq(logisticsVehicles.id, id)).returning();
+    return vehicle;
+  },
+
+  async deleteLogisticsVehicle(id: number): Promise<boolean> {
+    await db.delete(logisticsVehicles).where(eq(logisticsVehicles.id, id));
+    return true;
+  },
+
+  // Projects
+  async getLogisticsProjects(): Promise<LogisticsProject[]> {
+    return db.select().from(logisticsProjects).orderBy(desc(logisticsProjects.createdAt));
+  },
+
+  async getLogisticsProject(id: number): Promise<LogisticsProject | undefined> {
+    const [project] = await db.select().from(logisticsProjects).where(eq(logisticsProjects.id, id));
+    return project;
+  },
+
+  async createLogisticsProject(data: InsertLogisticsProject): Promise<LogisticsProject> {
+    const [project] = await db.insert(logisticsProjects).values(data).returning();
+    return project;
+  },
+
+  async updateLogisticsProject(id: number, data: Partial<InsertLogisticsProject>): Promise<LogisticsProject | undefined> {
+    const [project] = await db.update(logisticsProjects).set({ ...data, updatedAt: new Date() }).where(eq(logisticsProjects.id, id)).returning();
+    return project;
+  },
+
+  async deleteLogisticsProject(id: number): Promise<boolean> {
+    await db.delete(logisticsProjects).where(eq(logisticsProjects.id, id));
+    return true;
+  },
+
+  // Dispatch
+  async getLogisticsDispatchList(): Promise<LogisticsDispatch[]> {
+    return db.select().from(logisticsDispatch).orderBy(desc(logisticsDispatch.dispatchDate));
+  },
+
+  async getLogisticsDispatch(id: number): Promise<LogisticsDispatch | undefined> {
+    const [dispatch] = await db.select().from(logisticsDispatch).where(eq(logisticsDispatch.id, id));
+    return dispatch;
+  },
+
+  async createLogisticsDispatch(data: InsertLogisticsDispatch): Promise<LogisticsDispatch> {
+    const [dispatch] = await db.insert(logisticsDispatch).values(data).returning();
+    return dispatch;
+  },
+
+  async updateLogisticsDispatch(id: number, data: Partial<InsertLogisticsDispatch>): Promise<LogisticsDispatch | undefined> {
+    const [dispatch] = await db.update(logisticsDispatch).set({ ...data, updatedAt: new Date() }).where(eq(logisticsDispatch.id, id)).returning();
+    return dispatch;
+  },
+
+  async deleteLogisticsDispatch(id: number): Promise<boolean> {
+    await db.delete(logisticsDispatch).where(eq(logisticsDispatch.id, id));
+    return true;
+  },
+
+  // Master Cards
+  async getLogisticsMasterCards(): Promise<LogisticsMasterCard[]> {
+    return db.select().from(logisticsMasterCards).orderBy(desc(logisticsMasterCards.createdAt));
+  },
+
+  async getLogisticsMasterCard(id: number): Promise<LogisticsMasterCard | undefined> {
+    const [card] = await db.select().from(logisticsMasterCards).where(eq(logisticsMasterCards.id, id));
+    return card;
+  },
+
+  async createLogisticsMasterCard(data: InsertLogisticsMasterCard): Promise<LogisticsMasterCard> {
+    const [card] = await db.insert(logisticsMasterCards).values(data).returning();
+    return card;
+  },
+
+  async updateLogisticsMasterCard(id: number, data: Partial<InsertLogisticsMasterCard>): Promise<LogisticsMasterCard | undefined> {
+    const [card] = await db.update(logisticsMasterCards).set({ ...data, updatedAt: new Date() }).where(eq(logisticsMasterCards.id, id)).returning();
+    return card;
+  },
+
+  async deleteLogisticsMasterCard(id: number): Promise<boolean> {
+    await db.delete(logisticsMasterCards).where(eq(logisticsMasterCards.id, id));
+    return true;
+  },
+
+  // Quotations
+  async getLogisticsQuotations(): Promise<LogisticsQuotation[]> {
+    return db.select().from(logisticsQuotations).orderBy(desc(logisticsQuotations.createdAt));
+  },
+
+  async getLogisticsQuotation(id: number): Promise<LogisticsQuotation | undefined> {
+    const [quotation] = await db.select().from(logisticsQuotations).where(eq(logisticsQuotations.id, id));
+    return quotation;
+  },
+
+  async createLogisticsQuotation(data: InsertLogisticsQuotation): Promise<LogisticsQuotation> {
+    const [quotation] = await db.insert(logisticsQuotations).values(data).returning();
+    return quotation;
+  },
+
+  async updateLogisticsQuotation(id: number, data: Partial<InsertLogisticsQuotation>): Promise<LogisticsQuotation | undefined> {
+    const [quotation] = await db.update(logisticsQuotations).set({ ...data, updatedAt: new Date() }).where(eq(logisticsQuotations.id, id)).returning();
+    return quotation;
+  },
+
+  async deleteLogisticsQuotation(id: number): Promise<boolean> {
+    await db.delete(logisticsQuotations).where(eq(logisticsQuotations.id, id));
+    return true;
+  },
+
+  // Instructions
+  async getLogisticsInstructions(): Promise<LogisticsInstruction[]> {
+    return db.select().from(logisticsInstructions).orderBy(desc(logisticsInstructions.createdAt));
+  },
+
+  async getLogisticsInstruction(id: number): Promise<LogisticsInstruction | undefined> {
+    const [instruction] = await db.select().from(logisticsInstructions).where(eq(logisticsInstructions.id, id));
+    return instruction;
+  },
+
+  async createLogisticsInstruction(data: InsertLogisticsInstruction): Promise<LogisticsInstruction> {
+    const [instruction] = await db.insert(logisticsInstructions).values(data).returning();
+    return instruction;
+  },
+
+  async updateLogisticsInstruction(id: number, data: Partial<InsertLogisticsInstruction>): Promise<LogisticsInstruction | undefined> {
+    const [instruction] = await db.update(logisticsInstructions).set({ ...data, updatedAt: new Date() }).where(eq(logisticsInstructions.id, id)).returning();
+    return instruction;
+  },
+
+  async deleteLogisticsInstruction(id: number): Promise<boolean> {
+    await db.delete(logisticsInstructions).where(eq(logisticsInstructions.id, id));
+    return true;
+  },
+
+  // Invoices
+  async getLogisticsInvoices(): Promise<LogisticsInvoice[]> {
+    return db.select().from(logisticsInvoices).orderBy(desc(logisticsInvoices.createdAt));
+  },
+
+  async getLogisticsInvoice(id: number): Promise<LogisticsInvoice | undefined> {
+    const [invoice] = await db.select().from(logisticsInvoices).where(eq(logisticsInvoices.id, id));
+    return invoice;
+  },
+
+  async createLogisticsInvoice(data: InsertLogisticsInvoice): Promise<LogisticsInvoice> {
+    const [invoice] = await db.insert(logisticsInvoices).values(data).returning();
+    return invoice;
+  },
+
+  async updateLogisticsInvoice(id: number, data: Partial<InsertLogisticsInvoice>): Promise<LogisticsInvoice | undefined> {
+    const [invoice] = await db.update(logisticsInvoices).set({ ...data, updatedAt: new Date() }).where(eq(logisticsInvoices.id, id)).returning();
+    return invoice;
+  },
+
+  async deleteLogisticsInvoice(id: number): Promise<boolean> {
+    await db.delete(logisticsInvoices).where(eq(logisticsInvoices.id, id));
+    return true;
+  },
+
+  // Receipts
+  async getLogisticsReceipts(): Promise<LogisticsReceipt[]> {
+    return db.select().from(logisticsReceipts).orderBy(desc(logisticsReceipts.createdAt));
+  },
+
+  async getLogisticsReceipt(id: number): Promise<LogisticsReceipt | undefined> {
+    const [receipt] = await db.select().from(logisticsReceipts).where(eq(logisticsReceipts.id, id));
+    return receipt;
+  },
+
+  async createLogisticsReceipt(data: InsertLogisticsReceipt): Promise<LogisticsReceipt> {
+    const [receipt] = await db.insert(logisticsReceipts).values(data).returning();
+    return receipt;
+  },
+
+  async updateLogisticsReceipt(id: number, data: Partial<InsertLogisticsReceipt>): Promise<LogisticsReceipt | undefined> {
+    const [receipt] = await db.update(logisticsReceipts).set({ ...data, updatedAt: new Date() }).where(eq(logisticsReceipts.id, id)).returning();
+    return receipt;
+  },
+
+  async deleteLogisticsReceipt(id: number): Promise<boolean> {
+    await db.delete(logisticsReceipts).where(eq(logisticsReceipts.id, id));
+    return true;
+  },
+
+  // Payments
+  async getLogisticsPayments(): Promise<LogisticsPayment[]> {
+    return db.select().from(logisticsPayments).orderBy(desc(logisticsPayments.createdAt));
+  },
+
+  async getLogisticsPayment(id: number): Promise<LogisticsPayment | undefined> {
+    const [payment] = await db.select().from(logisticsPayments).where(eq(logisticsPayments.id, id));
+    return payment;
+  },
+
+  async createLogisticsPayment(data: InsertLogisticsPayment): Promise<LogisticsPayment> {
+    const [payment] = await db.insert(logisticsPayments).values(data).returning();
+    return payment;
+  },
+
+  async updateLogisticsPayment(id: number, data: Partial<InsertLogisticsPayment>): Promise<LogisticsPayment | undefined> {
+    const [payment] = await db.update(logisticsPayments).set({ ...data, updatedAt: new Date() }).where(eq(logisticsPayments.id, id)).returning();
+    return payment;
+  },
+
+  async deleteLogisticsPayment(id: number): Promise<boolean> {
+    await db.delete(logisticsPayments).where(eq(logisticsPayments.id, id));
+    return true;
+  },
+
+  // Cashflow
+  async getLogisticsCashflow(): Promise<LogisticsCashflow[]> {
+    return db.select().from(logisticsCashflow).orderBy(desc(logisticsCashflow.transactionDate));
+  },
+
+  async getLogisticsCashflowEntry(id: number): Promise<LogisticsCashflow | undefined> {
+    const [entry] = await db.select().from(logisticsCashflow).where(eq(logisticsCashflow.id, id));
+    return entry;
+  },
+
+  async createLogisticsCashflow(data: InsertLogisticsCashflow): Promise<LogisticsCashflow> {
+    const [entry] = await db.insert(logisticsCashflow).values(data).returning();
+    return entry;
+  },
+
+  async updateLogisticsCashflow(id: number, data: Partial<InsertLogisticsCashflow>): Promise<LogisticsCashflow | undefined> {
+    const [entry] = await db.update(logisticsCashflow).set({ ...data, updatedAt: new Date() }).where(eq(logisticsCashflow.id, id)).returning();
+    return entry;
+  },
+
+  async deleteLogisticsCashflow(id: number): Promise<boolean> {
+    await db.delete(logisticsCashflow).where(eq(logisticsCashflow.id, id));
+    return true;
+  },
+
+  async getLogisticsCashflowSummary(): Promise<{ income: number; expense: number; balance: number }> {
+    const incomeResult = await db.select({
+      total: sql<number>`COALESCE(SUM(${logisticsCashflow.amount}), 0)`,
+    }).from(logisticsCashflow).where(eq(logisticsCashflow.type, 'income'));
+    
+    const expenseResult = await db.select({
+      total: sql<number>`COALESCE(SUM(${logisticsCashflow.amount}), 0)`,
+    }).from(logisticsCashflow).where(eq(logisticsCashflow.type, 'expense'));
+    
+    const income = parseFloat(String(incomeResult[0]?.total || 0));
+    const expense = parseFloat(String(expenseResult[0]?.total || 0));
+    
+    return { income, expense, balance: income - expense };
   },
 };

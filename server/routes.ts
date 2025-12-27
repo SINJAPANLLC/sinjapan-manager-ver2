@@ -5160,6 +5160,582 @@ URL/名前: ${url || '未指定'}
       res.status(500).json({ error: '成約の記録に失敗しました' });
     }
   });
+
+  // ==================== LOGISTICS API ROUTES ====================
+
+  // Shippers
+  app.get('/api/logistics/shippers', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const shippers = await storage.getLogisticsShippers();
+      res.json(shippers);
+    } catch (error) {
+      console.error('Get shippers error:', error);
+      res.status(500).json({ error: '荷主の取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/logistics/shippers', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const shipper = await storage.createLogisticsShipper({
+        ...req.body,
+        createdBy: req.session.userId,
+      });
+      res.json(shipper);
+    } catch (error) {
+      console.error('Create shipper error:', error);
+      res.status(500).json({ error: '荷主の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/logistics/shippers/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const shipper = await storage.updateLogisticsShipper(parseInt(req.params.id), req.body);
+      if (!shipper) {
+        return res.status(404).json({ error: '荷主が見つかりません' });
+      }
+      res.json(shipper);
+    } catch (error) {
+      console.error('Update shipper error:', error);
+      res.status(500).json({ error: '荷主の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/logistics/shippers/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteLogisticsShipper(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete shipper error:', error);
+      res.status(500).json({ error: '荷主の削除に失敗しました' });
+    }
+  });
+
+  // Companies
+  app.get('/api/logistics/companies', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const companies = await storage.getLogisticsCompanies();
+      res.json(companies);
+    } catch (error) {
+      console.error('Get companies error:', error);
+      res.status(500).json({ error: '会社の取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/logistics/companies', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const company = await storage.createLogisticsCompany({
+        ...req.body,
+        createdBy: req.session.userId,
+      });
+      res.json(company);
+    } catch (error) {
+      console.error('Create company error:', error);
+      res.status(500).json({ error: '会社の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/logistics/companies/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const company = await storage.updateLogisticsCompany(parseInt(req.params.id), req.body);
+      if (!company) {
+        return res.status(404).json({ error: '会社が見つかりません' });
+      }
+      res.json(company);
+    } catch (error) {
+      console.error('Update company error:', error);
+      res.status(500).json({ error: '会社の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/logistics/companies/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteLogisticsCompany(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete company error:', error);
+      res.status(500).json({ error: '会社の削除に失敗しました' });
+    }
+  });
+
+  // Vehicles
+  app.get('/api/logistics/vehicles', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const vehicles = await storage.getLogisticsVehicles();
+      res.json(vehicles);
+    } catch (error) {
+      console.error('Get vehicles error:', error);
+      res.status(500).json({ error: '車両の取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/logistics/vehicles', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const vehicle = await storage.createLogisticsVehicle({
+        ...req.body,
+        createdBy: req.session.userId,
+      });
+      res.json(vehicle);
+    } catch (error) {
+      console.error('Create vehicle error:', error);
+      res.status(500).json({ error: '車両の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/logistics/vehicles/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const vehicle = await storage.updateLogisticsVehicle(parseInt(req.params.id), req.body);
+      if (!vehicle) {
+        return res.status(404).json({ error: '車両が見つかりません' });
+      }
+      res.json(vehicle);
+    } catch (error) {
+      console.error('Update vehicle error:', error);
+      res.status(500).json({ error: '車両の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/logistics/vehicles/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteLogisticsVehicle(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete vehicle error:', error);
+      res.status(500).json({ error: '車両の削除に失敗しました' });
+    }
+  });
+
+  // Projects
+  app.get('/api/logistics/projects', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const projects = await storage.getLogisticsProjects();
+      res.json(projects);
+    } catch (error) {
+      console.error('Get projects error:', error);
+      res.status(500).json({ error: '案件の取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/logistics/projects', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const project = await storage.createLogisticsProject({
+        ...req.body,
+        createdBy: req.session.userId,
+      });
+      res.json(project);
+    } catch (error) {
+      console.error('Create project error:', error);
+      res.status(500).json({ error: '案件の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/logistics/projects/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const project = await storage.updateLogisticsProject(parseInt(req.params.id), req.body);
+      if (!project) {
+        return res.status(404).json({ error: '案件が見つかりません' });
+      }
+      res.json(project);
+    } catch (error) {
+      console.error('Update project error:', error);
+      res.status(500).json({ error: '案件の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/logistics/projects/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteLogisticsProject(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete project error:', error);
+      res.status(500).json({ error: '案件の削除に失敗しました' });
+    }
+  });
+
+  // Dispatch
+  app.get('/api/logistics/dispatch', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const dispatch = await storage.getLogisticsDispatchList();
+      res.json(dispatch);
+    } catch (error) {
+      console.error('Get dispatch error:', error);
+      res.status(500).json({ error: '配車の取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/logistics/dispatch', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const dispatch = await storage.createLogisticsDispatch({
+        ...req.body,
+        createdBy: req.session.userId,
+      });
+      res.json(dispatch);
+    } catch (error) {
+      console.error('Create dispatch error:', error);
+      res.status(500).json({ error: '配車の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/logistics/dispatch/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const dispatch = await storage.updateLogisticsDispatch(parseInt(req.params.id), req.body);
+      if (!dispatch) {
+        return res.status(404).json({ error: '配車が見つかりません' });
+      }
+      res.json(dispatch);
+    } catch (error) {
+      console.error('Update dispatch error:', error);
+      res.status(500).json({ error: '配車の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/logistics/dispatch/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteLogisticsDispatch(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete dispatch error:', error);
+      res.status(500).json({ error: '配車の削除に失敗しました' });
+    }
+  });
+
+  // Master Cards
+  app.get('/api/logistics/master-cards', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const cards = await storage.getLogisticsMasterCards();
+      res.json(cards);
+    } catch (error) {
+      console.error('Get master cards error:', error);
+      res.status(500).json({ error: 'マスターカードの取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/logistics/master-cards', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const card = await storage.createLogisticsMasterCard({
+        ...req.body,
+        createdBy: req.session.userId,
+      });
+      res.json(card);
+    } catch (error) {
+      console.error('Create master card error:', error);
+      res.status(500).json({ error: 'マスターカードの作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/logistics/master-cards/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const card = await storage.updateLogisticsMasterCard(parseInt(req.params.id), req.body);
+      if (!card) {
+        return res.status(404).json({ error: 'マスターカードが見つかりません' });
+      }
+      res.json(card);
+    } catch (error) {
+      console.error('Update master card error:', error);
+      res.status(500).json({ error: 'マスターカードの更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/logistics/master-cards/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteLogisticsMasterCard(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete master card error:', error);
+      res.status(500).json({ error: 'マスターカードの削除に失敗しました' });
+    }
+  });
+
+  // Quotations
+  app.get('/api/logistics/quotations', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const quotations = await storage.getLogisticsQuotations();
+      res.json(quotations);
+    } catch (error) {
+      console.error('Get quotations error:', error);
+      res.status(500).json({ error: '見積書の取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/logistics/quotations', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const quotation = await storage.createLogisticsQuotation({
+        ...req.body,
+        createdBy: req.session.userId,
+      });
+      res.json(quotation);
+    } catch (error) {
+      console.error('Create quotation error:', error);
+      res.status(500).json({ error: '見積書の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/logistics/quotations/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const quotation = await storage.updateLogisticsQuotation(parseInt(req.params.id), req.body);
+      if (!quotation) {
+        return res.status(404).json({ error: '見積書が見つかりません' });
+      }
+      res.json(quotation);
+    } catch (error) {
+      console.error('Update quotation error:', error);
+      res.status(500).json({ error: '見積書の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/logistics/quotations/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteLogisticsQuotation(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete quotation error:', error);
+      res.status(500).json({ error: '見積書の削除に失敗しました' });
+    }
+  });
+
+  // Instructions
+  app.get('/api/logistics/instructions', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const instructions = await storage.getLogisticsInstructions();
+      res.json(instructions);
+    } catch (error) {
+      console.error('Get instructions error:', error);
+      res.status(500).json({ error: '指示書の取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/logistics/instructions', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const instruction = await storage.createLogisticsInstruction({
+        ...req.body,
+        createdBy: req.session.userId,
+      });
+      res.json(instruction);
+    } catch (error) {
+      console.error('Create instruction error:', error);
+      res.status(500).json({ error: '指示書の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/logistics/instructions/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const instruction = await storage.updateLogisticsInstruction(parseInt(req.params.id), req.body);
+      if (!instruction) {
+        return res.status(404).json({ error: '指示書が見つかりません' });
+      }
+      res.json(instruction);
+    } catch (error) {
+      console.error('Update instruction error:', error);
+      res.status(500).json({ error: '指示書の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/logistics/instructions/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteLogisticsInstruction(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete instruction error:', error);
+      res.status(500).json({ error: '指示書の削除に失敗しました' });
+    }
+  });
+
+  // Invoices
+  app.get('/api/logistics/invoices', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const invoices = await storage.getLogisticsInvoices();
+      res.json(invoices);
+    } catch (error) {
+      console.error('Get invoices error:', error);
+      res.status(500).json({ error: '請求書の取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/logistics/invoices', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const invoice = await storage.createLogisticsInvoice({
+        ...req.body,
+        createdBy: req.session.userId,
+      });
+      res.json(invoice);
+    } catch (error) {
+      console.error('Create invoice error:', error);
+      res.status(500).json({ error: '請求書の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/logistics/invoices/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const invoice = await storage.updateLogisticsInvoice(parseInt(req.params.id), req.body);
+      if (!invoice) {
+        return res.status(404).json({ error: '請求書が見つかりません' });
+      }
+      res.json(invoice);
+    } catch (error) {
+      console.error('Update invoice error:', error);
+      res.status(500).json({ error: '請求書の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/logistics/invoices/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteLogisticsInvoice(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete invoice error:', error);
+      res.status(500).json({ error: '請求書の削除に失敗しました' });
+    }
+  });
+
+  // Receipts
+  app.get('/api/logistics/receipts', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const receipts = await storage.getLogisticsReceipts();
+      res.json(receipts);
+    } catch (error) {
+      console.error('Get receipts error:', error);
+      res.status(500).json({ error: '受領書の取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/logistics/receipts', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const receipt = await storage.createLogisticsReceipt({
+        ...req.body,
+        createdBy: req.session.userId,
+      });
+      res.json(receipt);
+    } catch (error) {
+      console.error('Create receipt error:', error);
+      res.status(500).json({ error: '受領書の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/logistics/receipts/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const receipt = await storage.updateLogisticsReceipt(parseInt(req.params.id), req.body);
+      if (!receipt) {
+        return res.status(404).json({ error: '受領書が見つかりません' });
+      }
+      res.json(receipt);
+    } catch (error) {
+      console.error('Update receipt error:', error);
+      res.status(500).json({ error: '受領書の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/logistics/receipts/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteLogisticsReceipt(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete receipt error:', error);
+      res.status(500).json({ error: '受領書の削除に失敗しました' });
+    }
+  });
+
+  // Payments
+  app.get('/api/logistics/payments', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const payments = await storage.getLogisticsPayments();
+      res.json(payments);
+    } catch (error) {
+      console.error('Get payments error:', error);
+      res.status(500).json({ error: '支払書の取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/logistics/payments', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const payment = await storage.createLogisticsPayment({
+        ...req.body,
+        createdBy: req.session.userId,
+      });
+      res.json(payment);
+    } catch (error) {
+      console.error('Create payment error:', error);
+      res.status(500).json({ error: '支払書の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/logistics/payments/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const payment = await storage.updateLogisticsPayment(parseInt(req.params.id), req.body);
+      if (!payment) {
+        return res.status(404).json({ error: '支払書が見つかりません' });
+      }
+      res.json(payment);
+    } catch (error) {
+      console.error('Update payment error:', error);
+      res.status(500).json({ error: '支払書の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/logistics/payments/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteLogisticsPayment(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete payment error:', error);
+      res.status(500).json({ error: '支払書の削除に失敗しました' });
+    }
+  });
+
+  // Cashflow
+  app.get('/api/logistics/cashflow', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const cashflow = await storage.getLogisticsCashflow();
+      res.json(cashflow);
+    } catch (error) {
+      console.error('Get cashflow error:', error);
+      res.status(500).json({ error: '入出金の取得に失敗しました' });
+    }
+  });
+
+  app.get('/api/logistics/cashflow/summary', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const summary = await storage.getLogisticsCashflowSummary();
+      res.json(summary);
+    } catch (error) {
+      console.error('Get cashflow summary error:', error);
+      res.status(500).json({ error: '入出金サマリーの取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/logistics/cashflow', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const entry = await storage.createLogisticsCashflow({
+        ...req.body,
+        createdBy: req.session.userId,
+      });
+      res.json(entry);
+    } catch (error) {
+      console.error('Create cashflow error:', error);
+      res.status(500).json({ error: '入出金の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/logistics/cashflow/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const entry = await storage.updateLogisticsCashflow(parseInt(req.params.id), req.body);
+      if (!entry) {
+        return res.status(404).json({ error: '入出金が見つかりません' });
+      }
+      res.json(entry);
+    } catch (error) {
+      console.error('Update cashflow error:', error);
+      res.status(500).json({ error: '入出金の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/logistics/cashflow/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteLogisticsCashflow(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete cashflow error:', error);
+      res.status(500).json({ error: '入出金の削除に失敗しました' });
+    }
+  });
 }
 
 export async function runRecurringTaskGeneration(): Promise<number> {
