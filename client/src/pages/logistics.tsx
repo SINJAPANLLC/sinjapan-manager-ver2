@@ -637,13 +637,13 @@ export default function LogisticsPage() {
         <span className="text-sm text-slate-500 hidden sm:block">物流業務の総合管理</span>
       </div>
 
-      <div className="mb-4 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 overflow-x-auto scrollbar-hide">
-        <div className="inline-flex gap-1 bg-slate-100 p-1 rounded-xl">
+      <div className="mb-4 overflow-x-auto overflow-y-hidden scrollbar-hide pb-1" style={{ marginLeft: '-1rem', marginRight: '-1rem', paddingLeft: '1rem', paddingRight: '1rem' }}>
+        <div className="flex gap-1 bg-slate-100 p-1 rounded-xl w-max">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+              className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex-shrink-0 ${
                 activeTab === tab.id
                   ? 'bg-white text-primary-600 shadow-sm'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
