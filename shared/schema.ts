@@ -1264,3 +1264,117 @@ export const itSales = pgTable("it_sales", {
 
 export type ItSale = typeof itSales.$inferSelect;
 export type InsertItSale = typeof itSales.$inferInsert;
+
+// ============================================
+// BPO Module
+// ============================================
+
+// 業務一覧 (BPO Tasks/Operations)
+export const bpoTasks = pgTable("bpo_tasks", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  name: text("name").notNull(),
+  description: text("description"),
+  category: text("category"),
+  clientName: text("client_name"),
+  type: text("type").default("regular"), // regular, onetime, recurring
+  status: text("status").notNull().default("active"), // active, paused, completed, cancelled
+  priority: text("priority").default("medium"), // low, medium, high, urgent
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }),
+  estimatedHours: decimal("estimated_hours", { precision: 6, scale: 2 }),
+  deadline: timestamp("deadline"),
+  notes: text("notes"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type BpoTask = typeof bpoTasks.$inferSelect;
+export type InsertBpoTask = typeof bpoTasks.$inferInsert;
+
+// 業務フロー (BPO Workflows)
+export const bpoWorkflows = pgTable("bpo_workflows", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  taskId: integer("task_id").references(() => bpoTasks.id, { onDelete: "set null" }),
+  name: text("name").notNull(),
+  description: text("description"),
+  stepNumber: integer("step_number").notNull().default(1),
+  stepName: text("step_name").notNull(),
+  stepDescription: text("step_description"),
+  estimatedMinutes: integer("estimated_minutes"),
+  assigneeId: integer("assignee_id").references(() => users.id, { onDelete: "set null" }),
+  status: text("status").notNull().default("pending"), // pending, in_progress, completed, skipped
+  notes: text("notes"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type BpoWorkflow = typeof bpoWorkflows.$inferSelect;
+export type InsertBpoWorkflow = typeof bpoWorkflows.$inferInsert;
+
+// アサイン (BPO Assignments)
+export const bpoAssignments = pgTable("bpo_assignments", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  taskId: integer("task_id").references(() => bpoTasks.id, { onDelete: "set null" }),
+  assigneeId: integer("assignee_id").references(() => users.id, { onDelete: "set null" }),
+  assigneeName: text("assignee_name"),
+  role: text("role"),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  hoursWorked: decimal("hours_worked", { precision: 8, scale: 2 }),
+  status: text("status").notNull().default("assigned"), // assigned, in_progress, completed, cancelled
+  notes: text("notes"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type BpoAssignment = typeof bpoAssignments.$inferSelect;
+export type InsertBpoAssignment = typeof bpoAssignments.$inferInsert;
+
+// 請求 (BPO Invoices)
+export const bpoInvoices = pgTable("bpo_invoices", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  invoiceNumber: text("invoice_number").notNull(),
+  taskId: integer("task_id").references(() => bpoTasks.id, { onDelete: "set null" }),
+  clientName: text("client_name"),
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+  tax: decimal("tax", { precision: 15, scale: 2 }).default("0"),
+  totalAmount: decimal("total_amount", { precision: 15, scale: 2 }).notNull(),
+  issueDate: timestamp("issue_date").defaultNow().notNull(),
+  dueDate: timestamp("due_date"),
+  paidDate: timestamp("paid_date"),
+  status: text("status").notNull().default("draft"), // draft, sent, paid, overdue, cancelled
+  description: text("description"),
+  notes: text("notes"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type BpoInvoice = typeof bpoInvoices.$inferSelect;
+export type InsertBpoInvoice = typeof bpoInvoices.$inferInsert;
+
+// 売上 (BPO Sales)
+export const bpoSales = pgTable("bpo_sales", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  type: text("type").notNull().default("service"), // service, project, recurring
+  taskId: integer("task_id").references(() => bpoTasks.id, { onDelete: "set null" }),
+  invoiceId: integer("invoice_id").references(() => bpoInvoices.id, { onDelete: "set null" }),
+  clientName: text("client_name"),
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+  saleDate: timestamp("sale_date").defaultNow().notNull(),
+  description: text("description"),
+  notes: text("notes"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type BpoSale = typeof bpoSales.$inferSelect;
+export type InsertBpoSale = typeof bpoSales.$inferInsert;

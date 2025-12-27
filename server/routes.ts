@@ -6349,6 +6349,230 @@ URL/名前: ${url || '未指定'}
       res.status(500).json({ error: '売上の削除に失敗しました' });
     }
   });
+
+  // ============================================
+  // BPO Module Routes
+  // ============================================
+
+  // BPO Tasks
+  app.get('/api/bpo/tasks', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const tasks = await storage.getBpoTasks();
+      res.json(tasks);
+    } catch (error) {
+      console.error('Get BPO tasks error:', error);
+      res.status(500).json({ error: '業務一覧の取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/bpo/tasks', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const task = await storage.createBpoTask({ ...req.body, createdBy: req.session.userId });
+      res.json(task);
+    } catch (error) {
+      console.error('Create BPO task error:', error);
+      res.status(500).json({ error: '業務の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/bpo/tasks/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const task = await storage.updateBpoTask(parseInt(req.params.id), req.body);
+      if (!task) return res.status(404).json({ error: '業務が見つかりません' });
+      res.json(task);
+    } catch (error) {
+      console.error('Update BPO task error:', error);
+      res.status(500).json({ error: '業務の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/bpo/tasks/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteBpoTask(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete BPO task error:', error);
+      res.status(500).json({ error: '業務の削除に失敗しました' });
+    }
+  });
+
+  // BPO Workflows
+  app.get('/api/bpo/workflows', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const workflows = await storage.getBpoWorkflows();
+      res.json(workflows);
+    } catch (error) {
+      console.error('Get BPO workflows error:', error);
+      res.status(500).json({ error: '業務フローの取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/bpo/workflows', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const workflow = await storage.createBpoWorkflow({ ...req.body, createdBy: req.session.userId });
+      res.json(workflow);
+    } catch (error) {
+      console.error('Create BPO workflow error:', error);
+      res.status(500).json({ error: '業務フローの作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/bpo/workflows/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const workflow = await storage.updateBpoWorkflow(parseInt(req.params.id), req.body);
+      if (!workflow) return res.status(404).json({ error: '業務フローが見つかりません' });
+      res.json(workflow);
+    } catch (error) {
+      console.error('Update BPO workflow error:', error);
+      res.status(500).json({ error: '業務フローの更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/bpo/workflows/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteBpoWorkflow(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete BPO workflow error:', error);
+      res.status(500).json({ error: '業務フローの削除に失敗しました' });
+    }
+  });
+
+  // BPO Assignments
+  app.get('/api/bpo/assignments', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const assignments = await storage.getBpoAssignments();
+      res.json(assignments);
+    } catch (error) {
+      console.error('Get BPO assignments error:', error);
+      res.status(500).json({ error: 'アサインの取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/bpo/assignments', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const assignment = await storage.createBpoAssignment({ ...req.body, createdBy: req.session.userId });
+      res.json(assignment);
+    } catch (error) {
+      console.error('Create BPO assignment error:', error);
+      res.status(500).json({ error: 'アサインの作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/bpo/assignments/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const assignment = await storage.updateBpoAssignment(parseInt(req.params.id), req.body);
+      if (!assignment) return res.status(404).json({ error: 'アサインが見つかりません' });
+      res.json(assignment);
+    } catch (error) {
+      console.error('Update BPO assignment error:', error);
+      res.status(500).json({ error: 'アサインの更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/bpo/assignments/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteBpoAssignment(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete BPO assignment error:', error);
+      res.status(500).json({ error: 'アサインの削除に失敗しました' });
+    }
+  });
+
+  // BPO Invoices
+  app.get('/api/bpo/invoices', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const invoices = await storage.getBpoInvoices();
+      res.json(invoices);
+    } catch (error) {
+      console.error('Get BPO invoices error:', error);
+      res.status(500).json({ error: '請求書の取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/bpo/invoices', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const invoice = await storage.createBpoInvoice({ ...req.body, createdBy: req.session.userId });
+      res.json(invoice);
+    } catch (error) {
+      console.error('Create BPO invoice error:', error);
+      res.status(500).json({ error: '請求書の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/bpo/invoices/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const invoice = await storage.updateBpoInvoice(parseInt(req.params.id), req.body);
+      if (!invoice) return res.status(404).json({ error: '請求書が見つかりません' });
+      res.json(invoice);
+    } catch (error) {
+      console.error('Update BPO invoice error:', error);
+      res.status(500).json({ error: '請求書の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/bpo/invoices/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteBpoInvoice(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete BPO invoice error:', error);
+      res.status(500).json({ error: '請求書の削除に失敗しました' });
+    }
+  });
+
+  // BPO Sales
+  app.get('/api/bpo/sales', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const sales = await storage.getBpoSales();
+      res.json(sales);
+    } catch (error) {
+      console.error('Get BPO sales error:', error);
+      res.status(500).json({ error: '売上の取得に失敗しました' });
+    }
+  });
+
+  app.get('/api/bpo/sales/summary', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const summary = await storage.getBpoSalesSummary();
+      res.json(summary);
+    } catch (error) {
+      console.error('Get BPO sales summary error:', error);
+      res.status(500).json({ error: '売上サマリーの取得に失敗しました' });
+    }
+  });
+
+  app.post('/api/bpo/sales', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const sale = await storage.createBpoSale({ ...req.body, createdBy: req.session.userId });
+      res.json(sale);
+    } catch (error) {
+      console.error('Create BPO sale error:', error);
+      res.status(500).json({ error: '売上の作成に失敗しました' });
+    }
+  });
+
+  app.put('/api/bpo/sales/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const sale = await storage.updateBpoSale(parseInt(req.params.id), req.body);
+      if (!sale) return res.status(404).json({ error: '売上が見つかりません' });
+      res.json(sale);
+    } catch (error) {
+      console.error('Update BPO sale error:', error);
+      res.status(500).json({ error: '売上の更新に失敗しました' });
+    }
+  });
+
+  app.delete('/api/bpo/sales/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteBpoSale(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete BPO sale error:', error);
+      res.status(500).json({ error: '売上の削除に失敗しました' });
+    }
+  });
 }
 
 export async function runRecurringTaskGeneration(): Promise<number> {

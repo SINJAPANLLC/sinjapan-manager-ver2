@@ -1,8 +1,8 @@
 import { db } from './db';
-import { users, customers, tasks, notifications, chatMessages, chatGroups, chatGroupMembers, employees, agencySales, agencyMemos, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, systemSettings, leads, leadActivities, clientProjects, clientInvoices, companies, quickNotes, investments, staffAffiliates, financialEntries, agencyPaymentSettings, logisticsShippers, logisticsCompanies, logisticsVehicles, logisticsProjects, logisticsDispatch, logisticsMasterCards, logisticsQuotations, logisticsInstructions, logisticsInvoices, logisticsReceipts, logisticsPayments, logisticsCashflow, staffingJobs, staffingCandidates, staffingApplications, staffingResumes, staffingInvoices, staffingSales, itSystems, itProjects, itClients, itVendors, itInvoices, itSales } from '../shared/schema';
+import { users, customers, tasks, notifications, chatMessages, chatGroups, chatGroupMembers, employees, agencySales, agencyMemos, businesses, businessSales, memos, aiLogs, aiConversations, aiKnowledge, seoArticles, seoCategories, systemSettings, leads, leadActivities, clientProjects, clientInvoices, companies, quickNotes, investments, staffAffiliates, financialEntries, agencyPaymentSettings, logisticsShippers, logisticsCompanies, logisticsVehicles, logisticsProjects, logisticsDispatch, logisticsMasterCards, logisticsQuotations, logisticsInstructions, logisticsInvoices, logisticsReceipts, logisticsPayments, logisticsCashflow, staffingJobs, staffingCandidates, staffingApplications, staffingResumes, staffingInvoices, staffingSales, itSystems, itProjects, itClients, itVendors, itInvoices, itSales, bpoTasks, bpoWorkflows, bpoAssignments, bpoInvoices, bpoSales } from '../shared/schema';
 import { eq, and, or, desc, sql, isNull, gte, lte, like, ilike, inArray } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, ChatGroup, InsertChatGroup, ChatGroupMember, InsertChatGroupMember, Employee, InsertEmployee, AgencySale, InsertAgencySale, AgencyMemo, InsertAgencyMemo, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, SystemSetting, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Company, InsertCompany, QuickNote, InsertQuickNote, Investment, InsertInvestment, FinancialEntry, InsertFinancialEntry, AgencyPaymentSettings, InsertAgencyPaymentSettings, LogisticsShipper, InsertLogisticsShipper, LogisticsCompany, InsertLogisticsCompany, LogisticsVehicle, InsertLogisticsVehicle, LogisticsProject, InsertLogisticsProject, LogisticsDispatch, InsertLogisticsDispatch, LogisticsMasterCard, InsertLogisticsMasterCard, LogisticsQuotation, InsertLogisticsQuotation, LogisticsInstruction, InsertLogisticsInstruction, LogisticsInvoice, InsertLogisticsInvoice, LogisticsReceipt, InsertLogisticsReceipt, LogisticsPayment, InsertLogisticsPayment, LogisticsCashflow, InsertLogisticsCashflow, StaffingJob, InsertStaffingJob, StaffingCandidate, InsertStaffingCandidate, StaffingApplication, InsertStaffingApplication, StaffingResume, InsertStaffingResume, StaffingInvoice, InsertStaffingInvoice, StaffingSale, InsertStaffingSale, ItSystem, InsertItSystem, ItProject, InsertItProject, ItClient, InsertItClient, ItVendor, InsertItVendor, ItInvoice, InsertItInvoice, ItSale, InsertItSale } from '../shared/schema';
+import type { User, InsertUser, Customer, InsertCustomer, Task, InsertTask, Notification, InsertNotification, ChatMessage, InsertChatMessage, ChatGroup, InsertChatGroup, ChatGroupMember, InsertChatGroupMember, Employee, InsertEmployee, AgencySale, InsertAgencySale, AgencyMemo, InsertAgencyMemo, Business, InsertBusiness, BusinessSale, InsertBusinessSale, Memo, InsertMemo, AiLog, InsertAiLog, AiConversation, InsertAiConversation, AiKnowledge, InsertAiKnowledge, SeoArticle, InsertSeoArticle, SeoCategory, InsertSeoCategory, SystemSetting, Lead, InsertLead, LeadActivity, InsertLeadActivity, ClientProject, InsertClientProject, ClientInvoice, InsertClientInvoice, Company, InsertCompany, QuickNote, InsertQuickNote, Investment, InsertInvestment, FinancialEntry, InsertFinancialEntry, AgencyPaymentSettings, InsertAgencyPaymentSettings, LogisticsShipper, InsertLogisticsShipper, LogisticsCompany, InsertLogisticsCompany, LogisticsVehicle, InsertLogisticsVehicle, LogisticsProject, InsertLogisticsProject, LogisticsDispatch, InsertLogisticsDispatch, LogisticsMasterCard, InsertLogisticsMasterCard, LogisticsQuotation, InsertLogisticsQuotation, LogisticsInstruction, InsertLogisticsInstruction, LogisticsInvoice, InsertLogisticsInvoice, LogisticsReceipt, InsertLogisticsReceipt, LogisticsPayment, InsertLogisticsPayment, LogisticsCashflow, InsertLogisticsCashflow, StaffingJob, InsertStaffingJob, StaffingCandidate, InsertStaffingCandidate, StaffingApplication, InsertStaffingApplication, StaffingResume, InsertStaffingResume, StaffingInvoice, InsertStaffingInvoice, StaffingSale, InsertStaffingSale, ItSystem, InsertItSystem, ItProject, InsertItProject, ItClient, InsertItClient, ItVendor, InsertItVendor, ItInvoice, InsertItInvoice, ItSale, InsertItSale, BpoTask, InsertBpoTask, BpoWorkflow, InsertBpoWorkflow, BpoAssignment, InsertBpoAssignment, BpoInvoice, InsertBpoInvoice, BpoSale, InsertBpoSale } from '../shared/schema';
 
 export const storage = {
   async getUser(id: number): Promise<User | undefined> {
@@ -1690,6 +1690,134 @@ export const storage = {
     return {
       totalSales: parseFloat(String(result[0]?.totalSales || 0)),
       projectCount: Number(result[0]?.projectCount || 0),
+      monthlyRevenue: parseFloat(String(monthlyResult[0]?.total || 0)),
+    };
+  },
+
+  // ============================================
+  // BPO Module
+  // ============================================
+
+  // BPO Tasks
+  async getBpoTasks(): Promise<BpoTask[]> {
+    return db.select().from(bpoTasks).orderBy(desc(bpoTasks.createdAt));
+  },
+  async getBpoTask(id: number): Promise<BpoTask | undefined> {
+    const [task] = await db.select().from(bpoTasks).where(eq(bpoTasks.id, id));
+    return task;
+  },
+  async createBpoTask(data: InsertBpoTask): Promise<BpoTask> {
+    const [task] = await db.insert(bpoTasks).values(data).returning();
+    return task;
+  },
+  async updateBpoTask(id: number, data: Partial<InsertBpoTask>): Promise<BpoTask | undefined> {
+    const [task] = await db.update(bpoTasks).set({ ...data, updatedAt: new Date() }).where(eq(bpoTasks.id, id)).returning();
+    return task;
+  },
+  async deleteBpoTask(id: number): Promise<boolean> {
+    await db.delete(bpoTasks).where(eq(bpoTasks.id, id));
+    return true;
+  },
+
+  // BPO Workflows
+  async getBpoWorkflows(): Promise<BpoWorkflow[]> {
+    return db.select().from(bpoWorkflows).orderBy(bpoWorkflows.stepNumber);
+  },
+  async getBpoWorkflow(id: number): Promise<BpoWorkflow | undefined> {
+    const [workflow] = await db.select().from(bpoWorkflows).where(eq(bpoWorkflows.id, id));
+    return workflow;
+  },
+  async createBpoWorkflow(data: InsertBpoWorkflow): Promise<BpoWorkflow> {
+    const [workflow] = await db.insert(bpoWorkflows).values(data).returning();
+    return workflow;
+  },
+  async updateBpoWorkflow(id: number, data: Partial<InsertBpoWorkflow>): Promise<BpoWorkflow | undefined> {
+    const [workflow] = await db.update(bpoWorkflows).set({ ...data, updatedAt: new Date() }).where(eq(bpoWorkflows.id, id)).returning();
+    return workflow;
+  },
+  async deleteBpoWorkflow(id: number): Promise<boolean> {
+    await db.delete(bpoWorkflows).where(eq(bpoWorkflows.id, id));
+    return true;
+  },
+
+  // BPO Assignments
+  async getBpoAssignments(): Promise<BpoAssignment[]> {
+    return db.select().from(bpoAssignments).orderBy(desc(bpoAssignments.createdAt));
+  },
+  async getBpoAssignment(id: number): Promise<BpoAssignment | undefined> {
+    const [assignment] = await db.select().from(bpoAssignments).where(eq(bpoAssignments.id, id));
+    return assignment;
+  },
+  async createBpoAssignment(data: InsertBpoAssignment): Promise<BpoAssignment> {
+    const [assignment] = await db.insert(bpoAssignments).values(data).returning();
+    return assignment;
+  },
+  async updateBpoAssignment(id: number, data: Partial<InsertBpoAssignment>): Promise<BpoAssignment | undefined> {
+    const [assignment] = await db.update(bpoAssignments).set({ ...data, updatedAt: new Date() }).where(eq(bpoAssignments.id, id)).returning();
+    return assignment;
+  },
+  async deleteBpoAssignment(id: number): Promise<boolean> {
+    await db.delete(bpoAssignments).where(eq(bpoAssignments.id, id));
+    return true;
+  },
+
+  // BPO Invoices
+  async getBpoInvoices(): Promise<BpoInvoice[]> {
+    return db.select().from(bpoInvoices).orderBy(desc(bpoInvoices.issueDate));
+  },
+  async getBpoInvoice(id: number): Promise<BpoInvoice | undefined> {
+    const [invoice] = await db.select().from(bpoInvoices).where(eq(bpoInvoices.id, id));
+    return invoice;
+  },
+  async createBpoInvoice(data: InsertBpoInvoice): Promise<BpoInvoice> {
+    const [invoice] = await db.insert(bpoInvoices).values(data).returning();
+    return invoice;
+  },
+  async updateBpoInvoice(id: number, data: Partial<InsertBpoInvoice>): Promise<BpoInvoice | undefined> {
+    const [invoice] = await db.update(bpoInvoices).set({ ...data, updatedAt: new Date() }).where(eq(bpoInvoices.id, id)).returning();
+    return invoice;
+  },
+  async deleteBpoInvoice(id: number): Promise<boolean> {
+    await db.delete(bpoInvoices).where(eq(bpoInvoices.id, id));
+    return true;
+  },
+
+  // BPO Sales
+  async getBpoSales(): Promise<BpoSale[]> {
+    return db.select().from(bpoSales).orderBy(desc(bpoSales.saleDate));
+  },
+  async getBpoSale(id: number): Promise<BpoSale | undefined> {
+    const [sale] = await db.select().from(bpoSales).where(eq(bpoSales.id, id));
+    return sale;
+  },
+  async createBpoSale(data: InsertBpoSale): Promise<BpoSale> {
+    const [sale] = await db.insert(bpoSales).values(data).returning();
+    return sale;
+  },
+  async updateBpoSale(id: number, data: Partial<InsertBpoSale>): Promise<BpoSale | undefined> {
+    const [sale] = await db.update(bpoSales).set({ ...data, updatedAt: new Date() }).where(eq(bpoSales.id, id)).returning();
+    return sale;
+  },
+  async deleteBpoSale(id: number): Promise<boolean> {
+    await db.delete(bpoSales).where(eq(bpoSales.id, id));
+    return true;
+  },
+
+  async getBpoSalesSummary(): Promise<{ totalSales: number; taskCount: number; monthlyRevenue: number }> {
+    const result = await db.select({
+      totalSales: sql<number>`COALESCE(SUM(${bpoSales.amount}), 0)`,
+      taskCount: sql<number>`COUNT(*)`,
+    }).from(bpoSales);
+    
+    const monthlyResult = await db.select({
+      total: sql<number>`COALESCE(SUM(${bpoSales.amount}), 0)`,
+    }).from(bpoSales).where(
+      gte(bpoSales.saleDate, sql`DATE_TRUNC('month', CURRENT_DATE)`)
+    );
+    
+    return {
+      totalSales: parseFloat(String(result[0]?.totalSales || 0)),
+      taskCount: Number(result[0]?.taskCount || 0),
       monthlyRevenue: parseFloat(String(monthlyResult[0]?.total || 0)),
     };
   },
