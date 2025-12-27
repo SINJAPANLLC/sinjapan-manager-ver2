@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GraduationCap, BookOpen, Brain, TrendingUp, Lightbulb, Loader2, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
+import { GraduationCap, BookOpen, Brain, TrendingUp, Lightbulb, Loader2, ChevronDown, ChevronUp, RefreshCw, DollarSign, Users, Scale, Megaphone, Settings, AlertTriangle, Code, Cpu, Briefcase, Languages } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 
 const CATEGORIES = [
@@ -16,16 +16,141 @@ const CATEGORIES = [
     ],
   },
   {
-    id: 'management',
-    name: '経営学',
-    icon: TrendingUp,
+    id: 'finance',
+    name: '金融学',
+    icon: DollarSign,
+    color: 'from-green-500 to-green-600',
+    bgColor: 'bg-green-50',
+    topics: [
+      'コーポレートファイナンス', '投資理論・ポートフォリオ理論', 'デリバティブ・金融工学',
+      'バリュエーション（企業価値評価）', 'M&A・事業再編', '資本市場・IPO',
+      'リスクマネジメント', '行動ファイナンス', '国際金融・為替', 'ベンチャーキャピタル・PE',
+      '不動産金融・REIT', 'ストラクチャードファイナンス', '金融規制・コンプライアンス',
+      'ESG投資・サステナブルファイナンス', 'フィンテック・DeFi',
+    ],
+  },
+  {
+    id: 'management_adv',
+    name: 'マネジメント学',
+    icon: Users,
     color: 'from-blue-500 to-blue-600',
     bgColor: 'bg-blue-50',
     topics: [
-      '経営戦略論', 'マーケティング', '組織論', 'リーダーシップ', '財務管理',
-      '人的資源管理', 'オペレーション管理', 'イノベーション経営', '起業論',
-      'コーポレートガバナンス', '国際経営', 'サプライチェーン管理', '品質管理',
-      'プロジェクト管理', 'ビジネスモデル', 'デジタルトランスフォーメーション',
+      '戦略的経営論', '組織行動論', '変革マネジメント', 'タレントマネジメント',
+      'パフォーマンスマネジメント', 'クロスファンクショナルチーム管理', 'アジャイル経営',
+      'ナレッジマネジメント', 'グローバルマネジメント', 'エグゼクティブリーダーシップ',
+      'ステークホルダーマネジメント', '意思決定論', 'コンフリクトマネジメント',
+      'ダイバーシティ&インクルージョン', 'サクセッションプランニング',
+    ],
+  },
+  {
+    id: 'law',
+    name: '法律',
+    icon: Scale,
+    color: 'from-slate-500 to-slate-600',
+    bgColor: 'bg-slate-50',
+    topics: [
+      '会社法・商法', '契約法', '労働法', '知的財産法', '独占禁止法・競争法',
+      '金融商品取引法', '個人情報保護法・GDPR', 'コーポレートガバナンス法制',
+      'M&A法務', 'スタートアップ法務', '国際取引法', '倒産法・事業再生',
+      'コンプライアンス体制', 'リスク法務', 'AI・テクノロジー法',
+    ],
+  },
+  {
+    id: 'marketing',
+    name: 'マーケティング学',
+    icon: Megaphone,
+    color: 'from-pink-500 to-pink-600',
+    bgColor: 'bg-pink-50',
+    topics: [
+      'ブランドマネジメント', 'デジタルマーケティング戦略', 'カスタマージャーニー設計',
+      'データドリブンマーケティング', 'グロースハック', 'コンテンツマーケティング',
+      'インフルエンサーマーケティング', 'B2Bマーケティング', 'プロダクトマーケティング',
+      'プライシング戦略', '顧客獲得・LTV最適化', 'マーケティングROI分析',
+      'ニューロマーケティング', 'グローバルマーケティング', 'サステナブルマーケティング',
+    ],
+  },
+  {
+    id: 'operations',
+    name: 'オペレーション設計学',
+    icon: Settings,
+    color: 'from-orange-500 to-orange-600',
+    bgColor: 'bg-orange-50',
+    topics: [
+      'リーン生産方式', 'シックスシグマ', 'サプライチェーンデザイン', 'オペレーションズリサーチ',
+      'キャパシティプランニング', '在庫最適化', 'プロセス改善・BPR', 'オペレーションモデル設計',
+      'サービスオペレーション', 'デジタルオペレーション', 'アウトソーシング戦略',
+      '品質管理システム（QMS）', 'TOC（制約理論）', 'オペレーショナルエクセレンス',
+      'スケーラビリティ設計',
+    ],
+  },
+  {
+    id: 'risk_exit',
+    name: 'リスク・出口戦略学',
+    icon: AlertTriangle,
+    color: 'from-red-500 to-red-600',
+    bgColor: 'bg-red-50',
+    topics: [
+      'エンタープライズリスクマネジメント', '事業継続計画（BCP）', 'レピュテーションリスク管理',
+      'サイバーセキュリティリスク', '規制リスク対応', 'IPO戦略・準備', 'M&A出口戦略',
+      'MBO・EBO', '事業売却・カーブアウト', 'スタートアップのイグジット設計',
+      'バリュエーション交渉', 'PMI（買収後統合）', '事業撤退・清算戦略',
+      'クライシスマネジメント', 'シナリオプランニング',
+    ],
+  },
+  {
+    id: 'programming',
+    name: 'プログラミング学',
+    icon: Code,
+    color: 'from-cyan-500 to-cyan-600',
+    bgColor: 'bg-cyan-50',
+    topics: [
+      'ソフトウェアアーキテクチャ', 'デザインパターン', 'クリーンコード・リファクタリング',
+      'システムデザイン', 'マイクロサービス設計', 'API設計・REST/GraphQL', 'データベース設計',
+      'クラウドアーキテクチャ', 'DevOps・CI/CD', 'セキュアコーディング', 'パフォーマンス最適化',
+      'テスト駆動開発（TDD）', 'ドメイン駆動設計（DDD）', 'イベント駆動アーキテクチャ',
+      '技術的負債管理', 'スケーラブルシステム設計',
+    ],
+  },
+  {
+    id: 'ai',
+    name: 'AI学',
+    icon: Cpu,
+    color: 'from-violet-500 to-violet-600',
+    bgColor: 'bg-violet-50',
+    topics: [
+      '機械学習基礎・アルゴリズム', '深層学習・ニューラルネットワーク', '自然言語処理（NLP）',
+      'コンピュータビジョン', '強化学習', '生成AI・LLM', 'プロンプトエンジニアリング',
+      'MLOps・モデル運用', 'AI倫理・バイアス対策', 'AIガバナンス', 'エッジAI・組み込みAI',
+      '推薦システム', '時系列予測', 'AutoML・ノーコードAI', 'AI事業戦略・ROI',
+    ],
+  },
+  {
+    id: 'business_model',
+    name: 'ビジネスモデル学',
+    icon: Briefcase,
+    color: 'from-amber-500 to-amber-600',
+    bgColor: 'bg-amber-50',
+    topics: [
+      'ビジネスモデルキャンバス', 'プラットフォームビジネス', 'サブスクリプションモデル',
+      'フリーミアム戦略', 'マーケットプレイス設計', 'ネットワーク効果の構築',
+      'バリューチェーン再構築', 'ディスラプション戦略', 'ブルーオーシャン戦略',
+      'リカーリングレベニュー設計', 'ユニットエコノミクス', 'Go-to-Market戦略',
+      'ビジネスモデルイノベーション', 'エコシステム戦略', 'ピボット戦略',
+    ],
+  },
+  {
+    id: 'languages',
+    name: '言語',
+    icon: Languages,
+    color: 'from-teal-500 to-teal-600',
+    bgColor: 'bg-teal-50',
+    topics: [
+      'ビジネス英語・交渉術', '英語プレゼンテーション', '英語ライティング（ビジネス文書）',
+      '英語面接・キャリア英語', '中国語（ビジネス）', '韓国語（ビジネス）', 'スペイン語入門',
+      'フランス語入門', 'ドイツ語入門', '第二言語習得理論', '言語学習メソッド比較',
+      '異文化コミュニケーション', 'ビジネス日本語（外国人向け）', '通訳・翻訳スキル',
+      'マルチリンガル戦略',
     ],
   },
 ];
@@ -77,7 +202,7 @@ export default function StudyPage() {
           <GraduationCap className="text-primary-500" size={28} />
           勉強
         </h1>
-        <p className="text-slate-500 mt-1">AI学習アシスタント - 心理学・経営学</p>
+        <p className="text-slate-500 mt-1">AI学習アシスタント - ビジネス・テクノロジー・言語</p>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
