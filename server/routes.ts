@@ -157,7 +157,7 @@ export function registerRoutes(app: Express) {
       } else {
         res.json({
           id: null,
-          name: 'SIN JAPAN Manager',
+          name: 'SIN JAPAN',
           slug: null,
           logoUrl: null,
           primaryColor: '#3B82F6',
