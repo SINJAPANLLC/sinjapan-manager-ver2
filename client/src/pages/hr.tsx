@@ -42,9 +42,9 @@ const fetchApi = async (url: string) => {
 function Modal({ isOpen, onClose, title, children }: { isOpen: boolean; onClose: () => void; title: string; children: React.ReactNode }) {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-auto">
-        <div className="flex items-center justify-between p-4 border-b">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4" style={{ zIndex: 9999 }}>
+      <div className="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-auto shadow-2xl">
+        <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-white">
           <h3 className="text-lg font-semibold">{title}</h3>
           <button onClick={onClose} className="p-1 hover:bg-slate-100 rounded"><X size={20} /></button>
         </div>
