@@ -628,37 +628,37 @@ export default function LogisticsPage() {
   };
 
   return (
-    <Layout contentClassName="p-0">
-      <div className="p-2 sm:p-3">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <Truck className="text-primary-500" size={20} />
-            <h1 className="text-base font-bold text-slate-800">物流管理</h1>
-          </div>
-          <span className="text-xs text-slate-500 hidden sm:block">物流業務の総合管理</span>
+    <Layout>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
+            <Truck className="text-primary-500" size={28} />
+            物流管理
+          </h1>
+          <p className="text-slate-500 mt-1">物流業務の総合管理</p>
         </div>
-
-        <div className="mb-2 overflow-x-auto scrollbar-hide">
-          <div className="flex gap-0.5 bg-slate-100 p-0.5 rounded-lg w-max">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all whitespace-nowrap ${
-                  activeTab === tab.id
-                    ? 'bg-white text-primary-600 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                }`}
-              >
-                {tab.icon}
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {renderTabContent()}
       </div>
+
+      <div className="mb-4 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-1 bg-slate-100 p-1 rounded-xl w-max">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+                activeTab === tab.id
+                  ? 'bg-white text-primary-600 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {renderTabContent()}
     </Layout>
   );
 }
