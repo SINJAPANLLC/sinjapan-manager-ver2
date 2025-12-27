@@ -32,6 +32,7 @@ import { cn } from '../lib/utils';
 
 interface LayoutProps {
   children: ReactNode;
+  contentClassName?: string;
 }
 
 interface BadgeCounts {
@@ -42,7 +43,7 @@ interface BadgeCounts {
   agencySales: number;
 }
 
-export function Layout({ children }: LayoutProps) {
+export function Layout({ children, contentClassName }: LayoutProps) {
   const { user, logout } = useAuth();
   const { tenant } = useTenant();
   const [location] = useLocation();
@@ -230,7 +231,7 @@ export function Layout({ children }: LayoutProps) {
       </aside>
 
       <main className="lg:ml-72 min-h-screen pt-16 lg:pt-0">
-        <div className="p-4 sm:p-6 lg:p-8 animate-fade-in">
+        <div className={cn("animate-fade-in", contentClassName || "p-4 sm:p-6 lg:p-8")}>
           {children}
         </div>
       </main>
