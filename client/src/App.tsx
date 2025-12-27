@@ -22,6 +22,12 @@ import { StaffPage } from './pages/staff';
 import { AgencyPage } from './pages/agency';
 import { ClientsPage } from './pages/clients';
 import { MarketingPage } from './pages/marketing';
+import LogisticsPage from './pages/logistics';
+import HRPage from './pages/hr';
+import ITPage from './pages/it';
+import BPOPage from './pages/bpo';
+import TranslationPage from './pages/translation';
+import StudyPage from './pages/study';
 import { RegisterPage } from './pages/register';
 import { TermsPage } from './pages/terms';
 import { PrivacyPage } from './pages/privacy';
@@ -83,11 +89,17 @@ function AppRoutes() {
         <Route path="/chat" component={ChatPage} />
         <Route path="/communication" component={ChatPage} />
         <Route path="/business" component={BusinessPage} />
+        <Route path="/logistics" component={LogisticsPage} />
+        <Route path="/hr" component={HRPage} />
+        <Route path="/it" component={ITPage} />
+        <Route path="/bpo" component={BPOPage} />
         <Route path="/designs" component={DesignsPage} />
         <Route path="/marketing" component={MarketingPage} />
         <Route path="/financials" component={FinancialsPage} />
         <Route path="/ai" component={AiPage} />
         <Route path="/notifications" component={NotificationsPage} />
+        <Route path="/translation" component={TranslationPage} />
+        <Route path="/study" component={StudyPage} />
         <Route path="/users" component={UsersPage} />
         <Route path="/employees" component={EmployeesPage} />
         <Route path="/agency-sales" component={AgencySalesPage} />

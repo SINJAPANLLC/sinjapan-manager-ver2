@@ -20,7 +20,13 @@ import {
   TrendingUp,
   Compass,
   Menu,
-  X
+  X,
+  Truck,
+  Users2,
+  Monitor,
+  Headphones,
+  Languages,
+  GraduationCap
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -100,6 +106,10 @@ export function Layout({ children }: LayoutProps) {
     { href: '/calendar', label: 'カレンダー', icon: Calendar, roles: ['admin', 'ceo', 'manager'] },
     { href: '/communication', label: 'コミュニケーション', icon: MessageSquare, roles: ['admin', 'ceo', 'manager', 'staff', 'agency', 'client'] },
     { href: '/business', label: '事業', icon: Briefcase, roles: ['admin', 'ceo', 'manager'] },
+    { href: '/logistics', label: '物流', icon: Truck, roles: ['admin', 'ceo', 'manager'] },
+    { href: '/hr', label: '人材', icon: Users2, roles: ['admin', 'ceo', 'manager'] },
+    { href: '/it', label: 'IT', icon: Monitor, roles: ['admin', 'ceo', 'manager'] },
+    { href: '/bpo', label: 'BPO', icon: Headphones, roles: ['admin', 'ceo', 'manager'] },
     { href: '/designs', label: '設計', icon: Compass, roles: ['admin', 'ceo', 'manager'] },
     { href: '/marketing', label: 'マーケティング', icon: TrendingUp, roles: ['admin', 'ceo', 'manager'] },
     { href: '/financials', label: 'PL BS CF', icon: FileSpreadsheet, roles: ['admin', 'ceo', 'manager'] },
@@ -108,6 +118,8 @@ export function Layout({ children }: LayoutProps) {
     { href: '/agency', label: '代理店', icon: Building2, roles: ['admin', 'ceo', 'manager', 'agency'] },
     { href: '/clients', label: 'クライアント', icon: Users, roles: ['admin', 'ceo', 'manager'] },
     { href: '/notifications', label: '通知', icon: Bell, roles: ['admin', 'ceo', 'manager', 'staff', 'agency', 'client'] },
+    { href: '/translation', label: '翻訳', icon: Languages, roles: ['admin', 'ceo', 'manager'] },
+    { href: '/study', label: '勉強', icon: GraduationCap, roles: ['admin', 'ceo', 'manager'] },
     { href: '/settings', label: '設定', icon: Settings, roles: ['admin', 'ceo', 'manager', 'staff', 'agency', 'client'] },
   ];
 
