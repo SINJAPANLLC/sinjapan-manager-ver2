@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Layout } from '../components/layout';
 import { 
   Truck, 
   Building2, 
@@ -628,8 +627,8 @@ export default function LogisticsPage() {
   };
 
   return (
-    <Layout>
-      <div className="flex items-center justify-between mb-6">
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
             <Truck className="text-primary-500" size={28} />
@@ -639,7 +638,7 @@ export default function LogisticsPage() {
         </div>
       </div>
 
-      <div className="mb-4 overflow-x-auto scrollbar-hide">
+      <div className="overflow-x-auto scrollbar-hide">
         <div className="flex gap-1 bg-slate-100 p-1 rounded-xl w-max">
           {tabs.map((tab) => (
             <button
@@ -659,6 +658,6 @@ export default function LogisticsPage() {
       </div>
 
       {renderTabContent()}
-    </Layout>
+    </div>
   );
 }
