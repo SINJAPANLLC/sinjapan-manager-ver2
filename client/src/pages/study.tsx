@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GraduationCap, BookOpen, Brain, TrendingUp, Lightbulb, Loader2, ChevronDown, ChevronUp, RefreshCw, DollarSign, Users, Scale, Megaphone, Settings, AlertTriangle, Code, Cpu, Briefcase, Languages } from 'lucide-react';
+import { GraduationCap, BookOpen, Brain, Lightbulb, Loader2, ChevronDown, ChevronUp, RefreshCw, DollarSign, Users, Scale, Megaphone, Settings, AlertTriangle, Code, Cpu, Briefcase, Languages } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 
 const CATEGORIES = [
@@ -225,11 +225,11 @@ export default function StudyPage() {
                       isSelected ? `bg-gradient-to-r ${category.color} text-white` : `${category.bgColor} hover:opacity-80`
                     }`}
                   >
-                    <div className="flex items-center gap-2">
-                      <Icon size={20} />
-                      <span className="font-medium">{category.name}</span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Icon size={20} className="flex-shrink-0" />
+                      <span className="font-medium text-sm truncate">{category.name}</span>
                     </div>
-                    {isSelected ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                    <ChevronDown size={20} className={`flex-shrink-0 transition-transform ${isSelected ? 'rotate-180' : ''}`} />
                   </button>
                   
                   {isSelected && (
