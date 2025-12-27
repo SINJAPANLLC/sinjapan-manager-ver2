@@ -1567,6 +1567,121 @@ JSON形式で出力してください:
     }
   });
 
+  // Study API
+  app.post('/api/ai/study', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { topic, category } = req.body;
+      if (!topic) {
+        return res.status(400).json({ error: 'トピックを指定してください' });
+      }
+
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      });
+
+      const categoryName = category === 'psychology' ? '心理学' : '経営学';
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `あなたは${categoryName}の専門家です。ユーザーが指定したトピックについて、わかりやすく教育的なコンテンツを生成してください。
+必ず以下のJSON形式で回答してください：
+{
+  "title": "トピックのタイトル",
+  "summary": "トピックの概要説明（300-500文字）",
+  "keyPoints": ["重要ポイント1", "重要ポイント2", "重要ポイント3", "重要ポイント4", "重要ポイント5"],
+  "examples": ["具体例1", "具体例2", "具体例3"],
+  "practicalTips": ["実践的アドバイス1", "実践的アドバイス2", "実践的アドバイス3", "実践的アドバイス4"]
+}`
+          },
+          {
+            role: 'user',
+            content: `「${topic}」について詳しく教えてください。`
+          }
+        ],
+        response_format: { type: 'json_object' },
+      });
+
+      const content = completion.choices[0]?.message?.content;
+      if (!content) {
+        throw new Error('コンテンツが生成されませんでした');
+      }
+
+      const studyContent = JSON.parse(content);
+
+      await createTenantStorage(getCompanyId(req), { allowGlobal: true }).createAiLog({
+        type: 'study',
+        prompt: `[${categoryName}] ${topic}`,
+        result: studyContent.title,
+        status: 'success',
+        userId: req.session.userId,
+      });
+
+      res.json(studyContent);
+    } catch (error) {
+      console.error('Study content generation error:', error);
+      res.status(500).json({ error: 'コンテンツ生成に失敗しました' });
+    }
+  });
+
+  // Translation API
+  app.post('/api/ai/translate', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { text, sourceLang, targetLang } = req.body;
+      if (!text || !sourceLang || !targetLang) {
+        return res.status(400).json({ error: 'テキストと言語を指定してください' });
+      }
+
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      });
+
+      const langNames: Record<string, string> = {
+        'ja': 'Japanese', 'en': 'English', 'zh': 'Simplified Chinese', 'zh-TW': 'Traditional Chinese',
+        'ko': 'Korean', 'vi': 'Vietnamese', 'th': 'Thai', 'id': 'Indonesian', 'ms': 'Malay',
+        'tl': 'Filipino/Tagalog', 'my': 'Burmese', 'ne': 'Nepali', 'hi': 'Hindi', 'bn': 'Bengali',
+        'es': 'Spanish', 'pt': 'Portuguese', 'fr': 'French', 'de': 'German', 'it': 'Italian',
+        'ru': 'Russian', 'ar': 'Arabic', 'tr': 'Turkish',
+      };
+
+      const sourceLanguage = langNames[sourceLang] || sourceLang;
+      const targetLanguage = langNames[targetLang] || targetLang;
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `You are a professional translator. Translate the following text from ${sourceLanguage} to ${targetLanguage}. Only output the translated text, nothing else. Maintain the original formatting, tone, and style as much as possible.`
+          },
+          {
+            role: 'user',
+            content: text
+          }
+        ],
+      });
+
+      const translation = completion.choices[0]?.message?.content || '';
+
+      await createTenantStorage(getCompanyId(req), { allowGlobal: true }).createAiLog({
+        type: 'translation',
+        prompt: `[${sourceLang}→${targetLang}] ${text.substring(0, 100)}...`,
+        result: translation.substring(0, 100) + '...',
+        status: 'success',
+        userId: req.session.userId,
+      });
+
+      res.json({ translation });
+    } catch (error) {
+      console.error('Translation error:', error);
+      res.status(500).json({ error: '翻訳に失敗しました' });
+    }
+  });
+
   // Helper function to translate Japanese to English for better AI generation
   async function translateToEnglish(text: string): Promise<string> {
     // Check if text contains Japanese characters
