@@ -1130,3 +1130,137 @@ export const staffingSales = pgTable("staffing_sales", {
 
 export type StaffingSale = typeof staffingSales.$inferSelect;
 export type InsertStaffingSale = typeof staffingSales.$inferInsert;
+
+// ============================================
+// IT Module
+// ============================================
+
+// システム一覧 (System List)
+export const itSystems = pgTable("it_systems", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  name: text("name").notNull(),
+  description: text("description"),
+  type: text("type").default("web"), // web, mobile, desktop, api, other
+  technology: text("technology"),
+  status: text("status").notNull().default("active"), // active, maintenance, deprecated
+  url: text("url"),
+  repositoryUrl: text("repository_url"),
+  clientId: integer("client_id"),
+  notes: text("notes"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type ItSystem = typeof itSystems.$inferSelect;
+export type InsertItSystem = typeof itSystems.$inferInsert;
+
+// 案件一覧 (IT Projects)
+export const itProjects = pgTable("it_projects", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  name: text("name").notNull(),
+  description: text("description"),
+  clientId: integer("client_id"),
+  systemId: integer("system_id").references(() => itSystems.id, { onDelete: "set null" }),
+  type: text("type").default("development"), // development, maintenance, consulting, support
+  status: text("status").notNull().default("pending"), // pending, in_progress, completed, cancelled
+  budget: decimal("budget", { precision: 15, scale: 2 }),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  deadline: timestamp("deadline"),
+  priority: text("priority").default("medium"), // low, medium, high, urgent
+  notes: text("notes"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type ItProject = typeof itProjects.$inferSelect;
+export type InsertItProject = typeof itProjects.$inferInsert;
+
+// クライアント一覧 (IT Clients)
+export const itClients = pgTable("it_clients", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  name: text("name").notNull(),
+  contactName: text("contact_name"),
+  email: text("email"),
+  phone: text("phone"),
+  address: text("address"),
+  industry: text("industry"),
+  status: text("status").notNull().default("active"), // active, inactive, prospect
+  notes: text("notes"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type ItClient = typeof itClients.$inferSelect;
+export type InsertItClient = typeof itClients.$inferInsert;
+
+// 外注一覧 (IT Vendors/Outsource)
+export const itVendors = pgTable("it_vendors", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  name: text("name").notNull(),
+  contactName: text("contact_name"),
+  email: text("email"),
+  phone: text("phone"),
+  specialty: text("specialty"),
+  hourlyRate: decimal("hourly_rate", { precision: 10, scale: 2 }),
+  rating: integer("rating"),
+  status: text("status").notNull().default("active"), // active, inactive
+  notes: text("notes"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type ItVendor = typeof itVendors.$inferSelect;
+export type InsertItVendor = typeof itVendors.$inferInsert;
+
+// 請求書 (IT Invoices)
+export const itInvoices = pgTable("it_invoices", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  invoiceNumber: text("invoice_number").notNull(),
+  clientId: integer("client_id").references(() => itClients.id, { onDelete: "set null" }),
+  projectId: integer("project_id").references(() => itProjects.id, { onDelete: "set null" }),
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+  tax: decimal("tax", { precision: 15, scale: 2 }).default("0"),
+  totalAmount: decimal("total_amount", { precision: 15, scale: 2 }).notNull(),
+  issueDate: timestamp("issue_date").defaultNow().notNull(),
+  dueDate: timestamp("due_date"),
+  paidDate: timestamp("paid_date"),
+  status: text("status").notNull().default("draft"), // draft, sent, paid, overdue, cancelled
+  description: text("description"),
+  notes: text("notes"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type ItInvoice = typeof itInvoices.$inferSelect;
+export type InsertItInvoice = typeof itInvoices.$inferInsert;
+
+// 売上 (IT Sales)
+export const itSales = pgTable("it_sales", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id", { length: 255 }),
+  type: text("type").notNull().default("project"), // project, maintenance, consulting, support
+  clientId: integer("client_id").references(() => itClients.id, { onDelete: "set null" }),
+  projectId: integer("project_id").references(() => itProjects.id, { onDelete: "set null" }),
+  invoiceId: integer("invoice_id").references(() => itInvoices.id, { onDelete: "set null" }),
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+  saleDate: timestamp("sale_date").defaultNow().notNull(),
+  description: text("description"),
+  notes: text("notes"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type ItSale = typeof itSales.$inferSelect;
+export type InsertItSale = typeof itSales.$inferInsert;
