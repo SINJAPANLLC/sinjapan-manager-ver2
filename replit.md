@@ -26,7 +26,7 @@ The application features a refined white-based theme with blue gradient accents,
 -   **Multi-tenancy**: Implemented via subdomain-based tenant separation, with dedicated branding, data segregation using a tenant storage wrapper, and support for tenant-specific Square payment settings and AI features.
 -   **Security**: Server-side role-based authorization on all routes, staff ownership validation for data access, and session management.
 -   **Role-Based Access Control**: Granular permissions for Admin/CEO, Manager, Staff, Agency, and Client roles, ensuring data visibility and feature access are restricted according to the user's role.
--   **AI Features**: Integrated capabilities for AI text conversation (GPT-4o-mini), image/video/voice generation (MODELSLAB API), SEO article generation, list generation, document generation, multi-language translation (22 languages), and learning content generation (psychology/business management).
+-   **AI Features**: Integrated capabilities for AI text conversation (GPT-4o-mini), image/video/voice generation (MODELSLAB API), SEO article generation, list generation, document generation, multi-language translation (22 languages), learning content generation (psychology/business management), music concept/lyrics generation, LP (landing page) structure/copy generation, and drama script generation.
 -   **Workflow & Organization Visualization**: Interactive diagrams using React Flow for task workflows and organizational structures, with editing, full-screen, PDF export, and reset functionalities.
 -   **Data Filtering**: Role-based data filtering ensuring users only access data relevant to their permissions (e.g., staff only see their own created data).
 
