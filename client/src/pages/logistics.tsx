@@ -73,7 +73,7 @@ function ShippersTab() {
             <Filter size={18} />
           </button>
         </div>
-        <button className="btn-primary flex items-center gap-2">
+        <button className="btn-primary flex items-center gap-2 whitespace-nowrap">
           <Plus size={18} />
           荷主追加
         </button>
@@ -116,7 +116,7 @@ function CompaniesTab() {
             />
           </div>
         </div>
-        <button className="btn-primary flex items-center gap-2">
+        <button className="btn-primary flex items-center gap-2 whitespace-nowrap">
           <Plus size={18} />
           会社追加
         </button>
@@ -161,7 +161,7 @@ function ProjectsTab() {
             />
           </div>
         </div>
-        <button className="btn-primary flex items-center gap-2">
+        <button className="btn-primary flex items-center gap-2 whitespace-nowrap">
           <Plus size={18} />
           案件追加
         </button>
@@ -204,7 +204,7 @@ function DispatchTab() {
             <option>全ての車両</option>
           </select>
         </div>
-        <button className="btn-primary flex items-center gap-2">
+        <button className="btn-primary flex items-center gap-2 whitespace-nowrap">
           <Plus size={18} />
           配車追加
         </button>
@@ -243,7 +243,7 @@ function VehiclesTab() {
             className="pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
-        <button className="btn-primary flex items-center gap-2">
+        <button className="btn-primary flex items-center gap-2 whitespace-nowrap">
           <Plus size={18} />
           車両追加
         </button>
@@ -285,7 +285,7 @@ function MastercardTab() {
             className="pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
-        <button className="btn-primary flex items-center gap-2">
+        <button className="btn-primary flex items-center gap-2 whitespace-nowrap">
           <Plus size={18} />
           カード追加
         </button>
@@ -307,7 +307,7 @@ function SummaryTab() {
         <select className="px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
           <option>案件を選択</option>
         </select>
-        <button className="btn-primary flex items-center gap-2">
+        <button className="btn-primary flex items-center gap-2 whitespace-nowrap">
           <Plus size={18} />
           概要書作成
         </button>
@@ -334,7 +334,7 @@ function QuotationTab() {
             className="pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
-        <button className="btn-primary flex items-center gap-2">
+        <button className="btn-primary flex items-center gap-2 whitespace-nowrap">
           <Plus size={18} />
           見積書作成
         </button>
@@ -376,7 +376,7 @@ function InstructionsTab() {
             className="pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
-        <button className="btn-primary flex items-center gap-2">
+        <button className="btn-primary flex items-center gap-2 whitespace-nowrap">
           <Plus size={18} />
           指示書作成
         </button>
@@ -425,7 +425,7 @@ function InvoiceTab() {
             />
           </div>
         </div>
-        <button className="btn-primary flex items-center gap-2">
+        <button className="btn-primary flex items-center gap-2 whitespace-nowrap">
           <Plus size={18} />
           請求書作成
         </button>
@@ -467,7 +467,7 @@ function ReceiptTab() {
             className="pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
-        <button className="btn-primary flex items-center gap-2">
+        <button className="btn-primary flex items-center gap-2 whitespace-nowrap">
           <Plus size={18} />
           受領書作成
         </button>
@@ -515,7 +515,7 @@ function PaymentTab() {
             />
           </div>
         </div>
-        <button className="btn-primary flex items-center gap-2">
+        <button className="btn-primary flex items-center gap-2 whitespace-nowrap">
           <Plus size={18} />
           支払書作成
         </button>
@@ -561,7 +561,7 @@ function CashflowTab() {
             <option>出金</option>
           </select>
         </div>
-        <button className="btn-primary flex items-center gap-2">
+        <button className="btn-primary flex items-center gap-2 whitespace-nowrap">
           <Plus size={18} />
           入出金追加
         </button>
@@ -637,8 +637,8 @@ export default function LogisticsPage() {
         <p className="text-slate-500 mt-1">物流業務の総合管理</p>
       </div>
 
-      <div className="mb-6 overflow-x-auto">
-        <div className="flex gap-1 min-w-max bg-slate-100 p-1 rounded-xl">
+      <div className="mb-6 -mx-4 px-4 overflow-x-auto scrollbar-hide">
+        <div className="inline-flex gap-1 bg-slate-100 p-1 rounded-xl">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -650,7 +650,7 @@ export default function LogisticsPage() {
               }`}
             >
               {tab.icon}
-              {tab.label}
+              <span className="hidden sm:inline">{tab.label}</span>
             </button>
           ))}
         </div>

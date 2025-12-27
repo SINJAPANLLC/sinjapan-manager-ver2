@@ -172,3 +172,12 @@
   background: rgba(0, 112, 243, 0.15);
   color: #0070f3;
 }
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
