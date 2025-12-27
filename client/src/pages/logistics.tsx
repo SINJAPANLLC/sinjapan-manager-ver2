@@ -628,7 +628,7 @@ export default function LogisticsPage() {
   };
 
   return (
-    <Layout contentClassName="p-2 sm:p-3 lg:p-4">
+    <Layout contentClassName="pl-0 pr-2 pt-2 pb-0 sm:pl-0 sm:pr-3 sm:pt-3 lg:pl-0 lg:pr-4 lg:pt-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Truck className="text-primary-500" size={20} />
