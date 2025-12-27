@@ -1633,10 +1633,10 @@ JSON形式で出力してください:
     }
   });
 
-  // LP Generation API
+  // LP Generation API - generates actual HTML
   app.post('/api/ai/lp', requireAuth, async (req: Request, res: Response) => {
     try {
-      const { purpose, target, features } = req.body;
+      const { purpose, target, features, generateHtml } = req.body;
       if (!purpose) {
         return res.status(400).json({ error: 'サービスの目的を入力してください' });
       }
@@ -1646,66 +1646,64 @@ JSON形式で出力してください:
         baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
       });
 
+      // Generate HTML LP
       const completion = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
-            content: `あなたは優秀なマーケター兼コピーライターです。コンバージョン率の高いランディングページの構成とコピーを作成してください。
+            content: `あなたは優秀なWebデザイナー兼マーケターです。コンバージョン率の高いランディングページの完全なHTMLコードを生成してください。
 
-以下の構成で回答してください：
-1. 【ファーストビュー】
-   - キャッチコピー（インパクトのある一文）
-   - サブコピー（価値提案）
-   - CTAボタンのテキスト
+以下の要件を満たしてください：
+1. 完全な単一HTMLファイル（CSS埋め込み、外部依存なし）
+2. レスポンシブデザイン（モバイル対応）
+3. モダンでプロフェッショナルなデザイン
+4. 以下のセクションを含む：
+   - ヒーローセクション（キャッチコピー、サブコピー、CTAボタン）
+   - 問題提起セクション
+   - 解決策・ベネフィットセクション
+   - 特徴・強みセクション（アイコン付き3カラム）
+   - お客様の声セクション
+   - FAQ セクション
+   - 最終CTAセクション
+   - フッター
 
-2. 【問題提起セクション】
-   - ターゲットが抱える悩みや課題を3つ
+5. カラースキーム：プロフェッショナルなブルー系グラデーション
+6. 日本語フォント対応
+7. アニメーション効果（CSS only）
 
-3. 【解決策セクション】
-   - サービスがどう解決するか
-   - 具体的なベネフィット3-5個
-
-4. 【特徴・強みセクション】
-   - 差別化ポイント3つ
-   - 各特徴のキャッチコピーと説明
-
-5. 【社会的証明セクション】
-   - お客様の声（サンプル）3件
-   - 実績・数字で示せるもの
-
-6. 【よくある質問】
-   - FAQ 5つ
-
-7. 【CTA（行動喚起）】
-   - 最終的なオファーとCTAボタン
-   - 今すぐ行動すべき理由`
+HTMLコードのみを返してください。説明やマークダウンは不要です。<!DOCTYPE html>から始めてください。`
           },
           {
             role: 'user',
-            content: `サービス/製品の目的: ${purpose}
-ターゲット層: ${target || '指定なし'}
-サービスの特徴・強み: ${features || '指定なし'}
+            content: `以下の情報でLPを作成してください：
 
-上記の情報をもとに、コンバージョン率の高いLPの構成とコピーを作成してください。`
+サービス/製品の目的: ${purpose}
+ターゲット層: ${target || '一般ユーザー'}
+サービスの特徴・強み: ${features || '高品質、使いやすい、サポート充実'}
+
+完全なHTMLコードを生成してください。`
           }
         ],
       });
 
-      const content = completion.choices[0]?.message?.content || '';
+      let html = completion.choices[0]?.message?.content || '';
+      
+      // Clean up the response - remove markdown code blocks if present
+      html = html.replace(/^```html?\n?/i, '').replace(/\n?```$/i, '').trim();
 
       await createTenantStorage(getCompanyId(req), { allowGlobal: true }).createAiLog({
         type: 'lp',
         prompt: purpose.substring(0, 50) + '...',
-        result: content.substring(0, 100) + '...',
+        result: 'HTML LP generated',
         status: 'success',
         userId: req.session.userId,
       });
 
-      res.json({ content });
+      res.json({ html, content: html });
     } catch (error) {
       console.error('LP generation error:', error);
-      res.status(500).json({ error: 'LP構成の生成に失敗しました' });
+      res.status(500).json({ error: 'LP生成に失敗しました' });
     }
   });
 

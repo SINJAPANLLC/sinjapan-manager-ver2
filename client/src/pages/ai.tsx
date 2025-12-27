@@ -192,6 +192,11 @@ export function AiPage() {
   const [dramaEpisodes, setDramaEpisodes] = useState('1');
   const [dramaCharacters, setDramaCharacters] = useState('');
   const [generatedDrama, setGeneratedDrama] = useState('');
+  const [scenePrompt, setScenePrompt] = useState('');
+  const [generatedSceneVideo, setGeneratedSceneVideo] = useState('');
+  const [generatedMusicAudio, setGeneratedMusicAudio] = useState('');
+  const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
+  const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
 
   const tabs = [
     { id: 'chat' as TabType, label: 'テキスト会話', icon: MessageSquare },
@@ -2573,20 +2578,71 @@ export function AiPage() {
             </button>
 
             {generatedMusicScript && (
-              <div className="mt-4 p-4 bg-slate-50 rounded-lg">
-                <h3 className="font-medium text-slate-800 mb-3">生成された音楽コンセプト</h3>
-                <pre className="whitespace-pre-wrap text-sm text-slate-600 font-sans">{generatedMusicScript}</pre>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(generatedMusicScript);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                  }}
-                  className="mt-3 btn-secondary flex items-center gap-2"
-                >
-                  {copied ? <Check size={16} /> : <Copy size={16} />}
-                  {copied ? 'コピー済み' : 'コピー'}
-                </button>
+              <div className="mt-4 space-y-4">
+                <div className="p-4 bg-slate-50 rounded-lg">
+                  <h3 className="font-medium text-slate-800 mb-3">生成された音楽コンセプト</h3>
+                  <pre className="whitespace-pre-wrap text-sm text-slate-600 font-sans max-h-[400px] overflow-y-auto">{generatedMusicScript}</pre>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(generatedMusicScript);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    className="mt-3 btn-secondary flex items-center gap-2"
+                  >
+                    {copied ? <Check size={16} /> : <Copy size={16} />}
+                    {copied ? 'コピー済み' : 'コピー'}
+                  </button>
+                </div>
+
+                <div className="p-4 bg-pink-50 rounded-lg border border-pink-200">
+                  <h3 className="font-medium text-slate-800 mb-3 flex items-center gap-2">
+                    <Mic size={18} className="text-pink-500" />
+                    歌詞を音声で聴く
+                  </h3>
+                  <p className="text-sm text-slate-500 mb-3">生成された歌詞をAI音声で読み上げます</p>
+                  <button
+                    onClick={async () => {
+                      setIsGeneratingAudio(true);
+                      try {
+                        // Extract lyrics section from the script
+                        const lyricsMatch = generatedMusicScript.match(/【歌詞】[\s\S]*?(?=【|$)/);
+                        const lyrics = lyricsMatch ? lyricsMatch[0].replace('【歌詞】', '').trim() : generatedMusicScript.substring(0, 500);
+                        
+                        const res = await fetch('/api/ai/voice', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          credentials: 'include',
+                          body: JSON.stringify({ text: lyrics, voice: 'female1' }),
+                        });
+                        if (res.ok) {
+                          const data = await res.json();
+                          if (data.audioUrl) {
+                            setGeneratedMusicAudio(data.audioUrl);
+                          }
+                        }
+                      } catch (error) {
+                        console.error('Voice generation error:', error);
+                      } finally {
+                        setIsGeneratingAudio(false);
+                      }
+                    }}
+                    disabled={isGeneratingAudio}
+                    className="btn-primary flex items-center gap-2 bg-pink-500 hover:bg-pink-600"
+                  >
+                    {isGeneratingAudio ? <Loader2 className="animate-spin" size={16} /> : <Mic size={16} />}
+                    歌詞を読み上げる
+                  </button>
+                  {generatedMusicAudio && (
+                    <div className="mt-4">
+                      <audio src={generatedMusicAudio} controls className="w-full" />
+                      <a href={generatedMusicAudio} download target="_blank" rel="noopener noreferrer" className="mt-2 btn-secondary inline-flex items-center gap-2">
+                        <Download size={16} />
+                        音声をダウンロード
+                      </a>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -2598,7 +2654,7 @@ export function AiPage() {
               <Layout className="text-primary-500" size={20} />
               LP（ランディングページ）生成
             </h2>
-            <p className="text-sm text-slate-500">AIでランディングページの構成とコピーを自動生成します</p>
+            <p className="text-sm text-slate-500">AIで実際に動作するランディングページを自動生成します</p>
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">サービス/製品の目的 *</label>
@@ -2645,7 +2701,7 @@ export function AiPage() {
                   });
                   if (res.ok) {
                     const data = await res.json();
-                    setGeneratedLp(data.content);
+                    setGeneratedLp(data.html || data.content);
                   }
                 } finally {
                   setIsLoading(false);
@@ -2655,24 +2711,59 @@ export function AiPage() {
               className="btn-primary flex items-center gap-2"
             >
               {isLoading ? <Loader2 className="animate-spin" size={16} /> : <Layout size={16} />}
-              LP構成を生成
+              LPを生成
             </button>
 
             {generatedLp && (
-              <div className="mt-4 p-4 bg-slate-50 rounded-lg">
-                <h3 className="font-medium text-slate-800 mb-3">生成されたLP構成</h3>
-                <pre className="whitespace-pre-wrap text-sm text-slate-600 font-sans">{generatedLp}</pre>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(generatedLp);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                  }}
-                  className="mt-3 btn-secondary flex items-center gap-2"
-                >
-                  {copied ? <Check size={16} /> : <Copy size={16} />}
-                  {copied ? 'コピー済み' : 'コピー'}
-                </button>
+              <div className="mt-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium text-slate-800">生成されたLP</h3>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        const blob = new Blob([generatedLp], { type: 'text/html' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'landing-page.html';
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      }}
+                      className="btn-secondary flex items-center gap-2 text-sm"
+                    >
+                      <Download size={16} />
+                      HTMLダウンロード
+                    </button>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(generatedLp);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      }}
+                      className="btn-secondary flex items-center gap-2 text-sm"
+                    >
+                      {copied ? <Check size={16} /> : <Copy size={16} />}
+                      {copied ? 'コピー済み' : 'コードをコピー'}
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="border border-slate-200 rounded-lg overflow-hidden bg-white">
+                  <div className="bg-slate-100 px-4 py-2 border-b border-slate-200 flex items-center gap-2">
+                    <div className="flex gap-1.5">
+                      <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                      <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
+                      <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                    </div>
+                    <span className="text-xs text-slate-500 ml-2">プレビュー</span>
+                  </div>
+                  <iframe
+                    srcDoc={generatedLp}
+                    className="w-full h-[600px] border-0"
+                    title="LP Preview"
+                    sandbox="allow-scripts"
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -2769,20 +2860,82 @@ export function AiPage() {
             </button>
 
             {generatedDrama && (
-              <div className="mt-4 p-4 bg-slate-50 rounded-lg max-h-[600px] overflow-y-auto">
-                <h3 className="font-medium text-slate-800 mb-3">生成されたドラマ脚本</h3>
-                <pre className="whitespace-pre-wrap text-sm text-slate-600 font-sans">{generatedDrama}</pre>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(generatedDrama);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                  }}
-                  className="mt-3 btn-secondary flex items-center gap-2"
-                >
-                  {copied ? <Check size={16} /> : <Copy size={16} />}
-                  {copied ? 'コピー済み' : 'コピー'}
-                </button>
+              <div className="mt-4 space-y-4">
+                <div className="p-4 bg-slate-50 rounded-lg max-h-[400px] overflow-y-auto">
+                  <h3 className="font-medium text-slate-800 mb-3">生成されたドラマ脚本</h3>
+                  <pre className="whitespace-pre-wrap text-sm text-slate-600 font-sans">{generatedDrama}</pre>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(generatedDrama);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    className="mt-3 btn-secondary flex items-center gap-2"
+                  >
+                    {copied ? <Check size={16} /> : <Copy size={16} />}
+                    {copied ? 'コピー済み' : 'コピー'}
+                  </button>
+                </div>
+
+                <div className="p-4 bg-indigo-50 rounded-lg border border-indigo-200">
+                  <h3 className="font-medium text-slate-800 mb-3 flex items-center gap-2">
+                    <Video size={18} className="text-indigo-500" />
+                    シーン動画を生成
+                  </h3>
+                  <p className="text-sm text-slate-500 mb-3">脚本のシーンを動画に変換します（動画生成APIを使用）</p>
+                  <div className="mb-3">
+                    <label className="block text-sm font-medium text-slate-700 mb-2">シーンの説明</label>
+                    <textarea
+                      value={scenePrompt}
+                      onChange={(e) => setScenePrompt(e.target.value)}
+                      placeholder="例: 朝焼けの田舎の風景。主人公が丘の上から村を見下ろしている。風が穏やかに吹いている。"
+                      className="w-full h-20 px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary-500"
+                    />
+                  </div>
+                  <button
+                    onClick={async () => {
+                      if (!scenePrompt.trim()) return;
+                      setIsGeneratingVideo(true);
+                      try {
+                        const res = await fetch('/api/ai/video', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          credentials: 'include',
+                          body: JSON.stringify({ 
+                            prompt: scenePrompt, 
+                            provider: 'modelslab',
+                            aspectRatio: '16:9',
+                            seconds: 5
+                          }),
+                        });
+                        if (res.ok) {
+                          const data = await res.json();
+                          if (data.videoUrl) {
+                            setGeneratedSceneVideo(data.videoUrl);
+                          }
+                        }
+                      } catch (error) {
+                        console.error('Video generation error:', error);
+                      } finally {
+                        setIsGeneratingVideo(false);
+                      }
+                    }}
+                    disabled={isGeneratingVideo || !scenePrompt.trim()}
+                    className="btn-primary flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600"
+                  >
+                    {isGeneratingVideo ? <Loader2 className="animate-spin" size={16} /> : <Video size={16} />}
+                    シーン動画を生成
+                  </button>
+                  {generatedSceneVideo && (
+                    <div className="mt-4">
+                      <video src={generatedSceneVideo} controls className="w-full rounded-lg" />
+                      <a href={generatedSceneVideo} download target="_blank" rel="noopener noreferrer" className="mt-2 btn-secondary inline-flex items-center gap-2">
+                        <Download size={16} />
+                        動画をダウンロード
+                      </a>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
