@@ -1567,6 +1567,216 @@ JSON形式で出力してください:
     }
   });
 
+  // Music Generation API
+  app.post('/api/ai/music', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { prompt, genre, mood } = req.body;
+      if (!prompt) {
+        return res.status(400).json({ error: '曲のテーマを入力してください' });
+      }
+
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      });
+
+      const genreMap: Record<string, string> = {
+        'pop': 'ポップミュージック', 'rock': 'ロック', 'jazz': 'ジャズ', 'classical': 'クラシック',
+        'electronic': 'エレクトロニカ/EDM', 'hiphop': 'ヒップホップ', 'rnb': 'R&B', 'ambient': 'アンビエント',
+        'folk': 'フォーク', 'jpop': 'J-POP',
+      };
+      const moodMap: Record<string, string> = {
+        'cheerful': '明るく楽しい', 'romantic': 'ロマンチック', 'melancholy': '切なく哀愁漂う',
+        'energetic': 'エネルギッシュ', 'calm': '穏やかでリラックス', 'dramatic': 'ドラマチック',
+        'mysterious': '神秘的', 'nostalgic': 'ノスタルジック',
+      };
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `あなたは経験豊富な作曲家・作詞家です。ユーザーの要望に基づいて、音楽のコンセプト、歌詞、メロディのアイデアを詳細に提案してください。
+
+以下の構成で回答してください：
+1. 【曲のタイトル案】3つ提案
+2. 【コンセプト】曲の世界観やメッセージ
+3. 【歌詞】1番のサビと1コーラス分の歌詞
+4. 【メロディ・アレンジの提案】テンポ、キー、楽器構成、アレンジのアイデア
+5. 【参考曲】この方向性に近い既存の曲を2-3曲紹介`
+          },
+          {
+            role: 'user',
+            content: `ジャンル: ${genreMap[genre] || genre}
+ムード: ${moodMap[mood] || mood}
+テーマ: ${prompt}
+
+上記の条件で曲のコンセプトと歌詞を作成してください。`
+          }
+        ],
+      });
+
+      const script = completion.choices[0]?.message?.content || '';
+
+      await createTenantStorage(getCompanyId(req), { allowGlobal: true }).createAiLog({
+        type: 'music',
+        prompt: `[${genre}/${mood}] ${prompt.substring(0, 50)}...`,
+        result: script.substring(0, 100) + '...',
+        status: 'success',
+        userId: req.session.userId,
+      });
+
+      res.json({ script });
+    } catch (error) {
+      console.error('Music generation error:', error);
+      res.status(500).json({ error: '音楽コンセプトの生成に失敗しました' });
+    }
+  });
+
+  // LP Generation API
+  app.post('/api/ai/lp', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { purpose, target, features } = req.body;
+      if (!purpose) {
+        return res.status(400).json({ error: 'サービスの目的を入力してください' });
+      }
+
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      });
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `あなたは優秀なマーケター兼コピーライターです。コンバージョン率の高いランディングページの構成とコピーを作成してください。
+
+以下の構成で回答してください：
+1. 【ファーストビュー】
+   - キャッチコピー（インパクトのある一文）
+   - サブコピー（価値提案）
+   - CTAボタンのテキスト
+
+2. 【問題提起セクション】
+   - ターゲットが抱える悩みや課題を3つ
+
+3. 【解決策セクション】
+   - サービスがどう解決するか
+   - 具体的なベネフィット3-5個
+
+4. 【特徴・強みセクション】
+   - 差別化ポイント3つ
+   - 各特徴のキャッチコピーと説明
+
+5. 【社会的証明セクション】
+   - お客様の声（サンプル）3件
+   - 実績・数字で示せるもの
+
+6. 【よくある質問】
+   - FAQ 5つ
+
+7. 【CTA（行動喚起）】
+   - 最終的なオファーとCTAボタン
+   - 今すぐ行動すべき理由`
+          },
+          {
+            role: 'user',
+            content: `サービス/製品の目的: ${purpose}
+ターゲット層: ${target || '指定なし'}
+サービスの特徴・強み: ${features || '指定なし'}
+
+上記の情報をもとに、コンバージョン率の高いLPの構成とコピーを作成してください。`
+          }
+        ],
+      });
+
+      const content = completion.choices[0]?.message?.content || '';
+
+      await createTenantStorage(getCompanyId(req), { allowGlobal: true }).createAiLog({
+        type: 'lp',
+        prompt: purpose.substring(0, 50) + '...',
+        result: content.substring(0, 100) + '...',
+        status: 'success',
+        userId: req.session.userId,
+      });
+
+      res.json({ content });
+    } catch (error) {
+      console.error('LP generation error:', error);
+      res.status(500).json({ error: 'LP構成の生成に失敗しました' });
+    }
+  });
+
+  // Drama Script Generation API
+  app.post('/api/ai/drama', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { genre, theme, episodes, characters } = req.body;
+      if (!theme) {
+        return res.status(400).json({ error: 'ストーリーのテーマを入力してください' });
+      }
+
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      });
+
+      const genreMap: Record<string, string> = {
+        'romance': 'ロマンス・恋愛', 'comedy': 'コメディ', 'thriller': 'サスペンス・スリラー',
+        'drama': 'ヒューマンドラマ', 'action': 'アクション', 'scifi': 'SF・ファンタジー',
+        'mystery': 'ミステリー', 'horror': 'ホラー', 'historical': '時代劇・歴史', 'family': 'ファミリー',
+      };
+
+      const episodeCount = parseInt(episodes) || 1;
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `あなたは経験豊富な脚本家です。ドラマや映画の脚本を執筆してください。
+
+以下の構成で回答してください：
+1. 【タイトル】作品タイトルと英語タイトル
+2. 【ログライン】1-2文で作品を要約
+3. 【あらすじ】全体のストーリー概要（300字程度）
+4. 【主要キャラクター】各キャラクターの詳細設定
+5. 【各話プロット】${episodeCount}話分のあらすじと見どころ
+6. 【第1話 脚本】
+   - シーン1から始まる詳細な脚本
+   - ト書き、セリフ、演出指示を含む
+   - プロの脚本フォーマットで記述`
+          },
+          {
+            role: 'user',
+            content: `ジャンル: ${genreMap[genre] || genre}
+テーマ・ストーリー概要: ${theme}
+話数: ${episodeCount}話
+キャラクター設定: ${characters || '自由に設定してください'}
+
+上記の条件でドラマの脚本を作成してください。`
+          }
+        ],
+      });
+
+      const script = completion.choices[0]?.message?.content || '';
+
+      await createTenantStorage(getCompanyId(req), { allowGlobal: true }).createAiLog({
+        type: 'drama',
+        prompt: `[${genre}/${episodes}話] ${theme.substring(0, 40)}...`,
+        result: script.substring(0, 100) + '...',
+        status: 'success',
+        userId: req.session.userId,
+      });
+
+      res.json({ script });
+    } catch (error) {
+      console.error('Drama script generation error:', error);
+      res.status(500).json({ error: 'ドラマ脚本の生成に失敗しました' });
+    }
+  });
+
   // Study API
   app.post('/api/ai/study', requireAuth, async (req: Request, res: Response) => {
     try {

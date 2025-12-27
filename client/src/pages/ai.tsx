@@ -34,12 +34,15 @@ import {
   FolderOpen,
   Target,
   BookOpen,
-  RefreshCw
+  RefreshCw,
+  Music,
+  Layout,
+  Film
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 
-type TabType = 'image' | 'video' | 'seo' | 'voice' | 'list' | 'document' | 'chat' | 'voiceChat' | 'logs' | 'automation' | 'knowledge';
+type TabType = 'image' | 'video' | 'seo' | 'voice' | 'list' | 'document' | 'chat' | 'voiceChat' | 'logs' | 'automation' | 'knowledge' | 'music' | 'lp' | 'drama';
 
 interface AiKnowledge {
   id: number;
@@ -172,6 +175,24 @@ export function AiPage() {
   const [docDetails, setDocDetails] = useState('');
   const [generatedDoc, setGeneratedDoc] = useState('');
 
+  const [musicPrompt, setMusicPrompt] = useState('');
+  const [musicGenre, setMusicGenre] = useState('pop');
+  const [musicMood, setMusicMood] = useState('cheerful');
+  const [musicDuration, setMusicDuration] = useState('30');
+  const [generatedMusicUrl, setGeneratedMusicUrl] = useState('');
+  const [generatedMusicScript, setGeneratedMusicScript] = useState('');
+
+  const [lpPurpose, setLpPurpose] = useState('');
+  const [lpTarget, setLpTarget] = useState('');
+  const [lpFeatures, setLpFeatures] = useState('');
+  const [generatedLp, setGeneratedLp] = useState('');
+
+  const [dramaGenre, setDramaGenre] = useState('romance');
+  const [dramaTheme, setDramaTheme] = useState('');
+  const [dramaEpisodes, setDramaEpisodes] = useState('1');
+  const [dramaCharacters, setDramaCharacters] = useState('');
+  const [generatedDrama, setGeneratedDrama] = useState('');
+
   const tabs = [
     { id: 'chat' as TabType, label: 'テキスト会話', icon: MessageSquare },
     { id: 'image' as TabType, label: '画像生成', icon: Image },
@@ -180,6 +201,9 @@ export function AiPage() {
     { id: 'voice' as TabType, label: '音声生成', icon: Mic },
     { id: 'list' as TabType, label: 'リスト生成', icon: List },
     { id: 'document' as TabType, label: '書類生成', icon: FileSpreadsheet },
+    { id: 'music' as TabType, label: '音楽生成', icon: Music },
+    { id: 'lp' as TabType, label: 'LP生成', icon: Layout },
+    { id: 'drama' as TabType, label: 'ドラマ生成', icon: Film },
     { id: 'voiceChat' as TabType, label: '音声会話', icon: Phone },
     { id: 'knowledge' as TabType, label: '知識ベース', icon: BookOpen },
     { id: 'logs' as TabType, label: 'ログ', icon: History },
@@ -2461,6 +2485,306 @@ export function AiPage() {
                 )}
               </div>
             </div>
+          </div>
+        )}
+
+        {activeTab === 'music' && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+              <Music className="text-primary-500" size={20} />
+              音楽生成
+            </h2>
+            <p className="text-sm text-slate-500">AIで音楽のコンセプト・歌詞・メロディアイデアを生成します</p>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">ジャンル</label>
+                <select
+                  value={musicGenre}
+                  onChange={(e) => setMusicGenre(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="pop">ポップ</option>
+                  <option value="rock">ロック</option>
+                  <option value="jazz">ジャズ</option>
+                  <option value="classical">クラシック</option>
+                  <option value="electronic">エレクトロニック</option>
+                  <option value="hiphop">ヒップホップ</option>
+                  <option value="rnb">R&B</option>
+                  <option value="ambient">アンビエント</option>
+                  <option value="folk">フォーク</option>
+                  <option value="jpop">J-POP</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">ムード</label>
+                <select
+                  value={musicMood}
+                  onChange={(e) => setMusicMood(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="cheerful">明るい・楽しい</option>
+                  <option value="romantic">ロマンチック</option>
+                  <option value="melancholy">切ない・哀愁</option>
+                  <option value="energetic">エネルギッシュ</option>
+                  <option value="calm">穏やか・リラックス</option>
+                  <option value="dramatic">ドラマチック</option>
+                  <option value="mysterious">神秘的</option>
+                  <option value="nostalgic">ノスタルジック</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">曲のテーマ・コンセプト</label>
+              <textarea
+                value={musicPrompt}
+                onChange={(e) => setMusicPrompt(e.target.value)}
+                placeholder="どんな曲を作りたいか説明してください...（例: 夏の海を思い出させる爽やかな曲、失恋から立ち直る希望の歌など）"
+                className="w-full h-24 px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+
+            <button
+              onClick={async () => {
+                if (!musicPrompt.trim()) return;
+                setIsLoading(true);
+                try {
+                  const res = await fetch('/api/ai/music', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ prompt: musicPrompt, genre: musicGenre, mood: musicMood }),
+                  });
+                  if (res.ok) {
+                    const data = await res.json();
+                    setGeneratedMusicScript(data.script);
+                  }
+                } finally {
+                  setIsLoading(false);
+                }
+              }}
+              disabled={isLoading || !musicPrompt.trim()}
+              className="btn-primary flex items-center gap-2"
+            >
+              {isLoading ? <Loader2 className="animate-spin" size={16} /> : <Music size={16} />}
+              音楽コンセプトを生成
+            </button>
+
+            {generatedMusicScript && (
+              <div className="mt-4 p-4 bg-slate-50 rounded-lg">
+                <h3 className="font-medium text-slate-800 mb-3">生成された音楽コンセプト</h3>
+                <pre className="whitespace-pre-wrap text-sm text-slate-600 font-sans">{generatedMusicScript}</pre>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(generatedMusicScript);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                  className="mt-3 btn-secondary flex items-center gap-2"
+                >
+                  {copied ? <Check size={16} /> : <Copy size={16} />}
+                  {copied ? 'コピー済み' : 'コピー'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'lp' && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+              <Layout className="text-primary-500" size={20} />
+              LP（ランディングページ）生成
+            </h2>
+            <p className="text-sm text-slate-500">AIでランディングページの構成とコピーを自動生成します</p>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">サービス/製品の目的 *</label>
+              <input
+                type="text"
+                value={lpPurpose}
+                onChange={(e) => setLpPurpose(e.target.value)}
+                placeholder="例: オンライン英会話サービスの会員登録を増やす"
+                className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">ターゲット層</label>
+              <input
+                type="text"
+                value={lpTarget}
+                onChange={(e) => setLpTarget(e.target.value)}
+                placeholder="例: 20-40代のビジネスパーソン、英語でのキャリアアップを目指す人"
+                className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">サービスの特徴・強み</label>
+              <textarea
+                value={lpFeatures}
+                onChange={(e) => setLpFeatures(e.target.value)}
+                placeholder="例: 24時間いつでもレッスン可能、ネイティブ講師500名在籍、ビジネス英語に特化..."
+                className="w-full h-24 px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+
+            <button
+              onClick={async () => {
+                if (!lpPurpose.trim()) return;
+                setIsLoading(true);
+                try {
+                  const res = await fetch('/api/ai/lp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ purpose: lpPurpose, target: lpTarget, features: lpFeatures }),
+                  });
+                  if (res.ok) {
+                    const data = await res.json();
+                    setGeneratedLp(data.content);
+                  }
+                } finally {
+                  setIsLoading(false);
+                }
+              }}
+              disabled={isLoading || !lpPurpose.trim()}
+              className="btn-primary flex items-center gap-2"
+            >
+              {isLoading ? <Loader2 className="animate-spin" size={16} /> : <Layout size={16} />}
+              LP構成を生成
+            </button>
+
+            {generatedLp && (
+              <div className="mt-4 p-4 bg-slate-50 rounded-lg">
+                <h3 className="font-medium text-slate-800 mb-3">生成されたLP構成</h3>
+                <pre className="whitespace-pre-wrap text-sm text-slate-600 font-sans">{generatedLp}</pre>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(generatedLp);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                  className="mt-3 btn-secondary flex items-center gap-2"
+                >
+                  {copied ? <Check size={16} /> : <Copy size={16} />}
+                  {copied ? 'コピー済み' : 'コピー'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'drama' && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+              <Film className="text-primary-500" size={20} />
+              ドラマ脚本生成
+            </h2>
+            <p className="text-sm text-slate-500">AIでドラマ・映画の脚本やストーリーを自動生成します</p>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">ジャンル</label>
+                <select
+                  value={dramaGenre}
+                  onChange={(e) => setDramaGenre(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="romance">ロマンス・恋愛</option>
+                  <option value="comedy">コメディ</option>
+                  <option value="thriller">サスペンス・スリラー</option>
+                  <option value="drama">ヒューマンドラマ</option>
+                  <option value="action">アクション</option>
+                  <option value="scifi">SF・ファンタジー</option>
+                  <option value="mystery">ミステリー</option>
+                  <option value="horror">ホラー</option>
+                  <option value="historical">時代劇・歴史</option>
+                  <option value="family">ファミリー</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">エピソード数</label>
+                <select
+                  value={dramaEpisodes}
+                  onChange={(e) => setDramaEpisodes(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="1">1話（ショートストーリー）</option>
+                  <option value="3">3話（短編）</option>
+                  <option value="6">6話（中編）</option>
+                  <option value="12">12話（長編）</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">テーマ・ストーリーの概要 *</label>
+              <textarea
+                value={dramaTheme}
+                onChange={(e) => setDramaTheme(e.target.value)}
+                placeholder="例: 都会で疲れた主人公が田舎に移住し、地元の人々との交流を通じて本当の幸せを見つける物語"
+                className="w-full h-24 px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">主要キャラクター（任意）</label>
+              <textarea
+                value={dramaCharacters}
+                onChange={(e) => setDramaCharacters(e.target.value)}
+                placeholder="例: 主人公: 30代女性、元広告代理店勤務。相手役: 地元の農家の青年、30代前半..."
+                className="w-full h-20 px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+
+            <button
+              onClick={async () => {
+                if (!dramaTheme.trim()) return;
+                setIsLoading(true);
+                try {
+                  const res = await fetch('/api/ai/drama', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ genre: dramaGenre, theme: dramaTheme, episodes: dramaEpisodes, characters: dramaCharacters }),
+                  });
+                  if (res.ok) {
+                    const data = await res.json();
+                    setGeneratedDrama(data.script);
+                  }
+                } finally {
+                  setIsLoading(false);
+                }
+              }}
+              disabled={isLoading || !dramaTheme.trim()}
+              className="btn-primary flex items-center gap-2"
+            >
+              {isLoading ? <Loader2 className="animate-spin" size={16} /> : <Film size={16} />}
+              ドラマ脚本を生成
+            </button>
+
+            {generatedDrama && (
+              <div className="mt-4 p-4 bg-slate-50 rounded-lg max-h-[600px] overflow-y-auto">
+                <h3 className="font-medium text-slate-800 mb-3">生成されたドラマ脚本</h3>
+                <pre className="whitespace-pre-wrap text-sm text-slate-600 font-sans">{generatedDrama}</pre>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(generatedDrama);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                  className="mt-3 btn-secondary flex items-center gap-2"
+                >
+                  {copied ? <Check size={16} /> : <Copy size={16} />}
+                  {copied ? 'コピー済み' : 'コピー'}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
