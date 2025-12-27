@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Monitor, 
@@ -43,7 +44,7 @@ const fetchApi = async (url: string) => {
 
 function Modal({ isOpen, onClose, title, children }: { isOpen: boolean; onClose: () => void; title: string; children: React.ReactNode }) {
   if (!isOpen) return null;
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4" style={{ zIndex: 9999 }}>
       <div className="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-auto shadow-2xl">
         <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-white">
@@ -52,7 +53,8 @@ function Modal({ isOpen, onClose, title, children }: { isOpen: boolean; onClose:
         </div>
         <div className="p-4">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
