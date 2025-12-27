@@ -6367,7 +6367,10 @@ URL/名前: ${url || '未指定'}
 
   app.post('/api/bpo/tasks', requireAuth, async (req: Request, res: Response) => {
     try {
-      const task = await storage.createBpoTask({ ...req.body, createdBy: req.session.userId });
+      const data = { ...req.body };
+      if (data.unitPrice === '') data.unitPrice = null;
+      if (data.estimatedHours === '') data.estimatedHours = null;
+      const task = await storage.createBpoTask({ ...data, createdBy: req.session.userId });
       res.json(task);
     } catch (error) {
       console.error('Create BPO task error:', error);
@@ -6377,7 +6380,10 @@ URL/名前: ${url || '未指定'}
 
   app.put('/api/bpo/tasks/:id', requireAuth, async (req: Request, res: Response) => {
     try {
-      const task = await storage.updateBpoTask(parseInt(req.params.id), req.body);
+      const data = { ...req.body };
+      if (data.unitPrice === '') data.unitPrice = null;
+      if (data.estimatedHours === '') data.estimatedHours = null;
+      const task = await storage.updateBpoTask(parseInt(req.params.id), data);
       if (!task) return res.status(404).json({ error: '業務が見つかりません' });
       res.json(task);
     } catch (error) {
@@ -6409,7 +6415,12 @@ URL/名前: ${url || '未指定'}
 
   app.post('/api/bpo/workflows', requireAuth, async (req: Request, res: Response) => {
     try {
-      const workflow = await storage.createBpoWorkflow({ ...req.body, createdBy: req.session.userId });
+      const data = { ...req.body };
+      if (data.taskId === '' || data.taskId === undefined) data.taskId = null;
+      if (data.estimatedMinutes === '') data.estimatedMinutes = null;
+      if (data.stepNumber) data.stepNumber = parseInt(data.stepNumber);
+      if (data.estimatedMinutes) data.estimatedMinutes = parseInt(data.estimatedMinutes);
+      const workflow = await storage.createBpoWorkflow({ ...data, createdBy: req.session.userId });
       res.json(workflow);
     } catch (error) {
       console.error('Create BPO workflow error:', error);
@@ -6419,7 +6430,12 @@ URL/名前: ${url || '未指定'}
 
   app.put('/api/bpo/workflows/:id', requireAuth, async (req: Request, res: Response) => {
     try {
-      const workflow = await storage.updateBpoWorkflow(parseInt(req.params.id), req.body);
+      const data = { ...req.body };
+      if (data.taskId === '' || data.taskId === undefined) data.taskId = null;
+      if (data.estimatedMinutes === '') data.estimatedMinutes = null;
+      if (data.stepNumber) data.stepNumber = parseInt(data.stepNumber);
+      if (data.estimatedMinutes) data.estimatedMinutes = parseInt(data.estimatedMinutes);
+      const workflow = await storage.updateBpoWorkflow(parseInt(req.params.id), data);
       if (!workflow) return res.status(404).json({ error: '業務フローが見つかりません' });
       res.json(workflow);
     } catch (error) {
@@ -6451,7 +6467,12 @@ URL/名前: ${url || '未指定'}
 
   app.post('/api/bpo/assignments', requireAuth, async (req: Request, res: Response) => {
     try {
-      const assignment = await storage.createBpoAssignment({ ...req.body, createdBy: req.session.userId });
+      const data = { ...req.body };
+      if (data.taskId === '' || data.taskId === undefined) data.taskId = null;
+      if (data.hoursWorked === '') data.hoursWorked = null;
+      if (data.startDate === '') data.startDate = null;
+      if (data.endDate === '') data.endDate = null;
+      const assignment = await storage.createBpoAssignment({ ...data, createdBy: req.session.userId });
       res.json(assignment);
     } catch (error) {
       console.error('Create BPO assignment error:', error);
@@ -6461,7 +6482,12 @@ URL/名前: ${url || '未指定'}
 
   app.put('/api/bpo/assignments/:id', requireAuth, async (req: Request, res: Response) => {
     try {
-      const assignment = await storage.updateBpoAssignment(parseInt(req.params.id), req.body);
+      const data = { ...req.body };
+      if (data.taskId === '' || data.taskId === undefined) data.taskId = null;
+      if (data.hoursWorked === '') data.hoursWorked = null;
+      if (data.startDate === '') data.startDate = null;
+      if (data.endDate === '') data.endDate = null;
+      const assignment = await storage.updateBpoAssignment(parseInt(req.params.id), data);
       if (!assignment) return res.status(404).json({ error: 'アサインが見つかりません' });
       res.json(assignment);
     } catch (error) {
@@ -6493,7 +6519,12 @@ URL/名前: ${url || '未指定'}
 
   app.post('/api/bpo/invoices', requireAuth, async (req: Request, res: Response) => {
     try {
-      const invoice = await storage.createBpoInvoice({ ...req.body, createdBy: req.session.userId });
+      const data = { ...req.body };
+      if (data.taskId === '' || data.taskId === undefined) data.taskId = null;
+      if (data.tax === '') data.tax = '0';
+      if (data.dueDate === '') data.dueDate = null;
+      if (data.paidDate === '') data.paidDate = null;
+      const invoice = await storage.createBpoInvoice({ ...data, createdBy: req.session.userId });
       res.json(invoice);
     } catch (error) {
       console.error('Create BPO invoice error:', error);
@@ -6503,7 +6534,12 @@ URL/名前: ${url || '未指定'}
 
   app.put('/api/bpo/invoices/:id', requireAuth, async (req: Request, res: Response) => {
     try {
-      const invoice = await storage.updateBpoInvoice(parseInt(req.params.id), req.body);
+      const data = { ...req.body };
+      if (data.taskId === '' || data.taskId === undefined) data.taskId = null;
+      if (data.tax === '') data.tax = '0';
+      if (data.dueDate === '') data.dueDate = null;
+      if (data.paidDate === '') data.paidDate = null;
+      const invoice = await storage.updateBpoInvoice(parseInt(req.params.id), data);
       if (!invoice) return res.status(404).json({ error: '請求書が見つかりません' });
       res.json(invoice);
     } catch (error) {
@@ -6545,7 +6581,11 @@ URL/名前: ${url || '未指定'}
 
   app.post('/api/bpo/sales', requireAuth, async (req: Request, res: Response) => {
     try {
-      const sale = await storage.createBpoSale({ ...req.body, createdBy: req.session.userId });
+      const data = { ...req.body };
+      if (data.taskId === '' || data.taskId === undefined) data.taskId = null;
+      if (data.invoiceId === '' || data.invoiceId === undefined) data.invoiceId = null;
+      if (data.saleDate === '') data.saleDate = null;
+      const sale = await storage.createBpoSale({ ...data, createdBy: req.session.userId });
       res.json(sale);
     } catch (error) {
       console.error('Create BPO sale error:', error);
@@ -6555,7 +6595,11 @@ URL/名前: ${url || '未指定'}
 
   app.put('/api/bpo/sales/:id', requireAuth, async (req: Request, res: Response) => {
     try {
-      const sale = await storage.updateBpoSale(parseInt(req.params.id), req.body);
+      const data = { ...req.body };
+      if (data.taskId === '' || data.taskId === undefined) data.taskId = null;
+      if (data.invoiceId === '' || data.invoiceId === undefined) data.invoiceId = null;
+      if (data.saleDate === '') data.saleDate = null;
+      const sale = await storage.updateBpoSale(parseInt(req.params.id), data);
       if (!sale) return res.status(404).json({ error: '売上が見つかりません' });
       res.json(sale);
     } catch (error) {
