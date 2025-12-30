@@ -442,7 +442,16 @@ export function registerRoutes(app: Express) {
     }
     const tenantStorage = createTenantStorage(companyIdForTask, { allowGlobal: true });
     const tasks = await tenantStorage.getTasks(req.session.userId!, user?.role);
-    res.json(tasks);
+    
+    // Add creator names to tasks
+    const allUsers = await storage.getAllUsers();
+    const userMap = new Map(allUsers.map(u => [u.id, u.name]));
+    const tasksWithCreatorName = tasks.map(task => ({
+      ...task,
+      createdByName: task.createdBy ? userMap.get(task.createdBy) || '不明' : '不明',
+    }));
+    
+    res.json(tasksWithCreatorName);
   });
 
   app.post('/api/tasks', requireRole('admin', 'ceo', 'manager', 'staff'), async (req: Request, res: Response) => {

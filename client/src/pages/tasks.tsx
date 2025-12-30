@@ -32,6 +32,7 @@ interface Task {
   assignedTo?: number;
   assignmentType?: string;
   createdBy?: number;
+  createdByName?: string;
   customerId?: number;
   isRecurring?: boolean;
   recurringFrequency?: string;
@@ -326,7 +327,7 @@ export function TasksPage() {
   }, [user?.role]);
 
   const fetchTasks = async () => {
-    const res = await fetch('/api/tasks');
+    const res = await fetch('/api/tasks', { credentials: 'include' });
     if (res.ok) {
       setTasks(await res.json());
     }
@@ -872,6 +873,11 @@ export function TasksPage() {
                               <div className="flex-1">
                                 <h3 className="font-medium text-slate-800 text-sm">{task.title}</h3>
                               <div className="flex gap-1 mt-1 flex-wrap">
+                                {task.createdByName && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-xs">
+                                    作成: {task.createdByName}
+                                  </span>
+                                )}
                                 {task.isRecurring && (
                                   <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-violet-50 text-violet-600 rounded text-xs">
                                     <Repeat size={10} />
@@ -1132,6 +1138,11 @@ export function TasksPage() {
                             <div className="flex-1">
                               <h3 className="font-medium text-slate-800 text-sm">{task.title}</h3>
                               <div className="flex gap-1 mt-1 flex-wrap">
+                                {task.createdByName && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-xs">
+                                    作成: {task.createdByName}
+                                  </span>
+                                )}
                                 {task.isRecurring && (
                                   <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-violet-50 text-violet-600 rounded text-xs">
                                     <Repeat size={10} />
