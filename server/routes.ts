@@ -1785,6 +1785,103 @@ HTMLコードのみを返してください。説明やマークダウンは不�
     }
   });
 
+  // App Development API
+  app.post('/api/ai/appdev', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { prompt, type, framework } = req.body;
+      if (!prompt) {
+        return res.status(400).json({ error: 'アプリの説明を入力してください' });
+      }
+
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      });
+
+      const typeMap: Record<string, string> = {
+        'web': 'Webアプリケーション',
+        'api': 'REST API/バックエンドサービス',
+        'cli': 'コマンドラインツール',
+        'mobile': 'モバイルアプリ（React Native）',
+        'bot': 'チャットBot（Discord/Slack/LINE）',
+        'game': 'ブラウザゲーム',
+      };
+
+      const frameworkMap: Record<string, { name: string; ext: string; setup: string }> = {
+        'react': { name: 'React + TypeScript + Vite', ext: 'tsx', setup: 'npm create vite@latest my-app -- --template react-ts\ncd my-app\nnpm install\nnpm run dev' },
+        'nextjs': { name: 'Next.js + TypeScript', ext: 'tsx', setup: 'npx create-next-app@latest my-app --typescript\ncd my-app\nnpm run dev' },
+        'vue': { name: 'Vue.js 3 + TypeScript', ext: 'vue', setup: 'npm create vue@latest my-app\ncd my-app\nnpm install\nnpm run dev' },
+        'express': { name: 'Express.js + TypeScript', ext: 'ts', setup: 'mkdir my-app && cd my-app\nnpm init -y\nnpm install express typescript ts-node @types/express @types/node\nnpx tsc --init\nnpx ts-node index.ts' },
+        'python': { name: 'Python (Flask/FastAPI)', ext: 'py', setup: 'pip install flask fastapi uvicorn\npython app.py' },
+        'python-django': { name: 'Python (Django)', ext: 'py', setup: 'pip install django\ndjango-admin startproject myproject\ncd myproject\npython manage.py runserver' },
+        'go': { name: 'Go', ext: 'go', setup: 'go mod init my-app\ngo run main.go' },
+        'rust': { name: 'Rust', ext: 'rs', setup: 'cargo new my-app\ncd my-app\ncargo run' },
+      };
+
+      const fw = frameworkMap[framework] || frameworkMap['react'];
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `あなたは熟練したソフトウェアエンジニアです。ユーザーの要求に基づいて、${fw.name}を使用した${typeMap[type] || 'アプリ'}を作成してください。
+
+以下の厳密なJSON形式で回答してください：
+{
+  "description": "アプリの簡潔な説明（日本語30文字以内）",
+  "setup": "セットアップ手順（シェルコマンド）",
+  "files": [
+    {
+      "name": "ファイル名（パス含む）",
+      "content": "ファイルの完全なソースコード"
+    }
+  ]
+}
+
+重要なルール：
+1. 実際に動作する完全なコードを生成してください
+2. コメントは最小限に、コードを重視してください
+3. ファイルは必要最小限に抑えてください（1-5ファイル程度）
+4. package.jsonやrequirements.txtなど依存関係ファイルも含めてください
+5. 初心者でも使えるようにシンプルな構成にしてください
+6. JSONフォーマット以外の出力は禁止です`
+          },
+          {
+            role: 'user',
+            content: `以下のアプリを${fw.name}で作成してください：
+
+${prompt}
+
+アプリの種類: ${typeMap[type] || type}
+フレームワーク: ${fw.name}`
+          }
+        ],
+        response_format: { type: 'json_object' },
+      });
+
+      const content = completion.choices[0]?.message?.content;
+      if (!content) {
+        throw new Error('コードが生成されませんでした');
+      }
+
+      const appCode = JSON.parse(content);
+
+      await createTenantStorage(getCompanyId(req), { allowGlobal: true }).createAiLog({
+        type: 'appdev',
+        prompt: `[${type}/${framework}] ${prompt.substring(0, 40)}...`,
+        result: `${appCode.files?.length || 0}ファイル生成`,
+        status: 'success',
+        userId: req.session.userId,
+      });
+
+      res.json(appCode);
+    } catch (error) {
+      console.error('App development error:', error);
+      res.status(500).json({ error: 'アプリコードの生成に失敗しました' });
+    }
+  });
+
   // Study API
   app.post('/api/ai/study', requireAuth, async (req: Request, res: Response) => {
     try {

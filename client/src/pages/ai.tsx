@@ -37,12 +37,13 @@ import {
   RefreshCw,
   Music,
   Layout,
-  Film
+  Film,
+  Code2
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 
-type TabType = 'image' | 'video' | 'seo' | 'voice' | 'list' | 'document' | 'chat' | 'voiceChat' | 'logs' | 'automation' | 'knowledge' | 'music' | 'lp' | 'drama';
+type TabType = 'image' | 'video' | 'seo' | 'voice' | 'list' | 'document' | 'chat' | 'voiceChat' | 'logs' | 'automation' | 'knowledge' | 'music' | 'lp' | 'drama' | 'appdev';
 
 interface AiKnowledge {
   id: number;
@@ -198,6 +199,12 @@ export function AiPage() {
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
 
+  const [appDevPrompt, setAppDevPrompt] = useState('');
+  const [appDevType, setAppDevType] = useState('web');
+  const [appDevFramework, setAppDevFramework] = useState('react');
+  const [generatedAppCode, setGeneratedAppCode] = useState<{files: {name: string; content: string}[]; setup: string; description: string} | null>(null);
+  const [appDevCopiedFile, setAppDevCopiedFile] = useState<string | null>(null);
+
   const tabs = [
     { id: 'chat' as TabType, label: 'テキスト会話', icon: MessageSquare },
     { id: 'image' as TabType, label: '画像生成', icon: Image },
@@ -209,6 +216,7 @@ export function AiPage() {
     { id: 'music' as TabType, label: '音楽生成', icon: Music },
     { id: 'lp' as TabType, label: 'LP生成', icon: Layout },
     { id: 'drama' as TabType, label: 'ドラマ生成', icon: Film },
+    { id: 'appdev' as TabType, label: 'アプリ開発', icon: Code2 },
     { id: 'voiceChat' as TabType, label: '音声会話', icon: Phone },
     { id: 'knowledge' as TabType, label: '知識ベース', icon: BookOpen },
     { id: 'logs' as TabType, label: 'ログ', icon: History },
@@ -2935,6 +2943,170 @@ export function AiPage() {
                       </a>
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'appdev' && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+              <Code2 className="text-primary-500" size={20} />
+              AIアプリ開発
+            </h2>
+            <p className="text-sm text-slate-500">
+              アプリのアイデアを入力すると、AIがコードを生成します。生成されたコードをReplitにコピーして開発を開始できます。
+            </p>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">アプリの種類</label>
+                <select
+                  value={appDevType}
+                  onChange={(e) => setAppDevType(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="web">Webアプリ</option>
+                  <option value="api">API/バックエンド</option>
+                  <option value="cli">CLIツール</option>
+                  <option value="mobile">モバイルアプリ</option>
+                  <option value="bot">Bot（Discord/Slack等）</option>
+                  <option value="game">ゲーム</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">フレームワーク/言語</label>
+                <select
+                  value={appDevFramework}
+                  onChange={(e) => setAppDevFramework(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="react">React + TypeScript</option>
+                  <option value="nextjs">Next.js</option>
+                  <option value="vue">Vue.js</option>
+                  <option value="express">Express.js (Node.js)</option>
+                  <option value="python">Python (Flask/FastAPI)</option>
+                  <option value="python-django">Python (Django)</option>
+                  <option value="go">Go</option>
+                  <option value="rust">Rust</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">アプリの説明 *</label>
+              <textarea
+                value={appDevPrompt}
+                onChange={(e) => setAppDevPrompt(e.target.value)}
+                placeholder="例: チップ計算機を作成して。割り勘機能も付けて、人数を入力すると一人あたりの金額が計算されるようにして。"
+                className="w-full h-32 px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={async () => {
+                  if (!appDevPrompt.trim()) return;
+                  setIsLoading(true);
+                  setGeneratedAppCode(null);
+                  try {
+                    const res = await fetch('/api/ai/appdev', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      credentials: 'include',
+                      body: JSON.stringify({ 
+                        prompt: appDevPrompt, 
+                        type: appDevType, 
+                        framework: appDevFramework 
+                      }),
+                    });
+                    if (res.ok) {
+                      const data = await res.json();
+                      setGeneratedAppCode(data);
+                    }
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }}
+                disabled={isLoading || !appDevPrompt.trim()}
+                className="btn-primary flex items-center gap-2"
+              >
+                {isLoading ? <Loader2 className="animate-spin" size={16} /> : <Code2 size={16} />}
+                アプリを生成
+              </button>
+
+              <a
+                href="https://replit.com/new"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-secondary flex items-center gap-2"
+              >
+                <ExternalLink size={16} />
+                Replitで開く
+              </a>
+            </div>
+
+            {generatedAppCode && (
+              <div className="mt-6 space-y-4">
+                <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                  <h3 className="font-medium text-slate-800 mb-2 flex items-center gap-2">
+                    <Sparkles className="text-blue-500" size={18} />
+                    {generatedAppCode.description}
+                  </h3>
+                </div>
+
+                <div className="p-4 bg-slate-50 rounded-lg">
+                  <h4 className="font-medium text-slate-800 mb-3 flex items-center gap-2">
+                    <FolderOpen size={18} className="text-amber-500" />
+                    セットアップ手順
+                  </h4>
+                  <pre className="whitespace-pre-wrap text-sm text-slate-600 bg-slate-800 text-green-400 p-4 rounded-lg overflow-x-auto">
+                    {generatedAppCode.setup}
+                  </pre>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="font-medium text-slate-800 flex items-center gap-2">
+                    <FileText size={18} className="text-blue-500" />
+                    生成されたファイル ({generatedAppCode.files.length}個)
+                  </h4>
+                  {generatedAppCode.files.map((file, index) => (
+                    <div key={index} className="border border-slate-200 rounded-lg overflow-hidden">
+                      <div className="flex items-center justify-between bg-slate-100 px-4 py-2">
+                        <span className="font-mono text-sm text-slate-700">{file.name}</span>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(file.content);
+                            setAppDevCopiedFile(file.name);
+                            setTimeout(() => setAppDevCopiedFile(null), 2000);
+                          }}
+                          className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                        >
+                          {appDevCopiedFile === file.name ? (
+                            <><Check size={14} /> コピー済み</>
+                          ) : (
+                            <><Copy size={14} /> コピー</>
+                          )}
+                        </button>
+                      </div>
+                      <pre className="p-4 bg-slate-900 text-green-400 text-xs overflow-x-auto max-h-[300px]">
+                        {file.content}
+                      </pre>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+                  <h4 className="font-medium text-slate-800 mb-2">Replitで使用する方法</h4>
+                  <ol className="text-sm text-slate-600 space-y-2 list-decimal list-inside">
+                    <li>上の「Replitで開く」ボタンをクリック</li>
+                    <li>テンプレートを選択（{appDevFramework}推奨）</li>
+                    <li>上記のファイルを一つずつコピーして作成</li>
+                    <li>セットアップ手順のコマンドをシェルで実行</li>
+                    <li>「Run」ボタンを押してアプリを起動</li>
+                  </ol>
                 </div>
               </div>
             )}
